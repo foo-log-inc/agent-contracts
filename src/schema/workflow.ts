@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SectionSchema } from "./agent.js";
 
 const RetrySchema = z.object({
   condition: z.string(),
@@ -100,6 +101,7 @@ export const WorkflowSchema = z
     entry_conditions: z.array(z.string()).default([]),
     trigger: z.string().optional(),
     steps: z.array(WorkflowStepSchema),
+    sections: z.array(SectionSchema).optional(),
     external_participants: z.array(ExternalParticipantSchema).default([]),
   })
   .passthrough();
