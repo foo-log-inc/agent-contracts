@@ -193,6 +193,11 @@ Handlebars.registerHelper("or", (...args: unknown[]): boolean => {
   return args.some((a) => !!a);
 });
 
+Handlebars.registerHelper("coalesce", (...args: unknown[]): unknown => {
+  const _options = args.pop();
+  return args.find((a) => a != null && a !== false && a !== "");
+});
+
 Handlebars.registerHelper("and", (...args: unknown[]): boolean => {
   const _options = args.pop();
   return args.every((a) => !!a);

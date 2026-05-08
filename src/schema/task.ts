@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EscalationCriterionSchema, RuleSchema } from "./agent.js";
+import { EscalationCriterionSchema, RuleSchema, SectionSchema } from "./agent.js";
 
 export const ExecutionStepSchema = z
   .object({
@@ -35,6 +35,7 @@ export const TaskSchema = z
     rules: z.array(RuleSchema).optional(),
     anti_patterns: z.array(z.string()).optional(),
     escalation_criteria: z.array(EscalationCriterionSchema).optional(),
+    sections: z.array(SectionSchema).optional(),
     validations: z.array(z.string()).default([]),
     guardrails: z.array(z.string()).optional(),
   })

@@ -7,6 +7,8 @@ export {
   type Prerequisite,
   RuleSchema,
   type Rule,
+  SectionSchema,
+  type Section,
 } from "./agent.js";
 export { ArtifactSchema, type Artifact } from "./artifact.js";
 export {
@@ -74,9 +76,11 @@ export {
   type PolicyWhen,
 } from "./policy.js";
 export {
+  ContextLoadingSchema,
   ExtendsSchema,
   SystemSchema,
   VersionLiteralSchema,
+  type ContextLoading,
   type Extends,
   type System,
   type VersionLiteral,

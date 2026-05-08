@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+export const SectionSchema = z
+  .object({
+    title: z.string(),
+    content: z.string().optional(),
+    list: z
+      .enum(["agents", "workflow", "validations", "guardrails"])
+      .optional(),
+  })
+  .passthrough();
+export type Section = z.infer<typeof SectionSchema>;
+
 export const RuleSchema = z
   .object({
     id: z.string(),
@@ -51,14 +62,7 @@ export const AgentSchema = z
     rules: z.array(RuleSchema).optional(),
     anti_patterns: z.array(z.string()).optional(),
     escalation_criteria: z.array(EscalationCriterionSchema).optional(),
-    sections: z
-      .array(
-        z.object({
-          title: z.string(),
-          content: z.string(),
-        }),
-      )
-      .optional(),
+    sections: z.array(SectionSchema).optional(),
     prerequisites: z.array(PrerequisiteSchema).optional(),
     guardrails: z.array(z.string()).optional(),
   })
