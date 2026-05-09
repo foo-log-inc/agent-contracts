@@ -1,0 +1,2 @@
+dsl: ./agent-contracts.yaml
+generated_dir: ../src/generated/dsl-base

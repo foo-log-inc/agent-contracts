@@ -505,6 +505,126 @@ commandSets:
           idempotent: true
           sideEffects: []
 
+      # ── audit ───────────────────────────────────────────
+      audit:
+        summary: Run LLM-based semantic audit on DSL definitions and generated outputs.
+        description: >-
+          Performs LLM-based semantic analysis on DSL definitions and/or
+          generated outputs. Three audit types are available: "render"
+          checks whether generated files faithfully reflect the resolved
+          DSL, "dsl" reviews DSL design for semantic coherence, and
+          "prompt" verifies that generated prompts accurately express
+          DSL intent. Uses agent-contracts-runtime (optional peer
+          dependency) for LLM execution with handoff schema validation
+          and follow-up recovery.
+        usage:
+          - agent-contracts audit render -c agent-contracts.config.yaml
+          - agent-contracts audit dsl -c agent-contracts.config.yaml
+          - agent-contracts audit prompt -c agent-contracts.config.yaml
+          - agent-contracts audit all -c agent-contracts.config.yaml
+          - agent-contracts audit dsl --dry-run -c agent-contracts.config.yaml
+          - agent-contracts audit render --format json -c agent-contracts.config.yaml
+          - agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
+
+        arguments:
+          - name: type
+            index: 0
+            required: false
+            description: >-
+              Audit type to run: render (semantic diff of generated
+              outputs vs DSL), dsl (design coherence review), prompt
+              (generated prompt fidelity check), or all (run all three).
+            schema:
+              type: string
+              enum: [render, dsl, prompt, all]
+              default: all
+
+        options:
+          - name: config
+            aliases: [c]
+            description: Path to agent-contracts.config.yaml.
+            valueName: path
+            schema:
+              type: string
+            file:
+              mode: read
+              exists: false
+              mediaType: application/yaml
+              encoding: utf-8
+
+          - name: team
+            description: Limit to one team (multi-team config only).
+            valueName: id
+            schema:
+              type: string
+
+          - name: format
+            description: Output format.
+            valueName: format
+            schema:
+              type: string
+              enum: [text, json, markdown]
+              default: text
+
+          - name: scope
+            description: >-
+              Limit audit scope to specified entities
+              (e.g. agents:architect,implementer).
+            valueName: entities
+            schema:
+              type: string
+
+          - name: dry-run
+            description: Output the audit prompt without calling LLM.
+            schema:
+              type: boolean
+              default: false
+
+          - name: adapter
+            description: >-
+              SDK adapter to use for LLM calls
+              (overrides config audit.adapter).
+            valueName: name
+            schema:
+              type: string
+
+          - name: model
+            description: LLM model override (overrides config audit.model).
+            valueName: name
+            schema:
+              type: string
+
+        exits:
+          '0':
+            description: No critical findings detected.
+            stdout:
+              format: text
+
+          '1':
+            description: Critical findings detected.
+            stdout:
+              format: text
+
+          '2':
+            description: Invalid input or configuration error.
+            stderr:
+              format: text
+
+          '3':
+            description: LLM adapter error (API failure, runtime not installed).
+            stderr:
+              format: text
+
+        x-agent:
+          riskLevel: low
+          requiresConfirmation: false
+          idempotent: true
+          sideEffects: []
+          recommendedBeforeUse:
+            - Ensure agent-contracts.config.yaml exists with render targets.
+            - Run validate first to confirm DSL is valid.
+            - Install agent-contracts-runtime if not using --dry-run.
+
       # ── generate ──────────────────────────────────────
       generate:
         summary: Generate guardrail or interface artifacts from DSL.

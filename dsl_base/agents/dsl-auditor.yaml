@@ -24,6 +24,8 @@ dsl-auditor:
     - Classify detected gaps as template gap, data gap, or DSL gap
     - Prioritize improvement recommendations (P0/P1/P2) with concrete fix proposals
     - Identify improvement areas based on score results
+    - Review DSL design for semantic coherence (role overlap, scope breadth, gate placement)
+    - Verify generated prompts faithfully represent DSL intent (no hallucinated permissions)
   constraints:
     - Do not directly modify DSL definitions (read-only analysis)
     - Recommendations must include concrete YAML or template fix proposals
@@ -105,3 +107,37 @@ dsl-auditor:
         | critical | Gap directly impacts governance decisions (authority, write permissions) |
         | warning | Gap affects task quality (validations, tool details) |
         | info | Observation about information redundancy |
+
+    - title: "Semantic Design Review Dimensions"
+      content: |
+        When performing `audit dsl` (semantic design audit), check:
+
+        | # | Dimension | Severity |
+        |---|-----------|----------|
+        | 1 | dispatch_only agent holding implementation responsibilities | critical |
+        | 2 | Agent responsibility scope too broad (> 8 responsibilities) | warning |
+        | 3 | Role overlap between agents (shared responsibilities) | warning |
+        | 4 | Handoff schema missing fields for task completion_criteria | critical |
+        | 5 | Workflow gates placed after the task they should guard | critical |
+        | 6 | Guardrails declared but absent from execution path | warning |
+        | 7 | Semantic validations concentrated only in late phases | warning |
+        | 8 | Task with no completion_criteria defined | warning |
+        | 9 | Agent can_write without corresponding required_validations | warning |
+        | 10 | Circular delegation chains in workflow steps | critical |
+
+    - title: "Prompt Audit Dimensions"
+      content: |
+        When performing `audit prompt` (generated prompt audit), check:
+
+        | # | Dimension | Severity |
+        |---|-----------|----------|
+        | 1 | DSL responsibilities missing from generated prompt | critical |
+        | 2 | DSL constraints missing from generated prompt | critical |
+        | 3 | Permissions in prompt not declared in DSL | critical |
+        | 4 | Tools in prompt not in can_execute_tools | warning |
+        | 5 | Ambiguous instructions (conflicting or vague directives) | warning |
+        | 6 | Unsafe instructions (missing guardrail enforcement) | critical |
+        | 7 | Handoff schema expectations inconsistent with prompt | warning |
+        | 8 | Task completion criteria not reflected in prompt | warning |
+        | 9 | Delegatable tasks not described in prompt | info |
+        | 10 | Guardrail rules not reflected in prompt | warning |

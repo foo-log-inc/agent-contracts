@@ -55,6 +55,19 @@ export {
 } from "./config/index.js";
 export { score, type ScoreResult, type DimensionResult } from "./scorer/index.js";
 export {
+  runAudit,
+  runAllAudits,
+  buildAuditContext,
+  formatAuditResult,
+  formatAuditResults,
+  computeExitCode,
+  type AuditRunResult,
+  type AuditType,
+  type AuditConfig as AuditRunConfig,
+  type AuditOptions,
+  type OutputFormat as AuditOutputFormat,
+} from "./auditor/index.js";
+export {
   generateGuardrails,
   resolveChecks,
   resolveBindingTargetPath,

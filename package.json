@@ -81,6 +81,14 @@
     "typescript-eslint": "^8.58.1",
     "vitest": "^4.1.4"
   },
+  "peerDependencies": {
+    "agent-contracts-runtime": ">=0.11.0"
+  },
+  "peerDependenciesMeta": {
+    "agent-contracts-runtime": {
+      "optional": true
+    }
+  },
   "engines": {
     "node": ">=20.0.0"
   }
