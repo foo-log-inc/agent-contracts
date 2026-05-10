@@ -117,6 +117,9 @@ check-dsl-score:
     - dsl-source
   invocation_handoff: dsl-task-request
   result_handoff: dsl-task-result
+  validations:
+    - dsl-score-validation
+    - dsl-score-report-validation
   responsibilities:
     - Review score across 7 dimensions and identify weaknesses
     - List entities that need improvement
@@ -150,6 +153,7 @@ audit-dsl-completeness:
   result_handoff: dsl-audit-result
   validations:
     - dsl-completeness-audit
+    - dsl-audit-report-validation
   responsibilities:
     - Cross-check across 19 dimensions per audit procedure
     - Classify gaps as template gap, data gap, or DSL gap
@@ -190,6 +194,7 @@ audit-semantic-design:
   result_handoff: dsl-audit-result
   validations:
     - dsl-completeness-audit
+    - dsl-audit-report-validation
   responsibilities:
     - Check dispatch_only agents for implementation responsibilities
     - Detect agents with overly broad scope
@@ -234,6 +239,7 @@ audit-generated-prompts:
   result_handoff: dsl-audit-result
   validations:
     - dsl-completeness-audit
+    - dsl-audit-report-validation
   responsibilities:
     - Compare generated prompt content against DSL agent definitions
     - Detect missing requirements from DSL

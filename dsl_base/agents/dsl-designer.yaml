@@ -23,8 +23,12 @@ dsl-designer:
     - dsl-schema-validation
     - dsl-lint-validation
     - dsl-score-validation
+    - dsl-score-report-validation
   can_return_handoffs:
     - dsl-task-result
+  guardrails:
+    - dsl-validate-before-render
+    - dsl-no-hallucinated-permissions
   responsibilities:
     - Create new and update existing agent-contracts DSL (YAML) definitions
     - Design all sections — agents, tasks, artifacts, tools, validations, handoff_types, workflow, policies, guardrails, guardrail_policies

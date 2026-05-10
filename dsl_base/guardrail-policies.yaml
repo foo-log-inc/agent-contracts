@@ -1,0 +1,18 @@
+dsl-management-policy:
+  description: >-
+    Guardrail policy governing DSL management operations.
+    Groups all DSL-related guardrails and specifies resolution
+    behavior.
+  rules:
+    - guardrail: dsl-readonly-enforcement
+      severity: critical
+      action: block
+    - guardrail: dsl-validate-before-render
+      severity: mandatory
+      action: block
+    - guardrail: dsl-no-hallucinated-permissions
+      severity: critical
+      action: block
+      escalation:
+        target: dsl-designer
+        condition: Hallucinated permissions detected in generated prompts

@@ -46,6 +46,11 @@ export const dslUpdate: WorkflowContract = {
       max_retries: 0,
     },
     {
+      type: "gate",
+      gate_kind: "dsl-task-result",
+      description: "Block if validation_result or lint_result did not pass in update-dsl-definitions.",
+    },
+    {
       type: "delegate",
       task: "update-dsl-binding",
       from_agent: "dsl-designer",
@@ -60,6 +65,11 @@ export const dslUpdate: WorkflowContract = {
       description: "DSL Designer renders prompts and documents and checks for drift.",
       optional: false,
       max_retries: 0,
+    },
+    {
+      type: "gate",
+      gate_kind: "dsl-task-result",
+      description: "Block if drift_detected is true in render-dsl-outputs result.",
     },
     {
       type: "delegate",
@@ -87,6 +97,11 @@ export const dslAudit: WorkflowContract = {
       description: "DSL Auditor executes 19-dimension cross-check and produces audit report with improvement recommendations.",
       optional: false,
       max_retries: 0,
+    },
+    {
+      type: "gate",
+      gate_kind: "dsl-audit-result",
+      description: "Block if audit-dsl-completeness detected 3 or more critical-level gaps (triggers stop_and_report escalation).",
     },
     {
       type: "delegate",

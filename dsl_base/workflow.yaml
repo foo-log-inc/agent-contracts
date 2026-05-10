@@ -15,6 +15,11 @@ dsl-update:
       description: >-
         DSL Designer creates or updates DSL definitions and verifies
         via validate / lint.
+    - type: gate
+      gate_kind: dsl-task-result
+      description: >-
+        Block if validation_result or lint_result did not pass in
+        update-dsl-definitions.
     - type: delegate
       task: update-dsl-binding
       from_agent: dsl-designer
@@ -25,6 +30,10 @@ dsl-update:
       from_agent: dsl-designer
       description: >-
         DSL Designer renders prompts and documents and checks for drift.
+    - type: gate
+      gate_kind: dsl-task-result
+      description: >-
+        Block if drift_detected is true in render-dsl-outputs result.
     - type: delegate
       task: check-dsl-score
       from_agent: dsl-designer
@@ -49,6 +58,11 @@ dsl-audit:
       description: >-
         DSL Auditor executes 19-dimension cross-check and produces
         audit report with improvement recommendations.
+    - type: gate
+      gate_kind: dsl-audit-result
+      description: >-
+        Block if audit-dsl-completeness detected 3 or more
+        critical-level gaps (triggers stop_and_report escalation).
     - type: delegate
       task: audit-semantic-design
       from_agent: dsl-auditor

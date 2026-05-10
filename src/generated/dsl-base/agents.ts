@@ -60,12 +60,13 @@ export const dslAuditor: AgentContract = {
   "Cross-check DSL definitions against generated prompts across 19 dimensions",
   "Classify detected gaps as template gap, data gap, or DSL gap",
   "Prioritize improvement recommendations (P0/P1/P2) with concrete fix proposals",
-  "Identify improvement areas based on score results",
+  "Report score-based improvement areas as audit recommendations (read-only; consumes dsl-score-report produced by dsl-designer)",
   "Review DSL design for semantic coherence (role overlap, scope breadth, gate placement)",
   "Verify generated prompts faithfully represent DSL intent (no hallucinated permissions)"
 ],
   constraints: [
   "Do not directly modify DSL definitions (read-only analysis)",
+  "Do not execute agent-contracts score independently; consume dsl-score-report produced by dsl-designer only",
   "Recommendations must include concrete YAML or template fix proposals",
   "Findings must be classified as PASS / MISS / PARTIAL / N/A"
 ],

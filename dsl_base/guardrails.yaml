@@ -1,0 +1,44 @@
+dsl-readonly-enforcement:
+  description: >-
+    Prevent read-only analysis agents from modifying DSL source files.
+    Applies to dsl-auditor and any future read-only agents.
+  scope:
+    agents:
+      - dsl-auditor
+    artifacts:
+      - dsl-source
+  rationale: >-
+    Agents whose primary purpose is auditing must not produce or
+    write to artifacts outside their can_write_artifacts list.
+
+dsl-validate-before-render:
+  description: >-
+    Ensure DSL validation passes before rendering is attempted.
+    Prevents generation of prompts from invalid DSL definitions.
+  scope:
+    workflows:
+      - dsl-update
+    tasks:
+      - render-dsl-outputs
+    artifacts:
+      - dsl-generated-output
+  rationale: >-
+    render-dsl-outputs must not be invoked while validation_result
+    of update-dsl-definitions is not 'pass'.
+
+dsl-no-hallucinated-permissions:
+  description: >-
+    Rendered prompts must not grant permissions not declared in DSL.
+    Detected via audit-generated-prompts; any hallucinated-permission
+    finding of severity critical must be escalated.
+  scope:
+    artifacts:
+      - dsl-generated-output
+    tasks:
+      - audit-generated-prompts
+    tools:
+      - agent-contracts-cli
+  rationale: >-
+    audit-generated-prompts detects permissions or tool references
+    in generated prompts that have no corresponding declaration
+    in the agent's DSL definition.

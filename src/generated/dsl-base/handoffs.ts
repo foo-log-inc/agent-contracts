@@ -25,7 +25,10 @@ export type DslTaskRequest = z.infer<typeof DslTaskRequestSchema>;
 export const DslTaskResultSchema = z.object({
   changed_files: z.array(z.string()).optional(),
   validation_result: z.enum(["pass", "fail"]),
+  lint_result: z.enum(["pass", "fail", "skipped"]).optional(),
+  drift_detected: z.boolean().optional(),
   score: z.number().optional(),
+  score_dimensions: z.record(z.string(), z.unknown()).optional(),
   notes: z.string().optional(),
 });
 
@@ -36,10 +39,13 @@ export type DslTaskResult = z.infer<typeof DslTaskResultSchema>;
 // ---------------------------------------------------------------------------
 
 export const DslAuditResultSchema = z.object({
+  audit_type: z.enum(["completeness", "semantic", "prompt"]),
   total_dimensions: z.number(),
   pass_count: z.number(),
   miss_count: z.number(),
   partial_count: z.number().optional(),
+  agents_reviewed: z.number().optional(),
+  prompts_reviewed: z.number().optional(),
   critical_gaps: z.array(z.object({
   dimension: z.string().optional(),
   agent: z.string().optional(),

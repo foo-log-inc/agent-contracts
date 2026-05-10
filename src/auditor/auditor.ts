@@ -22,6 +22,55 @@ import {
 } from "../generated/dsl-base/index.js";
 import type { DslAuditResult } from "../generated/dsl-base/handoffs.js";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function createAdapter(runtimePkg: string, name: string, config: AuditConfig): Promise<any> {
+  switch (name) {
+    case "mock": {
+      const mod = await import(`${runtimePkg}/adapters/mock`);
+      return new mod.MockAdapter();
+    }
+    case "cursor": {
+      const mod = await import(`${runtimePkg}/adapters/cursor-sdk`);
+      const apiKey = process.env.CURSOR_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "CURSOR_API_KEY environment variable is required for the cursor adapter.\n" +
+          "Get your key from: https://cursor.com/dashboard/integrations",
+        );
+      }
+      return mod.CursorSdkAdapter.create({ apiKey, model: config.model });
+    }
+    case "claude": {
+      const mod = await import(`${runtimePkg}/adapters/claude-agent-sdk`);
+      return new mod.ClaudeAgentSdkAdapter({
+        model: config.model,
+        tools: ["Read", "Glob", "Grep"],
+        permissionMode: "bypassPermissions",
+      });
+    }
+    case "openai": {
+      const mod = await import(`${runtimePkg}/adapters/openai-agents-sdk`);
+      return new mod.OpenAIAgentsSdkAdapter({
+        model: config.model,
+        maxTurns: 1,
+      });
+    }
+    case "gemini": {
+      const mod = await import(`${runtimePkg}/adapters/gemini-sdk`);
+      return new mod.GeminiSdkAdapter({
+        apiKey: process.env.GEMINI_API_KEY,
+        model: config.model ?? "gemini-2.5-flash",
+        temperature: config.temperature,
+      });
+    }
+    default:
+      throw new Error(
+        `Unsupported audit adapter: "${name}". ` +
+        "Available: mock, cursor, claude, openai, gemini.",
+      );
+  }
+}
+
 const AUDIT_TYPE_TO_TASK: Record<AuditType, string> = {
   render: "audit-dsl-completeness",
   dsl: "audit-semantic-design",
@@ -67,7 +116,6 @@ export async function runAudit(
   // Dynamic import — agent-contracts-runtime is optional.
   // Module names are constructed to prevent TypeScript from resolving them at compile time.
   const RUNTIME_PKG = ["agent-contracts", "runtime"].join("-");
-  const MOCK_PKG = `${RUNTIME_PKG}/adapters/mock`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let runTask: (...args: any[]) => Promise<any>;
@@ -83,22 +131,7 @@ export async function runAudit(
   }
 
   const adapterName = auditConfig.adapter ?? "mock";
-  let adapter: unknown;
-  if (adapterName === "mock") {
-    try {
-      const mockMod = await import(MOCK_PKG);
-      adapter = new mockMod.MockAdapter();
-    } catch {
-      throw new Error(
-        "Failed to load mock adapter from agent-contracts-runtime.",
-      );
-    }
-  } else {
-    throw new Error(
-      `Unsupported audit adapter: "${adapterName}". ` +
-      "Available: mock. For other adapters, install the corresponding SDK package.",
-    );
-  }
+  const adapter = await createAdapter(RUNTIME_PKG, adapterName, auditConfig);
 
   const result = await runTask(adapter, taskId, {
     user_request: userRequest,

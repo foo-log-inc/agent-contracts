@@ -69,11 +69,15 @@
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.138",
+    "@cursor/sdk": "^1.0.12",
     "@eslint/js": "^10.0.1",
+    "@google/genai": "^2.0.1",
+    "@openai/agents": "^0.11.1",
     "@types/node": "^25.6.0",
+    "cli-contracts": "^0.2.0",
     "eslint": "^10.2.0",
     "globals": "^17.5.0",
-    "cli-contracts": "^0.2.0",
     "prettier": "^3.8.2",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",

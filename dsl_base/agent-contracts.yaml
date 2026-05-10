@@ -13,3 +13,5 @@ tools: { $ref: "./tools.yaml" }
 validations: { $ref: "./validations.yaml" }
 handoff_types: { $ref: "./handoff-types.yaml" }
 workflow: { $ref: "./workflow.yaml" }
+guardrails: { $ref: "./guardrails.yaml" }
+guardrail_policies: { $ref: "./guardrail-policies.yaml" }
