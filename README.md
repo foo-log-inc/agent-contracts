@@ -343,6 +343,7 @@ Design regressions become testable.
 * **`extensions` declarations** with scope, schema validation, and strict enforcement for custom `x-*` fields
 * **`resolve --expand-defaults`** to materialize all Zod schema defaults in output
 * **DSL completeness scoring** with 7 dimensions, text/JSON output, and `--threshold` CI gate
+* **LLM-based semantic audit** — design coherence, prompt fidelity, and completeness checks via Claude, OpenAI, Gemini, or Cursor adapters
 * **JSON Schema for editor support and external tooling**
 * **CI-friendly workflow checks**
 
@@ -1030,6 +1031,7 @@ npx agent-contracts
 | `agent-contracts score [path]`    | Calculate DSL completeness score                       |
 | `agent-contracts generate guardrails` | Generate guardrail artifacts from bindings       |
 | `agent-contracts generate interface` | Generate team interface YAML from DSL |
+| `agent-contracts audit <type>`    | Run LLM-based semantic audit (render/dsl/prompt/all)   |
 | `agent-contracts check`           | Run resolve → validate → lint → render --check         |
 
 The `[path]` argument defaults to `agent-contracts.yaml` in the current directory.
@@ -1054,6 +1056,26 @@ All commands also accept `--team <id>` to limit execution to a single team when 
 | `--threshold <number>` | Minimum score; exit 1 if below (for CI gates) |
 | `-c, --config <path>` | Path to `agent-contracts.config.yaml` |
 | `--team <id>` | Limit to one team (multi-team config only) |
+
+#### `audit` options
+
+| Option | Description |
+|--------|-------------|
+| `--format <text\|json\|markdown>` | Output format (default: `text`) |
+| `--scope <filter>` | Limit audit scope (e.g. `agents:architect,implementer`) |
+| `--dry-run` | Output the audit prompt without calling the LLM |
+| `--adapter <name>` | SDK adapter: `claude`, `openai`, `gemini`, `cursor` (overrides config) |
+| `--model <name>` | LLM model override (overrides config) |
+| `-c, --config <path>` | Path to `agent-contracts.config.yaml` |
+| `--team <id>` | Limit to one team (multi-team config only) |
+
+The `audit` command requires `agent-contracts-runtime` (optional peer dependency) to be installed. Configure the default adapter and model in `agent-contracts.config.yaml`:
+
+```yaml
+audit:
+  adapter: openai
+  model: gpt-4.1
+```
 
 The score command evaluates 7 dimensions:
 
@@ -1083,6 +1105,10 @@ agent-contracts check -c agent-contracts.config.yaml --strict
 agent-contracts generate interface -c agent-contracts.config.yaml
 agent-contracts generate interface -c agent-contracts.config.yaml --dry-run
 agent-contracts generate interface -c agent-contracts.config.yaml --format json
+agent-contracts audit dsl -c agent-contracts.config.yaml
+agent-contracts audit render -c agent-contracts.config.yaml --format json
+agent-contracts audit all -c agent-contracts.config.yaml --adapter claude
+agent-contracts audit dsl -c agent-contracts.config.yaml --dry-run
 ````
 
 ---
@@ -1631,6 +1657,61 @@ Use `--threshold` in CI to enforce a minimum quality bar:
 ````bash
 agent-contracts score -c config.yaml --threshold 70
 ````
+
+### LLM-based semantic audit
+
+Static tools (`validate`, `lint`, `score`) catch structural and naming issues, but cannot evaluate **design quality** — whether agent responsibilities are well-scoped, whether workflow gates are placed correctly, or whether generated prompts faithfully represent DSL intent. The `audit` command bridges this gap by using LLMs as semantic reviewers.
+
+Requires `agent-contracts-runtime` (optional peer dependency) and an API key for at least one supported adapter.
+
+#### Audit types
+
+| Type | What it checks |
+|------|----------------|
+| `render` | 19-dimension cross-check of DSL definitions vs generated prompts — detects template gaps, data gaps, and DSL gaps |
+| `dsl` | Design coherence — role overlap, scope breadth, gate placement, guardrail enforcement paths, handoff schema completeness |
+| `prompt` | Prompt fidelity — missing responsibilities, hallucinated permissions, ambiguous instructions, unsafe directives |
+| `all` | Run all three |
+
+Results are structured: each finding has a severity (`critical` / `warning` / `info`), a gap type classification, and prioritized recommendations (P0/P1/P2) with concrete fix proposals.
+
+#### Configuration
+
+````yaml
+# agent-contracts.config.yaml
+audit:
+  adapter: openai      # claude | openai | gemini | cursor
+  model: gpt-4.1       # model override (adapter-specific)
+````
+
+| Adapter | Environment Variable |
+|---------|---------------------|
+| `claude` | `ANTHROPIC_API_KEY` |
+| `openai` | `OPENAI_API_KEY` |
+| `gemini` | `GEMINI_API_KEY` |
+| `cursor` | `CURSOR_API_KEY` |
+
+#### Usage
+
+````bash
+agent-contracts audit dsl -c config.yaml
+agent-contracts audit all -c config.yaml --adapter claude
+agent-contracts audit render -c config.yaml --format json
+agent-contracts audit dsl -c config.yaml --dry-run
+````
+
+Use `--dry-run` to inspect the prompt sent to the LLM without making an API call. Running multiple adapters provides cross-validation — findings reported by 3+ adapters are high-confidence issues.
+
+| Exit Code | Meaning |
+|-----------|---------|
+| 0 | No critical findings |
+| 1 | Critical findings detected |
+| 2 | Invalid input or configuration |
+| 3 | LLM adapter error (API failure, runtime not installed) |
+
+#### A self-hosted example of agent-contracts + runtime
+
+The audit feature is itself built on the agent-contracts ecosystem. The auditor agent, audit tasks, handoff schemas, and workflow are all defined as DSL in `dsl_base/`, and executed via `agent-contracts-runtime` adapters at runtime. This makes the audit command a concrete, working example of how to combine the two packages: define agent behavior declaratively in YAML, auto-generate typed registries, and execute tasks against real LLM adapters with structured output validation.
 
 ---
 
