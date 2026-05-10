@@ -3,7 +3,7 @@ cliContracts: 0.1.0
 
 info:
   title: agent-contracts CLI
-  version: 0.19.1
+  version: 0.19.2
   description: >-
     Declarative YAML DSL toolkit for defining, validating, and rendering
     multi-agent development workflows. Provides static validation,
@@ -102,7 +102,10 @@ commandSets:
           '0':
             description: Resolved DSL output successfully.
             stdout:
-              format: text
+              format: '{options.format}'
+              schemaNote: >-
+                Output format depends on --format option. Defaults to
+                text (YAML representation); json produces a JSON object.
 
           '1':
             description: Resolution failed (file not found, parse error, or config error).
@@ -187,7 +190,11 @@ commandSets:
           '0':
             description: Validation passed. No errors found.
             stdout:
-              format: text
+              format: '{options.format}'
+              schemaNote: >-
+                Output format depends on --format option. Text shows
+                human-readable diagnostics; json produces structured
+                validation results.
 
           '1':
             description: Validation failed or unexpected error.
@@ -271,7 +278,11 @@ commandSets:
           '0':
             description: Lint passed. No errors or warnings.
             stdout:
-              format: text
+              format: '{options.format}'
+              schemaNote: >-
+                Output format depends on --format option. Text shows
+                human-readable diagnostics; json produces structured
+                lint results.
 
           '1':
             description: Lint failed or unexpected error.
@@ -344,8 +355,17 @@ commandSets:
           riskLevel: medium
           requiresConfirmation: false
           idempotent: true
+          idempotentNote: >-
+            Output is deterministic from DSL input and templates.
+            Repeated runs produce identical files. Confirmation is not
+            required because the command is idempotent and --check
+            provides a side-effect-free preview mode.
           sideEffects:
             - file_write
+          sideEffectNote: >-
+            Writes rendered files to configured output paths. No file
+            writes occur when --check is specified.
+          safeDryRunOption: check
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists with render targets.
             - Run validate first to confirm DSL is valid.
@@ -354,10 +374,13 @@ commandSets:
       check:
         summary: Run full pipeline — resolve, validate, lint, render --check.
         description: >-
-          Executes the complete verification pipeline in order: resolve
-          DSL, validate schema and references, run lint rules, and check
-          for render drift. Also verifies cross-team interface imports
-          and team-interface.yaml drift when applicable.
+          Executes the complete verification pipeline in order:
+          (1) resolve DSL, (2) validate schema and references,
+          (3) run lint rules, (4) check render drift via render --check.
+          Steps 1–4 always run. Additionally, when the DSL declares
+          cross-team interfaces, (5) verifies interface import
+          consistency and (6) checks team-interface.yaml drift.
+          Steps 5–6 are skipped when no cross-team interfaces exist.
         usage:
           - agent-contracts check -c agent-contracts.config.yaml
           - agent-contracts check -c agent-contracts.config.yaml --strict
@@ -406,7 +429,11 @@ commandSets:
           '0':
             description: All checks passed.
             stdout:
-              format: text
+              format: '{options.format}'
+              schemaNote: >-
+                Output format depends on --format option. Text shows
+                human-readable pipeline summary; json produces structured
+                results per pipeline stage.
 
           '1':
             description: >-
@@ -490,7 +517,11 @@ commandSets:
           '0':
             description: Score calculated (and above threshold if specified).
             stdout:
-              format: text
+              format: '{options.format}'
+              schemaNote: >-
+                Output format depends on --format option. Text shows
+                human-readable score breakdown; json produces structured
+                score object with per-dimension details.
 
           '1':
             description: >-
@@ -598,12 +629,25 @@ commandSets:
           '0':
             description: No critical findings detected.
             stdout:
-              format: text
+              format: '{options.format}'
+              schemaNote: >-
+                Audit findings are always emitted on stdout as the primary
+                output. Format depends on --format option (text, json, or
+                markdown).
 
           '1':
             description: Critical findings detected.
-            stdout:
+            stderr:
               format: text
+              schemaNote: >-
+                Summary diagnostic on stderr. Structured findings are
+                emitted on stdout in the requested --format.
+            stdout:
+              format: '{options.format}'
+              schemaNote: >-
+                Full findings output. Exit 1 indicates at least one
+                critical-severity finding exists; the findings themselves
+                are valid structured data, not error messages.
 
           '2':
             description: Invalid input or configuration error.
@@ -616,10 +660,18 @@ commandSets:
               format: text
 
         x-agent:
-          riskLevel: low
+          riskLevel: medium
           requiresConfirmation: false
           idempotent: true
-          sideEffects: []
+          sideEffects:
+            - network
+          sideEffectNote: >-
+            Makes LLM API calls to the configured adapter (e.g. OpenAI,
+            Gemini, Cursor) unless --dry-run is specified. Incurs token
+            cost and sends DSL content to the LLM provider.
+          safeDryRunOption: dry-run
+          expectedDurationMs: 120000
+          retryableExitCodes: [3]
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists with render targets.
             - Run validate first to confirm DSL is valid.
@@ -685,6 +737,10 @@ commandSets:
             valueName: path
             schema:
               type: string
+            file:
+              mode: write
+              mediaType: application/yaml
+              encoding: utf-8
 
           - name: format
             description: Output format for team interface (yaml or json). Interface type only.
@@ -723,8 +779,19 @@ commandSets:
           riskLevel: medium
           requiresConfirmation: false
           idempotent: true
+          idempotentNote: >-
+            Output is deterministic from DSL input, policies, and
+            bindings. Repeated runs produce identical files.
+            Confirmation is not required because the command is
+            idempotent and --dry-run provides a side-effect-free
+            preview mode.
           sideEffects:
             - file_write
+          sideEffectNote: >-
+            Writes guardrail binding files or team interface files to
+            configured output paths. No file writes occur when
+            --dry-run is specified.
+          safeDryRunOption: dry-run
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists with binding definitions.
             - Run validate first to confirm DSL is valid.
