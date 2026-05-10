@@ -23,6 +23,7 @@ const WorkflowDelegateStepSchema = z
     task: z.string(),
     from_agent: z.string(),
     group: z.string().optional(),
+    depends_on: z.array(z.string()).optional(),
     max_retries: z.number().int().min(0).optional(),
     max_follow_ups: z.number().int().min(0).optional(),
     retry: RetrySchema.optional(),
@@ -35,6 +36,7 @@ const WorkflowGateStepSchema = z
     description: z.string().optional(),
     gate_kind: z.string(),
     group: z.string().optional(),
+    depends_on: z.array(z.string()).optional(),
   })
   .passthrough();
 
@@ -47,6 +49,7 @@ const WorkflowHandoffStepSchema = z
     task: z.string().optional(),
     from_agent: z.string().optional(),
     group: z.string().optional(),
+    depends_on: z.array(z.string()).optional(),
     retry: RetrySchema.optional(),
   })
   .passthrough();
@@ -58,6 +61,7 @@ const WorkflowValidationStepSchema = z
     description: z.string().optional(),
     validation: z.string(),
     group: z.string().optional(),
+    depends_on: z.array(z.string()).optional(),
   })
   .passthrough();
 
@@ -70,6 +74,7 @@ const WorkflowDecisionStepSchema = z
     routing_key: z.string().optional(),
     branches: z.record(z.string(), z.array(z.string())),
     group: z.string().optional(),
+    depends_on: z.array(z.string()).optional(),
   })
   .passthrough();
 
@@ -82,6 +87,7 @@ const WorkflowTeamTaskStepSchema = z
     handoff: z.string(),
     expects: z.string(),
     group: z.string().optional(),
+    depends_on: z.array(z.string()).optional(),
   })
   .passthrough();
 

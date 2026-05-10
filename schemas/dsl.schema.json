@@ -921,6 +921,12 @@
                     "group": {
                       "type": "string"
                     },
+                    "depends_on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
                     "max_retries": {
                       "type": "integer",
                       "minimum": 0,
@@ -973,6 +979,12 @@
                     },
                     "group": {
                       "type": "string"
+                    },
+                    "depends_on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -1002,6 +1014,12 @@
                     },
                     "group": {
                       "type": "string"
+                    },
+                    "depends_on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     },
                     "retry": {
                       "type": "object",
@@ -1044,6 +1062,12 @@
                     },
                     "group": {
                       "type": "string"
+                    },
+                    "depends_on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -1082,6 +1106,12 @@
                     },
                     "group": {
                       "type": "string"
+                    },
+                    "depends_on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -1114,6 +1144,12 @@
                     },
                     "group": {
                       "type": "string"
+                    },
+                    "depends_on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [

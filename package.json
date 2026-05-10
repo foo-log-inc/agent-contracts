@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.19.2",
+  "version": "0.19.3",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
