@@ -1,0 +1,46 @@
+dsl-readonly-enforcement:
+  description: >-
+    Prevent audit-purpose agents from modifying DSL source files.
+    dsl-auditor is mode=read-write (to produce dsl-audit-report) but
+    must not write to dsl-source. This guardrail enforces that boundary.
+  scope:
+    agents:
+      - dsl-auditor
+    artifacts:
+      - dsl-source
+  rationale: >-
+    dsl-auditor uses mode=read-write because it produces dsl-audit-report,
+    but its constraints prohibit modifying DSL definitions. This guardrail
+    blocks writes to dsl-source from audit-purpose agents.
+
+dsl-validate-before-render:
+  description: >-
+    Ensure DSL validation passes before rendering is attempted.
+    Prevents generation of prompts from invalid DSL definitions.
+  scope:
+    workflows:
+      - dsl-update
+    tasks:
+      - render-dsl-outputs
+    artifacts:
+      - dsl-generated-output
+  rationale: >-
+    render-dsl-outputs must not be invoked while validation_result
+    of update-dsl-definitions is not 'pass'.
+
+dsl-no-hallucinated-permissions:
+  description: >-
+    Rendered prompts must not grant permissions not declared in DSL.
+    Detected via audit-generated-prompts; any hallucinated-permission
+    finding of severity critical must be escalated.
+  scope:
+    artifacts:
+      - dsl-generated-output
+    tasks:
+      - audit-generated-prompts
+    tools:
+      - agent-contracts-cli
+  rationale: >-
+    audit-generated-prompts detects permissions or tool references
+    in generated prompts that have no corresponding declaration
+    in the agent's DSL definition.

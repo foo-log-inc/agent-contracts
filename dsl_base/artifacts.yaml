@@ -51,6 +51,8 @@ dsl-score-report:
     - dsl-auditor
   states:
     - generated
+  required_validations:
+    - dsl-score-report-validation
 
 dsl-audit-report:
   type: doc
@@ -66,4 +68,6 @@ dsl-audit-report:
     - dsl-designer
   states:
     - submitted
+  required_validations:
+    - dsl-audit-report-validation
   x-artifact-class: evidence

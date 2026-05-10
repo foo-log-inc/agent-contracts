@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-05-10T01:01:15.973Z",
+  "dslHash": "65df03defc35e099a1a1a91d193ed2cd0e160991c61262f730da052b647dcd2f",
+  "generationInputHash": "65df03defc35e099a1a1a91d193ed2cd0e160991c61262f730da052b647dcd2f",
+  "files": [
+    "../src/generated/dsl-base/agents.ts",
+    "../src/generated/dsl-base/tasks.ts",
+    "../src/generated/dsl-base/workflows.ts",
+    "../src/generated/dsl-base/handoffs.ts",
+    "../src/generated/dsl-base/index.ts"
+  ]
+}

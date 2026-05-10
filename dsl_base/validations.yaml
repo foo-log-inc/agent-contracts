@@ -44,3 +44,23 @@ dsl-completeness-audit:
     19-dimension cross-check audit of DSL definitions against generated
     prompts. Verifies that all items defined in the DSL are correctly
     reflected in generated output.
+
+dsl-score-report-validation:
+  target_artifact: dsl-score-report
+  kind: semantic
+  executor_type: tool
+  executor: agent-contracts-cli
+  blocking: false
+  x-description: >-
+    Validates that dsl-score-report has been produced and contains
+    a valid score across all 7 dimensions.
+
+dsl-audit-report-validation:
+  target_artifact: dsl-audit-report
+  kind: semantic
+  executor_type: agent
+  executor: dsl-auditor
+  blocking: false
+  x-description: >-
+    Validates that dsl-audit-report contains findings classified
+    as PASS/MISS/PARTIAL for all inspected dimensions.

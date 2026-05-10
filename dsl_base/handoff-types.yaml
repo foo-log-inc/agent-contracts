@@ -17,7 +17,7 @@ dsl-task-request:
       - task_id
 
 dsl-task-result:
-  version: 1
+  version: 3
   description: Result of a DSL management task execution
   schema:
     type: object
@@ -32,10 +32,52 @@ dsl-task-result:
         enum:
           - pass
           - fail
-        description: Result of validate / lint
+        description: Result of agent-contracts validate
+      lint_result:
+        type: string
+        enum:
+          - pass
+          - fail
+          - skipped
+        description: Result of agent-contracts lint (separate from validate)
+      generate_result:
+        type: string
+        enum:
+          - pass
+          - fail
+          - skipped
+        description: >-
+          Result of agent-contracts generate guardrails (binding task).
+          Used by post-binding gate to block render on failure.
+      render_result:
+        type: string
+        enum:
+          - pass
+          - fail
+          - skipped
+        description: >-
+          Result of agent-contracts render execution.
+          Distinct from drift_detected — captures whether render itself succeeded.
+      drift_detected:
+        type: boolean
+        description: >-
+          True if render --check detected drift between DSL source
+          and generated outputs
+      cross_reference_check:
+        type: string
+        enum:
+          - pass
+          - fail
+          - skipped
+        description: >-
+          Result of cross-reference integrity verification for newly
+          added entities (update-dsl-definitions completion criterion).
       score:
         type: number
         description: Score command result (0-100)
+      score_dimensions:
+        type: object
+        description: Per-dimension score breakdown
       notes:
         type: string
         description: Additional notes or improvement suggestions
@@ -43,11 +85,18 @@ dsl-task-result:
       - validation_result
 
 dsl-audit-result:
-  version: 1
-  description: Result of DSL completeness audit
+  version: 3
+  description: Result of DSL audit (completeness, semantic design, or prompt fidelity)
   schema:
     type: object
     properties:
+      audit_type:
+        type: string
+        enum:
+          - completeness
+          - semantic
+          - prompt
+        description: Which audit task produced this result
       total_dimensions:
         type: integer
         description: Number of dimensions inspected
@@ -60,6 +109,22 @@ dsl-audit-result:
       partial_count:
         type: integer
         description: Number of PARTIAL dimensions
+      agents_reviewed:
+        type: integer
+        description: Number of agents reviewed (semantic and prompt audits)
+      prompts_reviewed:
+        type: integer
+        description: Number of generated prompts compared (prompt audit)
+      gate_analysis_complete:
+        type: boolean
+        description: >-
+          True when workflow gate placement analysis has been performed
+          (semantic audit completion criterion).
+      guardrail_enforcement_verified:
+        type: boolean
+        description: >-
+          True when all declared guardrails have been verified to exist
+          in execution paths (semantic audit completion criterion).
       critical_gaps:
         type: array
         items:
@@ -81,7 +146,7 @@ dsl-audit-result:
                 - critical
                 - warning
                 - info
-        description: List of detected critical gaps
+        description: List of detected gaps
       recommendations:
         type: array
         items:
@@ -103,6 +168,7 @@ dsl-audit-result:
                 - regeneration
         description: Prioritized improvement recommendation list
     required:
+      - audit_type
       - total_dimensions
       - pass_count
       - miss_count

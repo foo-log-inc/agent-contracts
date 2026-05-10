@@ -15,16 +15,31 @@ dsl-update:
       description: >-
         DSL Designer creates or updates DSL definitions and verifies
         via validate / lint.
+    - type: gate
+      gate_kind: dsl-task-result
+      description: >-
+        Block if validation_result or lint_result did not pass in
+        update-dsl-definitions.
     - type: delegate
       task: update-dsl-binding
       from_agent: dsl-designer
       description: >-
         DSL Designer adds or updates bindings and verifies via generate.
+    - type: gate
+      gate_kind: dsl-task-result
+      description: >-
+        Block if generate_result is not 'pass' in update-dsl-binding.
+        Prevents render-dsl-outputs from executing against invalid bindings.
     - type: delegate
       task: render-dsl-outputs
       from_agent: dsl-designer
       description: >-
         DSL Designer renders prompts and documents and checks for drift.
+    - type: gate
+      gate_kind: dsl-task-result
+      description: >-
+        Block if render_result is not 'pass' or drift_detected is true
+        in render-dsl-outputs result.
     - type: delegate
       task: check-dsl-score
       from_agent: dsl-designer
@@ -35,7 +50,8 @@ dsl-audit:
   description: >-
     DSL Audit — audit completeness of DSL definitions against generated
     prompts, detect gaps, and present improvement recommendations.
-    Executed by DSL Auditor.
+    Executed by DSL Auditor. Supports three audit types: render (semantic
+    diff), dsl (design coherence), and prompt (prompt fidelity).
   entry_conditions:
     - DSL definition rendering is complete
   trigger: >-
@@ -48,3 +64,28 @@ dsl-audit:
       description: >-
         DSL Auditor executes 19-dimension cross-check and produces
         audit report with improvement recommendations.
+    - type: gate
+      gate_kind: dsl-audit-result
+      description: >-
+        Block if audit-dsl-completeness detected 3 or more
+        critical-level gaps (triggers stop_and_report escalation).
+    - type: delegate
+      task: audit-semantic-design
+      from_agent: dsl-auditor
+      description: >-
+        DSL Auditor reviews DSL design for semantic coherence —
+        role overlap, scope breadth, gate placement, guardrail
+        enforcement paths.
+    - type: delegate
+      task: audit-generated-prompts
+      from_agent: dsl-auditor
+      description: >-
+        DSL Auditor compares generated prompts against DSL intent —
+        detects missing requirements, hallucinated permissions,
+        ambiguous instructions.
+    - type: gate
+      gate_kind: dsl-audit-result
+      description: >-
+        Terminal gate — block if audit-generated-prompts detected
+        hallucinated permissions (enforces dsl-no-hallucinated-permissions
+        guardrail at workflow level via stop_and_report escalation).

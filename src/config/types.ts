@@ -45,6 +45,17 @@ export const TeamConfigSchema = z.object({
 
 export type TeamConfig = z.infer<typeof TeamConfigSchema>;
 
+export const AuditConfigSchema = z
+  .object({
+    adapter: z.string().optional(),
+    model: z.string().optional(),
+    temperature: z.number().min(0).max(2).optional(),
+    cache_dir: z.string().optional(),
+  })
+  .optional();
+
+export type AuditConfig = z.infer<typeof AuditConfigSchema>;
+
 export const AgentContractsConfigSchema = z
   .object({
     dsl: z.string().optional(),
@@ -54,6 +65,7 @@ export const AgentContractsConfigSchema = z
     active_guardrail_policy: z.string().optional(),
     paths: z.record(z.string(), z.string()).optional(),
     teams: z.record(z.string(), TeamConfigSchema).optional(),
+    audit: AuditConfigSchema,
   })
   .superRefine((data, ctx) => {
     if (data.dsl !== undefined && data.teams !== undefined) {

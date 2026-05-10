@@ -117,6 +117,9 @@ check-dsl-score:
     - dsl-source
   invocation_handoff: dsl-task-request
   result_handoff: dsl-task-result
+  validations:
+    - dsl-score-validation
+    - dsl-score-report-validation
   responsibilities:
     - Review score across 7 dimensions and identify weaknesses
     - List entities that need improvement
@@ -150,6 +153,7 @@ audit-dsl-completeness:
   result_handoff: dsl-audit-result
   validations:
     - dsl-completeness-audit
+    - dsl-audit-report-validation
   responsibilities:
     - Cross-check across 19 dimensions per audit procedure
     - Classify gaps as template gap, data gap, or DSL gap
@@ -176,4 +180,90 @@ audit-dsl-completeness:
       produces_artifact: dsl-audit-report
   escalation_criteria:
     - condition: 3 or more critical-level gaps detected
+      action: stop_and_report
+
+audit-semantic-design:
+  description: Audit DSL design for semantic coherence
+  target_agent: dsl-auditor
+  allowed_from_agents:
+    - dsl-auditor
+  workflow: dsl-audit
+  input_artifacts:
+    - dsl-source
+  invocation_handoff: dsl-task-request
+  result_handoff: dsl-audit-result
+  validations:
+    - dsl-completeness-audit
+    - dsl-audit-report-validation
+  responsibilities:
+    - Check dispatch_only agents for implementation responsibilities
+    - Detect agents with overly broad scope
+    - Identify role overlap between agents
+    - Verify handoff schemas carry sufficient fields for task completion_criteria
+    - Check workflow gates are placed effectively
+    - Detect guardrails declared but absent from execution path
+    - Check semantic validations are distributed across phases
+  completion_criteria:
+    - All agents reviewed for scope and overlap
+    - Workflow gate placement analyzed
+    - Guardrail enforcement path verified
+    - Findings classified with severity and category
+  execution_steps:
+    - id: load-dsl
+      action: Load resolved DSL definitions
+      reads_artifact: dsl-source
+      required: true
+    - id: analyze-agents
+      action: Review agent responsibilities, permissions, and role boundaries
+    - id: analyze-workflows
+      action: Analyze workflow structure, gate placement, and validation coverage
+    - id: analyze-guardrails
+      action: Verify guardrail enforcement paths
+    - id: produce-report
+      action: Produce semantic design audit report
+      produces_artifact: dsl-audit-report
+  escalation_criteria:
+    - condition: 3 or more critical-level design issues detected
+      action: stop_and_report
+
+audit-generated-prompts:
+  description: Audit generated prompts against DSL intent
+  target_agent: dsl-auditor
+  allowed_from_agents:
+    - dsl-auditor
+  workflow: dsl-audit
+  input_artifacts:
+    - dsl-source
+    - dsl-generated-output
+  invocation_handoff: dsl-task-request
+  result_handoff: dsl-audit-result
+  validations:
+    - dsl-completeness-audit
+    - dsl-audit-report-validation
+  responsibilities:
+    - Compare generated prompt content against DSL agent definitions
+    - Detect missing requirements from DSL
+    - Detect hallucinated permissions not in DSL
+    - Identify ambiguous or unsafe instructions
+    - Verify consistency between prompt and handoff schema expectations
+  completion_criteria:
+    - All generated prompts compared against DSL definitions
+    - Missing, hallucinated, and ambiguous instructions identified
+    - Findings classified with severity and category
+  execution_steps:
+    - id: collect-sources
+      action: Collect DSL agent definitions and related entities
+      reads_artifact: dsl-source
+      required: true
+    - id: collect-prompts
+      action: Collect generated prompt files
+      reads_artifact: dsl-generated-output
+      required: true
+    - id: compare
+      action: Compare each prompt against its DSL definition
+    - id: produce-report
+      action: Produce prompt audit report
+      produces_artifact: dsl-audit-report
+  escalation_criteria:
+    - condition: Hallucinated permissions detected in generated prompts
       action: stop_and_report

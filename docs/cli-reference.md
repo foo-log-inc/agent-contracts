@@ -2,7 +2,7 @@
 
 Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows. Provides static validation, semantic linting, prompt rendering, guardrail generation, and completeness scoring for agent contract definitions.
 
-**Version:** 0.16.2
+**Version:** 0.19.0
 
 ## Table of Contents
 
@@ -13,6 +13,7 @@ Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent
   - [render](#agent-contracts-render)
   - [check](#agent-contracts-check)
   - [score](#agent-contracts-score)
+  - [audit](#agent-contracts-audit)
   - [generate](#agent-contracts-generate)
 
 ---
@@ -374,6 +375,89 @@ x-agent:
   idempotent: true
   sideEffects: 
 
+```
+
+---
+
+### audit
+
+Run LLM-based semantic audit on DSL definitions and generated outputs.
+
+Performs LLM-based semantic analysis on DSL definitions and/or generated outputs. Three audit types are available: "render" checks whether generated files faithfully reflect the resolved DSL, "dsl" reviews DSL design for semantic coherence, and "prompt" verifies that generated prompts accurately express DSL intent. Uses agent-contracts-runtime (optional peer dependency) for LLM execution with handoff schema validation and follow-up recovery.
+
+**Usage:**
+
+```
+agent-contracts audit render -c agent-contracts.config.yaml
+```
+```
+agent-contracts audit dsl -c agent-contracts.config.yaml
+```
+```
+agent-contracts audit prompt -c agent-contracts.config.yaml
+```
+```
+agent-contracts audit all -c agent-contracts.config.yaml
+```
+```
+agent-contracts audit dsl --dry-run -c agent-contracts.config.yaml
+```
+```
+agent-contracts audit render --format json -c agent-contracts.config.yaml
+```
+```
+agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
+```
+
+#### Arguments
+
+| Name | Required | Description |
+|---|---|---|
+| `type` | No | Audit type to run: render (semantic diff of generated outputs vs DSL), dsl (design coherence review), prompt (generated prompt fidelity check), or all (run all three). |
+
+#### Options
+
+| Option | Aliases | Required | Default | Description |
+|---|---|---|---|---|
+| `--config` | -c | No |  | Path to agent-contracts.config.yaml. |
+| `--team` |  | No |  | Limit to one team (multi-team config only). |
+| `--format` |  | No | `"text"` | Output format. |
+| `--scope` |  | No |  | Limit audit scope to specified entities (e.g. agents:architect,implementer). |
+| `--dry-run` |  | No | `false` | Output the audit prompt without calling LLM. |
+| `--adapter` |  | No |  | SDK adapter to use for LLM calls (overrides config audit.adapter). |
+| `--model` |  | No |  | LLM model override (overrides config audit.model). |
+
+#### Exit Codes
+
+**Exit 0:** No critical findings detected.
+
+- **stdout:** format=`text`
+
+**Exit 1:** Critical findings detected.
+
+- **stdout:** format=`text`
+
+**Exit 2:** Invalid input or configuration error.
+
+- **stderr:** format=`text`
+
+**Exit 3:** LLM adapter error (API failure, runtime not installed).
+
+- **stderr:** format=`text`
+
+#### Extensions
+
+```yaml
+x-agent: 
+  riskLevel: low
+  requiresConfirmation: false
+  idempotent: true
+  sideEffects: 
+
+  recommendedBeforeUse: 
+    - Ensure agent-contracts.config.yaml exists with render targets.
+    - Run validate first to confirm DSL is valid.
+    - Install agent-contracts-runtime if not using --dry-run.
 ```
 
 ---
