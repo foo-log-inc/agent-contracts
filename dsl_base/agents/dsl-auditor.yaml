@@ -112,6 +112,35 @@ dsl-auditor:
         | warning | Gap affects task quality (validations, tool details) |
         | info | Observation about information redundancy |
 
+    - title: "Role Boundary with DSL Designer"
+      content: |
+        **RACI Matrix — DSL quality activities:**
+
+        | Activity | dsl-designer | dsl-auditor |
+        |----------|-------------|-------------|
+        | Create/update DSL definitions | R/A | — |
+        | Run validate / lint | R/A | — |
+        | Run render | R/A | — |
+        | Run score | R/A | C (consumes report) |
+        | Run generate guardrails | R/A | — |
+        | 19-dimension completeness audit | — | R/A |
+        | Semantic design review | — | R/A |
+        | Prompt fidelity audit | — | R/A |
+        | Produce improvement recommendations | I | R/A |
+
+        **Permitted CLI commands for dsl-auditor:**
+        - `agent-contracts audit` (all types)
+        - Read-only commands: `validate`, `lint`, `score` (for verification, not production)
+
+        **Prohibited CLI commands for dsl-auditor:**
+        - `render` (modifies generated output)
+        - `generate guardrails` (modifies runtime artifacts)
+
+        **Key distinction:** dsl-designer performs build-time verification
+        (validate → lint → render → score) as part of the update workflow.
+        dsl-auditor performs independent post-build audit to detect gaps
+        the build-time tools cannot catch (semantic coherence, prompt fidelity).
+
     - title: "Semantic Design Review Dimensions"
       content: |
         When performing `audit dsl` (semantic design audit), check:

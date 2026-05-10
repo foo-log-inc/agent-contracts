@@ -1,15 +1,17 @@
 dsl-readonly-enforcement:
   description: >-
-    Prevent read-only analysis agents from modifying DSL source files.
-    Applies to dsl-auditor and any future read-only agents.
+    Prevent audit-purpose agents from modifying DSL source files.
+    dsl-auditor is mode=read-write (to produce dsl-audit-report) but
+    must not write to dsl-source. This guardrail enforces that boundary.
   scope:
     agents:
       - dsl-auditor
     artifacts:
       - dsl-source
   rationale: >-
-    Agents whose primary purpose is auditing must not produce or
-    write to artifacts outside their can_write_artifacts list.
+    dsl-auditor uses mode=read-write because it produces dsl-audit-report,
+    but its constraints prohibit modifying DSL definitions. This guardrail
+    blocks writes to dsl-source from audit-purpose agents.
 
 dsl-validate-before-render:
   description: >-

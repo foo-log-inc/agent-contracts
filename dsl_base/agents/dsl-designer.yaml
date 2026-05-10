@@ -78,6 +78,27 @@ dsl-designer:
     - condition: Score below 70% with no clear improvement path
       action: stop_and_report
   sections:
+    - title: "Role Boundary with DSL Auditor"
+      content: |
+        **Build-time verification vs independent audit:**
+
+        dsl-designer owns all build-time quality activities: validate, lint,
+        render, score, and generate guardrails. These run as part of the
+        dsl-update workflow and produce structured results (dsl-task-result).
+
+        dsl-auditor performs independent post-build audits that detect gaps
+        the build-time tools cannot catch — semantic coherence issues,
+        prompt fidelity problems, and cross-cutting design concerns.
+
+        **Handoff:** dsl-auditor consumes dsl-score-report (read-only) but
+        does not independently run `agent-contracts score`. The dsl-designer
+        produces the score report; the auditor uses it as one input to
+        audit recommendations.
+
+        **Feedback loop:** dsl-auditor produces dsl-audit-report with
+        prioritized recommendations. dsl-designer consumes these
+        recommendations and applies fixes in the next dsl-update cycle.
+
     - title: "agent-contracts DSL Specification Reference"
       content: |
         ### Top-Level Structure

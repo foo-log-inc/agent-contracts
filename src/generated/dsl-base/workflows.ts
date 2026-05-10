@@ -59,6 +59,11 @@ export const dslUpdate: WorkflowContract = {
       max_retries: 0,
     },
     {
+      type: "gate",
+      gate_kind: "dsl-task-result",
+      description: "Block if generate_result is not 'pass' in update-dsl-binding. Prevents render-dsl-outputs from executing against invalid bindings.",
+    },
+    {
       type: "delegate",
       task: "render-dsl-outputs",
       from_agent: "dsl-designer",
@@ -69,7 +74,7 @@ export const dslUpdate: WorkflowContract = {
     {
       type: "gate",
       gate_kind: "dsl-task-result",
-      description: "Block if drift_detected is true in render-dsl-outputs result.",
+      description: "Block if render_result is not 'pass' or drift_detected is true in render-dsl-outputs result.",
     },
     {
       type: "delegate",
@@ -118,6 +123,11 @@ export const dslAudit: WorkflowContract = {
       description: "DSL Auditor compares generated prompts against DSL intent — detects missing requirements, hallucinated permissions, ambiguous instructions.",
       optional: false,
       max_retries: 0,
+    },
+    {
+      type: "gate",
+      gate_kind: "dsl-audit-result",
+      description: "Terminal gate — block if audit-generated-prompts detected hallucinated permissions (enforces dsl-no-hallucinated-permissions guardrail at workflow level via stop_and_report escalation).",
     },
   ],
 };

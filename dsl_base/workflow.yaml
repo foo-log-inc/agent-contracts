@@ -25,6 +25,11 @@ dsl-update:
       from_agent: dsl-designer
       description: >-
         DSL Designer adds or updates bindings and verifies via generate.
+    - type: gate
+      gate_kind: dsl-task-result
+      description: >-
+        Block if generate_result is not 'pass' in update-dsl-binding.
+        Prevents render-dsl-outputs from executing against invalid bindings.
     - type: delegate
       task: render-dsl-outputs
       from_agent: dsl-designer
@@ -33,7 +38,8 @@ dsl-update:
     - type: gate
       gate_kind: dsl-task-result
       description: >-
-        Block if drift_detected is true in render-dsl-outputs result.
+        Block if render_result is not 'pass' or drift_detected is true
+        in render-dsl-outputs result.
     - type: delegate
       task: check-dsl-score
       from_agent: dsl-designer
@@ -77,3 +83,9 @@ dsl-audit:
         DSL Auditor compares generated prompts against DSL intent —
         detects missing requirements, hallucinated permissions,
         ambiguous instructions.
+    - type: gate
+      gate_kind: dsl-audit-result
+      description: >-
+        Terminal gate — block if audit-generated-prompts detected
+        hallucinated permissions (enforces dsl-no-hallucinated-permissions
+        guardrail at workflow level via stop_and_report escalation).
