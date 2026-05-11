@@ -3,7 +3,7 @@ cliContracts: 0.1.0
 
 info:
   title: agent-contracts CLI
-  version: 0.19.2
+  version: 0.19.4
   description: >-
     Declarative YAML DSL toolkit for defining, validating, and rendering
     multi-agent development workflows. Provides static validation,
@@ -625,44 +625,81 @@ commandSets:
             schema:
               type: string
 
+          - name: fail-on
+            description: >-
+              Minimum finding severity that causes exit 10
+              (info|warning|error|critical).
+            valueName: level
+            schema:
+              type: string
+              enum: [info, warning, error, critical]
+              default: critical
+
+          - name: output
+            aliases: [o]
+            description: Write result to a file instead of stdout.
+            valueName: file
+            schema:
+              type: string
+            file:
+              mode: write
+              encoding: utf-8
+
+          - name: report-format
+            description: >-
+              Alias for --format. When both are specified, --report-format
+              takes precedence.
+            valueName: fmt
+            schema:
+              type: string
+              enum: [text, json, markdown]
+              default: text
+
         exits:
           '0':
-            description: No critical findings detected.
+            description: Audit succeeded. No findings at or above --fail-on threshold.
             stdout:
               format: '{options.format}'
-              schemaNote: >-
-                Audit findings are always emitted on stdout as the primary
-                output. Format depends on --format option (text, json, or
-                markdown).
+              schema:
+                $ref: './dsl_base/components.yaml#/schemas/agent-audit-result'
 
           '1':
-            description: Critical findings detected.
+            description: Unexpected error (invalid input, config error, or internal failure).
+            stderr:
+              format: text
+
+          '10':
+            description: Findings at or above --fail-on severity threshold detected.
+            stdout:
+              format: '{options.format}'
+              schema:
+                $ref: './dsl_base/components.yaml#/schemas/agent-audit-result'
             stderr:
               format: text
               schemaNote: >-
                 Summary diagnostic on stderr. Structured findings are
-                emitted on stdout in the requested --format.
-            stdout:
-              format: '{options.format}'
-              schemaNote: >-
-                Full findings output. Exit 1 indicates at least one
-                critical-severity finding exists; the findings themselves
-                are valid structured data, not error messages.
+                emitted on stdout in the requested format.
 
-          '2':
-            description: Invalid input or configuration error.
+          '11':
+            description: >-
+              Runtime dependency missing (agent-contracts-runtime not installed).
             stderr:
               format: text
 
-          '3':
-            description: LLM adapter error (API failure, runtime not installed).
+          '12':
+            description: LLM provider or adapter error (API failure, auth error).
             stderr:
               format: text
 
         x-agent:
           riskLevel: medium
           requiresConfirmation: false
-          idempotent: true
+          idempotent: false
+          idempotentNote: >-
+            Safe to repeat (no persistent side effects beyond network calls),
+            but LLM inference is non-deterministic — identical inputs may
+            produce different findings, severity assignments, and
+            recommendation text across runs.
           sideEffects:
             - network
           sideEffectNote: >-
@@ -671,7 +708,7 @@ commandSets:
             cost and sends DSL content to the LLM provider.
           safeDryRunOption: dry-run
           expectedDurationMs: 120000
-          retryableExitCodes: [3]
+          retryableExitCodes: [12]
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists with render targets.
             - Run validate first to confirm DSL is valid.
