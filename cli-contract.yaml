@@ -3,7 +3,7 @@ cliContracts: 0.1.0
 
 info:
   title: agent-contracts CLI
-  version: 0.19.4
+  version: 0.20.0
   description: >-
     Declarative YAML DSL toolkit for defining, validating, and rendering
     multi-agent development workflows. Provides static validation,
@@ -117,6 +117,8 @@ commandSets:
           requiresConfirmation: false
           idempotent: true
           sideEffects: []
+          expectedDurationMs: 3000
+          retryableExitCodes: []
 
       # ── validate ──────────────────────────────────────
       validate:
@@ -206,6 +208,8 @@ commandSets:
           requiresConfirmation: false
           idempotent: true
           sideEffects: []
+          expectedDurationMs: 3000
+          retryableExitCodes: []
 
       # ── lint ──────────────────────────────────────────
       lint:
@@ -294,6 +298,8 @@ commandSets:
           requiresConfirmation: false
           idempotent: true
           sideEffects: []
+          expectedDurationMs: 3000
+          retryableExitCodes: []
 
       # ── render ────────────────────────────────────────
       render:
@@ -369,6 +375,8 @@ commandSets:
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists with render targets.
             - Run validate first to confirm DSL is valid.
+          expectedDurationMs: 5000
+          retryableExitCodes: []
 
       # ── check ─────────────────────────────────────────
       check:
@@ -449,6 +457,8 @@ commandSets:
           sideEffects: []
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists.
+          expectedDurationMs: 10000
+          retryableExitCodes: []
 
       # ── score ─────────────────────────────────────────
       score:
@@ -535,6 +545,8 @@ commandSets:
           requiresConfirmation: false
           idempotent: true
           sideEffects: []
+          expectedDurationMs: 5000
+          retryableExitCodes: []
 
       # ── audit ───────────────────────────────────────────
       audit:
@@ -832,3 +844,5 @@ commandSets:
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists with binding definitions.
             - Run validate first to confirm DSL is valid.
+          expectedDurationMs: 5000
+          retryableExitCodes: []
