@@ -1,0 +1,18 @@
+schemas:
+  common-handoff:
+    type: object
+    required: [from_agent, to_agent]
+    properties:
+      from_agent:
+        type: string
+      to_agent:
+        type: string
+  result-payload:
+    type: object
+    required: [summary]
+    properties:
+      summary:
+        type: string
+      details:
+        type: object
+        additionalProperties: true
