@@ -1,0 +1,110 @@
+schemas:
+  agent-evidence:
+    type: object
+    description: Evidence supporting an agent finding.
+    required: [kind]
+    properties:
+      kind:
+        type: string
+        enum: [file, command, schema, diff, stdout, stderr, text]
+      target:
+        type: string
+        description: Target identifier (file path, command ID, schema name).
+      location:
+        type: string
+        description: Location within the target (line number, JSON pointer).
+      excerpt:
+        type: string
+        description: Relevant excerpt from the target.
+
+  agent-finding:
+    type: object
+    description: A single finding from an agent audit or analysis.
+    required: [severity, category, message]
+    properties:
+      id:
+        type: string
+        description: Unique finding identifier.
+      severity:
+        type: string
+        enum: [info, warning, error, critical]
+      category:
+        type: string
+        description: Finding category (e.g. missing-policy, inconsistent-risk).
+      target:
+        type: string
+        description: Target of the finding (command ID, schema path).
+      location:
+        type: string
+        description: Location within the target.
+      message:
+        type: string
+      recommendation:
+        type: string
+      confidence:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Confidence score (0-1) for LLM-generated findings.
+      evidence:
+        type: array
+        items:
+          $ref: "#/schemas/agent-evidence"
+      details:
+        type: object
+        additionalProperties: true
+
+  agent-recommended-action:
+    type: object
+    description: A recommended action from an agent audit.
+    required: [kind, title]
+    properties:
+      kind:
+        type: string
+        enum: [run_command, edit_file, review, confirm, block, ignore]
+      title:
+        type: string
+      command:
+        type: string
+        description: CLI command to run (for run_command kind).
+      target:
+        type: string
+        description: Target file or resource.
+      rationale:
+        type: string
+
+  agent-audit-result:
+    type: object
+    description: >-
+      Top-level result from an agent audit.
+      Canonical schema for agent interoperability across toolchains.
+    required: [summary, riskLevel, findings]
+    properties:
+      summary:
+        type: string
+      riskLevel:
+        type: string
+        enum: [low, medium, high, critical]
+      findings:
+        type: array
+        items:
+          $ref: "#/schemas/agent-finding"
+      recommendedActions:
+        type: array
+        items:
+          $ref: "#/schemas/agent-recommended-action"
+      metadata:
+        type: object
+        properties:
+          tool:
+            type: string
+          command:
+            type: string
+          version:
+            type: string
+          generatedAt:
+            type: string
+          adapter:
+            type: string
+          model:
+            type: string

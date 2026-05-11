@@ -84,6 +84,14 @@ dsl-task-result:
     required:
       - validation_result
 
+audit-result:
+  version: 1
+  description: >-
+    Generic audit result for tool/agent execution.
+    Uses canonical agent-audit-result schema from components.schemas.
+  schema:
+    $ref: "#/components/schemas/agent-audit-result"
+
 dsl-audit-result:
   version: 3
   description: Result of DSL audit (completeness, semantic design, or prompt fidelity)

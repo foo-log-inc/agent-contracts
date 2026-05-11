@@ -125,16 +125,24 @@ export function formatAuditResults(results: AuditRunResult[], format: OutputForm
   return results.map((r) => formatAuditResult(r, format)).join("\n\n");
 }
 
-export function computeExitCode(results: AuditRunResult[]): number {
+export function computeExitCode(results: AuditRunResult[], failOn?: string): number {
   for (const r of results) {
     if (r.status === "error") {
-      if (r.errorMessage?.includes("not installed") || r.errorMessage?.includes("adapter")) return 3;
-      return 2;
+      if (r.errorMessage?.includes("not installed")) return 11;
+      if (r.errorMessage?.includes("adapter") || r.errorMessage?.includes("API")) return 12;
+      return 1;
     }
   }
+
+  const severityRank: Record<string, number> = { info: 0, warning: 1, error: 2, critical: 3 };
+  const threshold = severityRank[failOn ?? "critical"] ?? 3;
+
   for (const r of results) {
-    if (r.data?.critical_gaps && r.data.critical_gaps.some((g) => g.severity === "critical")) {
-      return 1;
+    if (r.data?.critical_gaps) {
+      for (const gap of r.data.critical_gaps) {
+        const rank = severityRank[gap.severity ?? ""] ?? 0;
+        if (rank >= threshold) return 10;
+      }
     }
   }
   return 0;
