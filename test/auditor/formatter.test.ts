@@ -85,15 +85,39 @@ describe("computeExitCode", () => {
     expect(computeExitCode([r])).toBe(0);
   });
 
-  it("returns 1 for critical findings", () => {
-    expect(computeExitCode([makeResult()])).toBe(1);
+  it("returns 10 for critical findings (default failOn=critical)", () => {
+    expect(computeExitCode([makeResult()])).toBe(10);
   });
 
-  it("returns 2 for error status", () => {
-    expect(computeExitCode([makeResult({ status: "error", errorMessage: "bad input" })])).toBe(2);
+  it("returns 10 for warning findings when failOn=warning", () => {
+    const r = makeResult({
+      data: {
+        total_dimensions: 19, pass_count: 17, miss_count: 2,
+        critical_gaps: [{ dimension: "x", agent: "y", gap_type: "z", severity: "warning" }],
+      },
+    });
+    expect(computeExitCode([r], "warning")).toBe(10);
   });
 
-  it("returns 3 for runtime not installed", () => {
-    expect(computeExitCode([makeResult({ status: "error", errorMessage: "not installed" })])).toBe(3);
+  it("returns 0 for warning findings when failOn=critical", () => {
+    const r = makeResult({
+      data: {
+        total_dimensions: 19, pass_count: 17, miss_count: 2,
+        critical_gaps: [{ dimension: "x", agent: "y", gap_type: "z", severity: "warning" }],
+      },
+    });
+    expect(computeExitCode([r], "critical")).toBe(0);
+  });
+
+  it("returns 1 for error status", () => {
+    expect(computeExitCode([makeResult({ status: "error", errorMessage: "bad input" })])).toBe(1);
+  });
+
+  it("returns 11 for runtime not installed", () => {
+    expect(computeExitCode([makeResult({ status: "error", errorMessage: "not installed" })])).toBe(11);
+  });
+
+  it("returns 12 for adapter error", () => {
+    expect(computeExitCode([makeResult({ status: "error", errorMessage: "adapter failed" })])).toBe(12);
   });
 });
