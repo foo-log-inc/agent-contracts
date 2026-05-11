@@ -151,11 +151,11 @@ artifacts:
     states: [draft, reviewed, approved]
 ````
 
-Validate and render:
+Validate and generate:
 
 ````bash
 agent-contracts validate
-agent-contracts render -c agent-contracts.config.yaml
+agent-contracts generate -c agent-contracts.config.yaml
 ````
 
 
@@ -1028,12 +1028,14 @@ npx agent-contracts
 | `agent-contracts resolve [path]`  | Resolve `extends` inheritance and output resolved YAML |
 | `agent-contracts validate [path]` | Validate schema and references                         |
 | `agent-contracts lint [path]`     | Run semantic lint                                      |
-| `agent-contracts render`          | Render outputs from config                             |
-| `agent-contracts score [path]`    | Calculate DSL completeness score                       |
+| `agent-contracts generate`        | Generate all artifacts (templates + guardrails + interface) |
+| `agent-contracts generate templates` | Render template outputs from config                |
 | `agent-contracts generate guardrails` | Generate guardrail artifacts from bindings       |
-| `agent-contracts generate interface` | Generate team interface YAML from DSL |
+| `agent-contracts generate interface` | Generate team interface YAML from DSL            |
+| `agent-contracts score [path]`    | Calculate DSL completeness score                       |
 | `agent-contracts audit <type>`    | Run LLM-based semantic audit (render/dsl/prompt/all)   |
 | `agent-contracts check`           | Run resolve → validate → lint → render --check         |
+| `agent-contracts render`          | _(deprecated)_ Alias for `generate templates`          |
 
 The `[path]` argument defaults to `agent-contracts.yaml` in the current directory.
 If `-c` / `--config` is specified, the DSL path from the config file is used.
@@ -1100,8 +1102,9 @@ agent-contracts lint --strict
 agent-contracts score
 agent-contracts score -c agent-contracts.config.yaml --threshold 70
 agent-contracts score --format json
-agent-contracts render -c agent-contracts.config.yaml
-agent-contracts render -c agent-contracts.config.yaml --check
+agent-contracts generate -c agent-contracts.config.yaml
+agent-contracts generate templates -c agent-contracts.config.yaml
+agent-contracts generate templates -c agent-contracts.config.yaml --check
 agent-contracts check -c agent-contracts.config.yaml --strict
 agent-contracts generate interface -c agent-contracts.config.yaml
 agent-contracts generate interface -c agent-contracts.config.yaml --dry-run
@@ -1239,7 +1242,7 @@ renders:
 
 Tools with `x-script` get a generated script file; tools without it produce no file at all.
 
-`skip_empty` also works with `render --check` (drift detection): when the expected output is empty, the check expects the file to **not exist** and reports drift if it does.
+`skip_empty` also works with `generate templates --check` (drift detection): when the expected output is empty, the check expects the file to **not exist** and reports drift if it does.
 
 ### Available context types
 
@@ -1724,7 +1727,7 @@ A practical model is:
 
 1. define the workflow in YAML
 2. validate and lint it in CI
-3. render prompts and derived docs
+3. generate prompts and derived docs
 4. execute the workflow in your runtime of choice
 
 That separation keeps runtime concerns and architecture concerns from being mixed together.
