@@ -284,11 +284,21 @@ async function resolveRefsDeep(
       return resolved;
     }
 
-    // File/directory reference
-    const refTarget = resolve(baseDir, refValue);
+    // File reference with optional JSON Pointer fragment (file.yaml#/path)
+    const hashIdx = refValue.indexOf("#");
+    const filePart = hashIdx >= 0 ? refValue.slice(0, hashIdx) : refValue;
+    const fragment = hashIdx >= 0 ? refValue.slice(hashIdx) : null;
+
+    const refTarget = resolve(baseDir, filePart);
     const s = await fsStat(refTarget).catch(() => null);
 
     if (s?.isDirectory()) {
+      if (fragment) {
+        throw new DslLoadError(
+          `Cannot use JSON Pointer fragment with directory $ref: ${refValue}`,
+          refTarget,
+        );
+      }
       if (resolving.has(refTarget)) {
         throw new DslLoadError(
           `Circular $ref detected: ${refTarget}`,
@@ -313,14 +323,26 @@ async function resolveRefsDeep(
     }
     resolving.add(refTarget);
     const content = await readYaml(refTarget);
-    const resolved = await resolveRefsDeep(
+    const fileRoot = fragment ? content as AnyRecord : rootDoc;
+    let fileData = await resolveRefsDeep(
       content,
       dirname(refTarget),
       resolving,
-      rootDoc,
+      fileRoot,
     );
     resolving.delete(refTarget);
-    return resolved;
+
+    if (fragment && fragment.startsWith("#/")) {
+      if (!isRecord(fileData)) {
+        throw new DslLoadError(
+          `Cannot resolve fragment "${fragment}" in ${refTarget}: file content is not an object`,
+          refTarget,
+        );
+      }
+      fileData = resolveJsonPointer(fileData as AnyRecord, fragment);
+    }
+
+    return fileData;
   }
 
   let obj = data as AnyRecord;

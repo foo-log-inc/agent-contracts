@@ -1,0 +1,36 @@
+version: 1
+system:
+  id: file-fragment-test
+  name: File Fragment Ref Test
+  default_workflow_order:
+    - implement
+
+agents:
+  worker:
+    role_name: Worker
+    purpose: Do work
+    can_return_handoffs: [work-result]
+
+tasks:
+  do-work:
+    description: A task
+    target_agent: worker
+    allowed_from_agents: [worker]
+    workflow: implement
+    input_artifacts: []
+    invocation_handoff: work-result
+    result_handoff: work-result
+
+artifacts: {}
+tools: {}
+validations: {}
+
+handoff_types:
+  work-result:
+    version: 1
+    description: Work result with schema from external file fragment
+    schema:
+      $ref: './components.yaml#/schemas/result-payload'
+
+workflow: {}
+policies: {}

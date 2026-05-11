@@ -269,4 +269,93 @@ describe("loadDsl", () => {
       }
     });
   });
+
+  describe("file $ref with JSON Pointer fragment (file.yaml#/path)", () => {
+    it("resolves external file with fragment", async () => {
+      const result = await loadDsl(
+        join(fixturesDir, "file-fragment-ref/agent-contracts.yaml"),
+      );
+      const handoffTypes = result.data["handoff_types"] as Record<string, Record<string, unknown>>;
+      const workResult = handoffTypes["work-result"];
+      const schema = workResult["schema"] as Record<string, unknown>;
+
+      expect(schema["type"]).toBe("object");
+      expect(schema["required"]).toEqual(["summary"]);
+      const props = schema["properties"] as Record<string, unknown>;
+      expect(props["summary"]).toEqual({ type: "string" });
+      expect(props["details"]).toEqual({
+        type: "object",
+        additionalProperties: true,
+      });
+    });
+
+    it("resolves internal $ref within an externally-loaded file", async () => {
+      const { writeFileSync, unlinkSync } = await import("node:fs");
+      const tempDsl = join(fixturesDir, "file-fragment-ref/temp-internal-ref.yaml");
+      const tempComp = join(fixturesDir, "file-fragment-ref/temp-components.yaml");
+      writeFileSync(tempComp, [
+        "schemas:",
+        "  base:",
+        "    type: object",
+        "    properties:",
+        "      id:",
+        "        type: string",
+        "  extended:",
+        "    type: object",
+        "    properties:",
+        "      base:",
+        '        $ref: "#/schemas/base"',
+        "      extra:",
+        "        type: string",
+      ].join("\n"));
+      writeFileSync(tempDsl, [
+        "version: 1",
+        "system:",
+        "  id: t",
+        "  name: T",
+        "  default_workflow_order: []",
+        "handoff_types:",
+        "  h:",
+        "    version: 1",
+        "    schema:",
+        "      $ref: './temp-components.yaml#/schemas/extended'",
+      ].join("\n"));
+      try {
+        const result = await loadDsl(tempDsl);
+        const ht = result.data["handoff_types"] as Record<string, Record<string, unknown>>;
+        const schema = ht["h"]["schema"] as Record<string, unknown>;
+        expect(schema["type"]).toBe("object");
+        const props = schema["properties"] as Record<string, unknown>;
+        expect(props["extra"]).toEqual({ type: "string" });
+        const base = props["base"] as Record<string, unknown>;
+        expect(base["type"]).toBe("object");
+        expect((base["properties"] as Record<string, unknown>)["id"]).toEqual({ type: "string" });
+      } finally {
+        unlinkSync(tempDsl);
+        unlinkSync(tempComp);
+      }
+    });
+
+    it("errors on file $ref with fragment pointing to non-existent path", async () => {
+      const { writeFileSync, unlinkSync } = await import("node:fs");
+      const tempDsl = join(fixturesDir, "file-fragment-ref/temp-bad-fragment.yaml");
+      writeFileSync(tempDsl, [
+        "version: 1",
+        "system:",
+        "  id: t",
+        "  name: T",
+        "  default_workflow_order: []",
+        "handoff_types:",
+        "  h:",
+        "    version: 1",
+        "    schema:",
+        "      $ref: './components.yaml#/schemas/nonexistent'",
+      ].join("\n"));
+      try {
+        await expect(loadDsl(tempDsl)).rejects.toThrow("not found");
+      } finally {
+        unlinkSync(tempDsl);
+      }
+    });
+  });
 });
