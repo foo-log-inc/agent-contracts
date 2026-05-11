@@ -2,7 +2,7 @@
 
 Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows. Provides static validation, semantic linting, prompt rendering, guardrail generation, and completeness scoring for agent contract definitions.
 
-**Version:** 0.19.1
+**Version:** 0.19.4
 
 ## Table of Contents
 
@@ -72,7 +72,7 @@ agent-contracts resolve -c agent-contracts.config.yaml
 
 **Exit 0:** Resolved DSL output successfully.
 
-- **stdout:** format=`text`
+- **stdout:** format=`{options.format}`
 
 **Exit 1:** Resolution failed (file not found, parse error, or config error).
 
@@ -86,6 +86,9 @@ x-agent:
   requiresConfirmation: false
   idempotent: true
   sideEffects: 
+
+  expectedDurationMs: 3000
+  retryableExitCodes: 
 
 ```
 
@@ -135,7 +138,7 @@ agent-contracts validate --quiet
 
 **Exit 0:** Validation passed. No errors found.
 
-- **stdout:** format=`text`
+- **stdout:** format=`{options.format}`
 
 **Exit 1:** Validation failed or unexpected error.
 
@@ -149,6 +152,9 @@ x-agent:
   requiresConfirmation: false
   idempotent: true
   sideEffects: 
+
+  expectedDurationMs: 3000
+  retryableExitCodes: 
 
 ```
 
@@ -195,7 +201,7 @@ agent-contracts lint --format json
 
 **Exit 0:** Lint passed. No errors or warnings.
 
-- **stdout:** format=`text`
+- **stdout:** format=`{options.format}`
 
 **Exit 1:** Lint failed or unexpected error.
 
@@ -209,6 +215,9 @@ x-agent:
   requiresConfirmation: false
   idempotent: true
   sideEffects: 
+
+  expectedDurationMs: 3000
+  retryableExitCodes: 
 
 ```
 
@@ -258,11 +267,17 @@ x-agent:
   riskLevel: medium
   requiresConfirmation: false
   idempotent: true
+  idempotentNote: Output is deterministic from DSL input and templates. Repeated runs produce identical files. Confirmation is not required because the command is idempotent and --check provides a side-effect-free preview mode.
   sideEffects: 
     - file_write
+  sideEffectNote: Writes rendered files to configured output paths. No file writes occur when --check is specified.
+  safeDryRunOption: check
   recommendedBeforeUse: 
     - Ensure agent-contracts.config.yaml exists with render targets.
     - Run validate first to confirm DSL is valid.
+  expectedDurationMs: 5000
+  retryableExitCodes: 
+
 ```
 
 ---
@@ -271,7 +286,7 @@ x-agent:
 
 Run full pipeline — resolve, validate, lint, render --check.
 
-Executes the complete verification pipeline in order: resolve DSL, validate schema and references, run lint rules, and check for render drift. Also verifies cross-team interface imports and team-interface.yaml drift when applicable.
+Executes the complete verification pipeline in order: (1) resolve DSL, (2) validate schema and references, (3) run lint rules, (4) check render drift via render --check. Steps 1–4 always run. Additionally, when the DSL declares cross-team interfaces, (5) verifies interface import consistency and (6) checks team-interface.yaml drift. Steps 5–6 are skipped when no cross-team interfaces exist.
 
 **Usage:**
 
@@ -299,7 +314,7 @@ agent-contracts check --format json --quiet
 
 **Exit 0:** All checks passed.
 
-- **stdout:** format=`text`
+- **stdout:** format=`{options.format}`
 
 **Exit 1:** One or more checks failed — validation errors, lint errors, render drift, or missing interface files.
 
@@ -316,6 +331,9 @@ x-agent:
 
   recommendedBeforeUse: 
     - Ensure agent-contracts.config.yaml exists.
+  expectedDurationMs: 10000
+  retryableExitCodes: 
+
 ```
 
 ---
@@ -360,7 +378,7 @@ agent-contracts score -c agent-contracts.config.yaml
 
 **Exit 0:** Score calculated (and above threshold if specified).
 
-- **stdout:** format=`text`
+- **stdout:** format=`{options.format}`
 
 **Exit 1:** Score below threshold, schema validation failed, or unexpected error.
 
@@ -374,6 +392,9 @@ x-agent:
   requiresConfirmation: false
   idempotent: true
   sideEffects: 
+
+  expectedDurationMs: 5000
+  retryableExitCodes: 
 
 ```
 
@@ -426,22 +447,31 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 | `--dry-run` |  | No | `false` | Output the audit prompt without calling LLM. |
 | `--adapter` |  | No |  | SDK adapter to use for LLM calls (overrides config audit.adapter). |
 | `--model` |  | No |  | LLM model override (overrides config audit.model). |
+| `--fail-on` |  | No | `"critical"` | Minimum finding severity that causes exit 10 (info|warning|error|critical). |
+| `--output` | -o | No |  | Write result to a file instead of stdout. |
+| `--report-format` |  | No | `"text"` | Alias for --format. When both are specified, --report-format takes precedence. |
 
 #### Exit Codes
 
-**Exit 0:** No critical findings detected.
+**Exit 0:** Audit succeeded. No findings at or above --fail-on threshold.
 
-- **stdout:** format=`text`
+- **stdout:** format=`{options.format}`
 
-**Exit 1:** Critical findings detected.
-
-- **stdout:** format=`text`
-
-**Exit 2:** Invalid input or configuration error.
+**Exit 1:** Unexpected error (invalid input, config error, or internal failure).
 
 - **stderr:** format=`text`
 
-**Exit 3:** LLM adapter error (API failure, runtime not installed).
+**Exit 10:** Findings at or above --fail-on severity threshold detected.
+
+- **stdout:** format=`{options.format}`
+
+- **stderr:** format=`text`
+
+**Exit 11:** Runtime dependency missing (agent-contracts-runtime not installed).
+
+- **stderr:** format=`text`
+
+**Exit 12:** LLM provider or adapter error (API failure, auth error).
 
 - **stderr:** format=`text`
 
@@ -449,11 +479,17 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 
 ```yaml
 x-agent: 
-  riskLevel: low
+  riskLevel: medium
   requiresConfirmation: false
-  idempotent: true
+  idempotent: false
+  idempotentNote: Safe to repeat (no persistent side effects beyond network calls), but LLM inference is non-deterministic — identical inputs may produce different findings, severity assignments, and recommendation text across runs.
   sideEffects: 
-
+    - network
+  sideEffectNote: Makes LLM API calls to the configured adapter (e.g. OpenAI, Gemini, Cursor) unless --dry-run is specified. Incurs token cost and sends DSL content to the LLM provider.
+  safeDryRunOption: dry-run
+  expectedDurationMs: 120000
+  retryableExitCodes: 
+    - 12
   recommendedBeforeUse: 
     - Ensure agent-contracts.config.yaml exists with render targets.
     - Run validate first to confirm DSL is valid.
@@ -527,11 +563,17 @@ x-agent:
   riskLevel: medium
   requiresConfirmation: false
   idempotent: true
+  idempotentNote: Output is deterministic from DSL input, policies, and bindings. Repeated runs produce identical files. Confirmation is not required because the command is idempotent and --dry-run provides a side-effect-free preview mode.
   sideEffects: 
     - file_write
+  sideEffectNote: Writes guardrail binding files or team interface files to configured output paths. No file writes occur when --dry-run is specified.
+  safeDryRunOption: dry-run
   recommendedBeforeUse: 
     - Ensure agent-contracts.config.yaml exists with binding definitions.
     - Run validate first to confirm DSL is valid.
+  expectedDurationMs: 5000
+  retryableExitCodes: 
+
 ```
 
 ---
