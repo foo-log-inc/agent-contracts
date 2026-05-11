@@ -3,7 +3,7 @@ cliContracts: 0.1.0
 
 info:
   title: agent-contracts CLI
-  version: 0.20.0
+  version: 0.21.0
   description: >-
     Declarative YAML DSL toolkit for defining, validating, and rendering
     multi-agent development workflows. Provides static validation,
@@ -301,13 +301,18 @@ commandSets:
           expectedDurationMs: 3000
           retryableExitCodes: []
 
-      # ── render ────────────────────────────────────────
+      # ── render (deprecated alias) ─────────────────────
       render:
-        summary: Render resolved DSL with Handlebars templates.
+        summary: (deprecated) Alias for 'generate templates'.
+        deprecated:
+          message: >-
+            Use 'agent-contracts generate templates' instead.
+          alternative: generate templates
         description: >-
+          Deprecated alias for 'agent-contracts generate templates'.
           Renders output files from the resolved DSL using Handlebars
-          templates configured in agent-contracts.config.yaml. Supports
-          drift detection via --check mode. Requires a config file.
+          templates and emits a deprecation warning. Supports --check
+          for drift detection. Requires a config file.
         usage:
           - agent-contracts render -c agent-contracts.config.yaml
           - agent-contracts render -c agent-contracts.config.yaml --check
@@ -333,7 +338,7 @@ commandSets:
               type: string
 
           - name: check
-            description: Check for drift without writing files.
+            description: Check for template drift without writing files.
             schema:
               type: boolean
               default: false
@@ -346,14 +351,14 @@ commandSets:
 
         exits:
           '0':
-            description: Render succeeded (or no drift detected in --check mode).
+            description: Generation succeeded (or no drift detected in --check mode).
             stdout:
               format: text
 
           '1':
             description: >-
-              Render failed, config not found, schema validation failed,
-              or drift detected in --check mode.
+              Generation failed, config not found, schema validation
+              failed, or drift detected in --check mode.
             stderr:
               format: text
 
@@ -363,9 +368,8 @@ commandSets:
           idempotent: true
           idempotentNote: >-
             Output is deterministic from DSL input and templates.
-            Repeated runs produce identical files. Confirmation is not
-            required because the command is idempotent and --check
-            provides a side-effect-free preview mode.
+            Repeated runs produce identical files. This is a
+            deprecated alias; prefer 'generate templates'.
           sideEffects:
             - file_write
           sideEffectNote: >-
@@ -728,15 +732,20 @@ commandSets:
 
       # ── generate ──────────────────────────────────────
       generate:
-        summary: Generate guardrail or interface artifacts from DSL.
+        summary: Generate artifacts from DSL — templates, guardrails, and/or interface.
         description: >-
-          Generates runtime artifacts from the DSL. When type is
-          "guardrails" (default), produces guardrail binding files from
-          DSL, policies, and software bindings. When type is "interface",
-          generates a team interface YAML/JSON file from the DSL's
-          team_interface section.
+          Unified generation command. When type is omitted, runs all
+          generation targets (templates, guardrails, interface). When
+          type is "templates", renders output files from the DSL using
+          Handlebars templates. When type is "guardrails", produces
+          guardrail binding files from DSL, policies, and software
+          bindings. When type is "interface", generates a team interface
+          YAML/JSON file from the DSL's team_interface section.
         usage:
+          - agent-contracts generate
           - agent-contracts generate -c agent-contracts.config.yaml
+          - agent-contracts generate templates
+          - agent-contracts generate templates --check
           - agent-contracts generate guardrails -c agent-contracts.config.yaml
           - agent-contracts generate guardrails --binding cursor-rules
           - agent-contracts generate guardrails --dry-run
@@ -748,11 +757,11 @@ commandSets:
           - name: type
             index: 0
             required: false
-            description: Type of artifacts to generate.
+            description: >-
+              Type of artifacts to generate. Omit to run all targets.
             schema:
               type: string
-              enum: [guardrails, interface]
-              default: guardrails
+              enum: [templates, guardrails, interface]
 
         options:
           - name: config
@@ -772,6 +781,14 @@ commandSets:
             valueName: id
             schema:
               type: string
+
+          - name: check
+            description: >-
+              Check for template drift without writing files.
+              Only applies to the templates target.
+            schema:
+              type: boolean
+              default: false
 
           - name: binding
             description: Filter to specific software binding(s). Guardrails type only.
@@ -813,14 +830,14 @@ commandSets:
 
         exits:
           '0':
-            description: Generation succeeded.
+            description: Generation succeeded (or no drift detected in --check mode).
             stdout:
               format: text
 
           '1':
             description: >-
               Generation failed — unknown type, schema validation failed,
-              config not found, or error-level diagnostics.
+              config not found, drift detected, or error-level diagnostics.
             stderr:
               format: text
 
@@ -829,20 +846,21 @@ commandSets:
           requiresConfirmation: false
           idempotent: true
           idempotentNote: >-
-            Output is deterministic from DSL input, policies, and
-            bindings. Repeated runs produce identical files.
+            Output is deterministic from DSL input, templates, policies,
+            and bindings. Repeated runs produce identical files.
             Confirmation is not required because the command is
-            idempotent and --dry-run provides a side-effect-free
-            preview mode.
+            idempotent and --dry-run / --check provide side-effect-free
+            preview modes.
           sideEffects:
             - file_write
           sideEffectNote: >-
-            Writes guardrail binding files or team interface files to
-            configured output paths. No file writes occur when
-            --dry-run is specified.
+            Writes rendered template files, guardrail binding files,
+            and/or team interface files to configured output paths.
+            No file writes occur when --dry-run or --check is specified
+            (--check applies to templates only).
           safeDryRunOption: dry-run
           recommendedBeforeUse:
-            - Ensure agent-contracts.config.yaml exists with binding definitions.
+            - Ensure agent-contracts.config.yaml exists with render targets and/or binding definitions.
             - Run validate first to confirm DSL is valid.
           expectedDurationMs: 5000
           retryableExitCodes: []

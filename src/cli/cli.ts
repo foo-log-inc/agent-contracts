@@ -8,7 +8,7 @@ import { validateCommand } from "./commands/validate.js";
 import { lintCommand } from "./commands/lint.js";
 import { renderCommand } from "./commands/render.js";
 import { checkCommand } from "./commands/check.js";
-import { generateGuardrailsCommand } from "./commands/generate-guardrails.js";
+import { generateCommand } from "./commands/generate.js";
 import { scoreCommand } from "./commands/score.js";
 import { auditCommand } from "./commands/audit.js";
 
@@ -27,7 +27,7 @@ program.addCommand(validateCommand);
 program.addCommand(lintCommand);
 program.addCommand(renderCommand);
 program.addCommand(checkCommand);
-program.addCommand(generateGuardrailsCommand);
+program.addCommand(generateCommand);
 program.addCommand(scoreCommand);
 program.addCommand(auditCommand);
 
