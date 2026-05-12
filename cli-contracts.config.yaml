@@ -12,3 +12,12 @@ generators:
     options:
       includeSchemas: false
       includeExtensions: true
+
+  typescript:
+    enabled: true
+    output: ./src/generated/cli-contract
+    templates: builtin:typescript
+    options:
+      emitTypes: true
+      emitClient: false
+      emitValidators: true

@@ -1011,7 +1011,7 @@ VarsSubstitutionError: Undefined variable "repo_url" in value "Repository: ${var
 
 For the full CLI reference with all commands, options, arguments, exit codes, and AI agent policies, see the [CLI Reference](docs/cli-reference.md).
 
-The CLI contract specification is defined in [`cli-contract.yaml`](cli-contract.yaml) using [CLI Contracts](https://github.com/foo-ogawa/cli-contracts).
+The CLI contract specification is defined in [`cli-contract.yaml`](cli-contract.yaml) using [CLI Contracts](https://github.com/foo-ogawa/cli-contracts). Commands that have side effects declare structured `effects` metadata, and the `--introspect` global option outputs the derived policy as JSON without executing the command.
 
 ### Installation
 
@@ -1041,6 +1041,40 @@ The `[path]` argument defaults to `agent-contracts.yaml` in the current director
 If `-c` / `--config` is specified, the DSL path from the config file is used.
 
 All commands also accept `--team <id>` to limit execution to a single team when using a [multi-team configuration](#multi-team-configuration).
+
+#### `--introspect` (global)
+
+Any command can be invoked with `--introspect` to output the derived policy as JSON **without executing** the command. This is useful for AI agents to inspect what side effects a command would have before deciding whether to run it.
+
+````bash
+agent-contracts generate --introspect
+agent-contracts audit --introspect
+agent-contracts validate --introspect
+````
+
+The output follows the [CLI Contracts](https://github.com/foo-ogawa/cli-contracts) `IntrospectionResult` shape:
+
+````json
+{
+  "command": "generate",
+  "activeOptions": ["format"],
+  "policy": {
+    "riskLevel": "low",
+    "requiresConfirmation": false,
+    "idempotent": true,
+    "sideEffects": ["file_write"],
+    "reads": [],
+    "writes": [
+      {
+        "kind": "semantic",
+        "target": "configured render, guardrail, and interface output paths",
+        "idempotent": true,
+        "source": "command:generate"
+      }
+    ]
+  }
+}
+````
 
 #### `resolve` options
 
