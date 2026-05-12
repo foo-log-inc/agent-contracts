@@ -3,7 +3,7 @@ cliContracts: 0.1.0
 
 info:
   title: agent-contracts CLI
-  version: 0.21.0
+  version: 0.22.0
   description: >-
     Declarative YAML DSL toolkit for defining, validating, and rendering
     multi-agent development workflows. Provides static validation,
@@ -112,14 +112,6 @@ commandSets:
             stderr:
               format: text
 
-        x-agent:
-          riskLevel: low
-          requiresConfirmation: false
-          idempotent: true
-          sideEffects: []
-          expectedDurationMs: 3000
-          retryableExitCodes: []
-
       # ── validate ──────────────────────────────────────
       validate:
         summary: Validate DSL against schema and check references.
@@ -203,14 +195,6 @@ commandSets:
             stderr:
               format: text
 
-        x-agent:
-          riskLevel: low
-          requiresConfirmation: false
-          idempotent: true
-          sideEffects: []
-          expectedDurationMs: 3000
-          retryableExitCodes: []
-
       # ── lint ──────────────────────────────────────────
       lint:
         summary: Run semantic lint rules on resolved DSL.
@@ -293,14 +277,6 @@ commandSets:
             stderr:
               format: text
 
-        x-agent:
-          riskLevel: low
-          requiresConfirmation: false
-          idempotent: true
-          sideEffects: []
-          expectedDurationMs: 3000
-          retryableExitCodes: []
-
       # ── render (deprecated alias) ─────────────────────
       render:
         summary: (deprecated) Alias for 'generate templates'.
@@ -317,6 +293,17 @@ commandSets:
           - agent-contracts render -c agent-contracts.config.yaml
           - agent-contracts render -c agent-contracts.config.yaml --check
           - agent-contracts render --quiet
+
+        effects:
+          riskLevel: medium
+          writes:
+            - target: "configured render output paths"
+              description: "rendered template files from DSL input"
+              overwrite: true
+              idempotent: true
+              idempotentNote: >-
+                Output is deterministic from DSL input and templates.
+                Repeated runs produce identical files.
 
         options:
           - name: config
@@ -363,24 +350,9 @@ commandSets:
               format: text
 
         x-agent:
-          riskLevel: medium
-          requiresConfirmation: false
-          idempotent: true
-          idempotentNote: >-
-            Output is deterministic from DSL input and templates.
-            Repeated runs produce identical files. This is a
-            deprecated alias; prefer 'generate templates'.
-          sideEffects:
-            - file_write
-          sideEffectNote: >-
-            Writes rendered files to configured output paths. No file
-            writes occur when --check is specified.
-          safeDryRunOption: check
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists with render targets.
             - Run validate first to confirm DSL is valid.
-          expectedDurationMs: 5000
-          retryableExitCodes: []
 
       # ── check ─────────────────────────────────────────
       check:
@@ -455,14 +427,8 @@ commandSets:
               format: text
 
         x-agent:
-          riskLevel: low
-          requiresConfirmation: false
-          idempotent: true
-          sideEffects: []
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists.
-          expectedDurationMs: 10000
-          retryableExitCodes: []
 
       # ── score ─────────────────────────────────────────
       score:
@@ -544,14 +510,6 @@ commandSets:
             stderr:
               format: text
 
-        x-agent:
-          riskLevel: low
-          requiresConfirmation: false
-          idempotent: true
-          sideEffects: []
-          expectedDurationMs: 5000
-          retryableExitCodes: []
-
       # ── audit ───────────────────────────────────────────
       audit:
         summary: Run LLM-based semantic audit on DSL definitions and generated outputs.
@@ -572,6 +530,18 @@ commandSets:
           - agent-contracts audit dsl --dry-run -c agent-contracts.config.yaml
           - agent-contracts audit render --format json -c agent-contracts.config.yaml
           - agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
+
+        effects:
+          riskLevel: medium
+          network:
+            description: >-
+              LLM API calls to configured adapter (e.g. OpenAI,
+              Gemini, Cursor). Incurs token cost and sends DSL
+              content to the LLM provider.
+            idempotent: false
+            idempotentNote: >-
+              LLM inference is non-deterministic — identical inputs
+              may produce different findings across runs.
 
         arguments:
           - name: type
@@ -708,22 +678,6 @@ commandSets:
               format: text
 
         x-agent:
-          riskLevel: medium
-          requiresConfirmation: false
-          idempotent: false
-          idempotentNote: >-
-            Safe to repeat (no persistent side effects beyond network calls),
-            but LLM inference is non-deterministic — identical inputs may
-            produce different findings, severity assignments, and
-            recommendation text across runs.
-          sideEffects:
-            - network
-          sideEffectNote: >-
-            Makes LLM API calls to the configured adapter (e.g. OpenAI,
-            Gemini, Cursor) unless --dry-run is specified. Incurs token
-            cost and sends DSL content to the LLM provider.
-          safeDryRunOption: dry-run
-          expectedDurationMs: 120000
           retryableExitCodes: [12]
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists with render targets.
@@ -752,6 +706,20 @@ commandSets:
           - agent-contracts generate interface -c agent-contracts.config.yaml
           - agent-contracts generate interface --format json
           - agent-contracts generate interface -o team-interface.yaml --dry-run
+
+        effects:
+          riskLevel: low
+          writes:
+            - target: "configured render, guardrail, and interface output paths"
+              description: >-
+                template files, guardrail binding files, and/or team
+                interface files generated from DSL input
+              overwrite: true
+              idempotent: true
+              idempotentNote: >-
+                Output is deterministic from DSL input, templates,
+                policies, and bindings. Repeated runs produce
+                identical files.
 
         arguments:
           - name: type
@@ -842,25 +810,6 @@ commandSets:
               format: text
 
         x-agent:
-          riskLevel: medium
-          requiresConfirmation: false
-          idempotent: true
-          idempotentNote: >-
-            Output is deterministic from DSL input, templates, policies,
-            and bindings. Repeated runs produce identical files.
-            Confirmation is not required because the command is
-            idempotent and --dry-run / --check provide side-effect-free
-            preview modes.
-          sideEffects:
-            - file_write
-          sideEffectNote: >-
-            Writes rendered template files, guardrail binding files,
-            and/or team interface files to configured output paths.
-            No file writes occur when --dry-run or --check is specified
-            (--check applies to templates only).
-          safeDryRunOption: dry-run
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists with render targets and/or binding definitions.
             - Run validate first to confirm DSL is valid.
-          expectedDurationMs: 5000
-          retryableExitCodes: []

@@ -2,7 +2,7 @@
 
 Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows. Provides static validation, semantic linting, prompt rendering, guardrail generation, and completeness scoring for agent contract definitions.
 
-**Version:** 0.21.0
+**Version:** 0.22.0
 
 ## Table of Contents
 
@@ -78,20 +78,6 @@ agent-contracts resolve -c agent-contracts.config.yaml
 
 - **stderr:** format=`text`
 
-#### Extensions
-
-```yaml
-x-agent: 
-  riskLevel: low
-  requiresConfirmation: false
-  idempotent: true
-  sideEffects: 
-
-  expectedDurationMs: 3000
-  retryableExitCodes: 
-
-```
-
 ---
 
 ### validate
@@ -144,20 +130,6 @@ agent-contracts validate --quiet
 
 - **stderr:** format=`text`
 
-#### Extensions
-
-```yaml
-x-agent: 
-  riskLevel: low
-  requiresConfirmation: false
-  idempotent: true
-  sideEffects: 
-
-  expectedDurationMs: 3000
-  retryableExitCodes: 
-
-```
-
 ---
 
 ### lint
@@ -207,20 +179,6 @@ agent-contracts lint --format json
 
 - **stderr:** format=`text`
 
-#### Extensions
-
-```yaml
-x-agent: 
-  riskLevel: low
-  requiresConfirmation: false
-  idempotent: true
-  sideEffects: 
-
-  expectedDurationMs: 3000
-  retryableExitCodes: 
-
-```
-
 ---
 
 ### render
@@ -267,20 +225,9 @@ agent-contracts render --quiet
 
 ```yaml
 x-agent: 
-  riskLevel: medium
-  requiresConfirmation: false
-  idempotent: true
-  idempotentNote: Output is deterministic from DSL input and templates. Repeated runs produce identical files. This is a deprecated alias; prefer 'generate templates'.
-  sideEffects: 
-    - file_write
-  sideEffectNote: Writes rendered files to configured output paths. No file writes occur when --check is specified.
-  safeDryRunOption: check
   recommendedBeforeUse: 
     - Ensure agent-contracts.config.yaml exists with render targets.
     - Run validate first to confirm DSL is valid.
-  expectedDurationMs: 5000
-  retryableExitCodes: 
-
 ```
 
 ---
@@ -327,16 +274,8 @@ agent-contracts check --format json --quiet
 
 ```yaml
 x-agent: 
-  riskLevel: low
-  requiresConfirmation: false
-  idempotent: true
-  sideEffects: 
-
   recommendedBeforeUse: 
     - Ensure agent-contracts.config.yaml exists.
-  expectedDurationMs: 10000
-  retryableExitCodes: 
-
 ```
 
 ---
@@ -386,20 +325,6 @@ agent-contracts score -c agent-contracts.config.yaml
 **Exit 1:** Score below threshold, schema validation failed, or unexpected error.
 
 - **stderr:** format=`text`
-
-#### Extensions
-
-```yaml
-x-agent: 
-  riskLevel: low
-  requiresConfirmation: false
-  idempotent: true
-  sideEffects: 
-
-  expectedDurationMs: 5000
-  retryableExitCodes: 
-
-```
 
 ---
 
@@ -460,222 +385,6 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 
 - **stdout:** format=`{options.format}`
 
-  | Property | Type | Required | Description |
-  |---|---|---|---|
-  | `summary` | `string` | Yes |  |
-  | `riskLevel` | `"low" \| "medium" \| "high" \| "critical"` | Yes |  |
-  | `findings` | `object[]` | Yes |  |
-  | `findings[].id` | `string` | No | Unique finding identifier. |
-  | `findings[].severity` | `"info" \| "warning" \| "error" \| "critical"` | Yes |  |
-  | `findings[].category` | `string` | Yes | Finding category (e.g. missing-policy, inconsistent-risk). |
-  | `findings[].target` | `string` | No | Target of the finding (command ID, schema path). |
-  | `findings[].location` | `string` | No | Location within the target. |
-  | `findings[].message` | `string` | Yes |  |
-  | `findings[].recommendation` | `string` | No |  |
-  | `findings[].confidence` | `number (min: 0, max: 1)` | No | Confidence score (0-1) for LLM-generated findings. |
-  | `findings[].evidence` | `object[]` | No |  |
-  | `findings[].evidence[].kind` | `enum(7 values)` | Yes |  |
-  | `findings[].evidence[].target` | `string` | No | Target identifier (file path, command ID, schema name). |
-  | `findings[].evidence[].location` | `string` | No | Location within the target (line number, JSON pointer). |
-  | `findings[].evidence[].excerpt` | `string` | No | Relevant excerpt from the target. |
-  | `findings[].details` | `Record<string, any>` | No |  |
-  | `recommendedActions` | `object[]` | No |  |
-  | `recommendedActions[].kind` | `enum(6 values)` | Yes |  |
-  | `recommendedActions[].title` | `string` | Yes |  |
-  | `recommendedActions[].command` | `string` | No | CLI command to run (for run_command kind). |
-  | `recommendedActions[].target` | `string` | No | Target file or resource. |
-  | `recommendedActions[].rationale` | `string` | No |  |
-  | `metadata` | `object` | No |  |
-  | `metadata.tool` | `string` | No |  |
-  | `metadata.command` | `string` | No |  |
-  | `metadata.version` | `string` | No |  |
-  | `metadata.generatedAt` | `string` | No |  |
-  | `metadata.adapter` | `string` | No |  |
-  | `metadata.model` | `string` | No |  |
-
-  <details>
-  <summary>JSON Schema</summary>
-
-  ```json
-  {
-    "type": "object",
-    "description": "Top-level result from an agent audit. Canonical schema for agent interoperability across toolchains.",
-    "required": [
-      "summary",
-      "riskLevel",
-      "findings"
-    ],
-    "properties": {
-      "summary": {
-        "type": "string"
-      },
-      "riskLevel": {
-        "type": "string",
-        "enum": [
-          "low",
-          "medium",
-          "high",
-          "critical"
-        ]
-      },
-      "findings": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "description": "A single finding from an agent audit or analysis.",
-          "required": [
-            "severity",
-            "category",
-            "message"
-          ],
-          "properties": {
-            "id": {
-              "type": "string",
-              "description": "Unique finding identifier."
-            },
-            "severity": {
-              "type": "string",
-              "enum": [
-                "info",
-                "warning",
-                "error",
-                "critical"
-              ]
-            },
-            "category": {
-              "type": "string",
-              "description": "Finding category (e.g. missing-policy, inconsistent-risk)."
-            },
-            "target": {
-              "type": "string",
-              "description": "Target of the finding (command ID, schema path)."
-            },
-            "location": {
-              "type": "string",
-              "description": "Location within the target."
-            },
-            "message": {
-              "type": "string"
-            },
-            "recommendation": {
-              "type": "string"
-            },
-            "confidence": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1,
-              "description": "Confidence score (0-1) for LLM-generated findings."
-            },
-            "evidence": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "description": "Evidence supporting an agent finding.",
-                "required": [
-                  "kind"
-                ],
-                "properties": {
-                  "kind": {
-                    "type": "string",
-                    "enum": [
-                      "file",
-                      "command",
-                      "schema",
-                      "diff",
-                      "stdout",
-                      "stderr",
-                      "text"
-                    ]
-                  },
-                  "target": {
-                    "type": "string",
-                    "description": "Target identifier (file path, command ID, schema name)."
-                  },
-                  "location": {
-                    "type": "string",
-                    "description": "Location within the target (line number, JSON pointer)."
-                  },
-                  "excerpt": {
-                    "type": "string",
-                    "description": "Relevant excerpt from the target."
-                  }
-                }
-              }
-            },
-            "details": {
-              "type": "object",
-              "additionalProperties": true
-            }
-          }
-        }
-      },
-      "recommendedActions": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "description": "A recommended action from an agent audit.",
-          "required": [
-            "kind",
-            "title"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "run_command",
-                "edit_file",
-                "review",
-                "confirm",
-                "block",
-                "ignore"
-              ]
-            },
-            "title": {
-              "type": "string"
-            },
-            "command": {
-              "type": "string",
-              "description": "CLI command to run (for run_command kind)."
-            },
-            "target": {
-              "type": "string",
-              "description": "Target file or resource."
-            },
-            "rationale": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "metadata": {
-        "type": "object",
-        "properties": {
-          "tool": {
-            "type": "string"
-          },
-          "command": {
-            "type": "string"
-          },
-          "version": {
-            "type": "string"
-          },
-          "generatedAt": {
-            "type": "string"
-          },
-          "adapter": {
-            "type": "string"
-          },
-          "model": {
-            "type": "string"
-          }
-        }
-      }
-    }
-  }
-  ```
-
-  </details>
-
 **Exit 1:** Unexpected error (invalid input, config error, or internal failure).
 
 - **stderr:** format=`text`
@@ -683,222 +392,6 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 **Exit 10:** Findings at or above --fail-on severity threshold detected.
 
 - **stdout:** format=`{options.format}`
-
-  | Property | Type | Required | Description |
-  |---|---|---|---|
-  | `summary` | `string` | Yes |  |
-  | `riskLevel` | `"low" \| "medium" \| "high" \| "critical"` | Yes |  |
-  | `findings` | `object[]` | Yes |  |
-  | `findings[].id` | `string` | No | Unique finding identifier. |
-  | `findings[].severity` | `"info" \| "warning" \| "error" \| "critical"` | Yes |  |
-  | `findings[].category` | `string` | Yes | Finding category (e.g. missing-policy, inconsistent-risk). |
-  | `findings[].target` | `string` | No | Target of the finding (command ID, schema path). |
-  | `findings[].location` | `string` | No | Location within the target. |
-  | `findings[].message` | `string` | Yes |  |
-  | `findings[].recommendation` | `string` | No |  |
-  | `findings[].confidence` | `number (min: 0, max: 1)` | No | Confidence score (0-1) for LLM-generated findings. |
-  | `findings[].evidence` | `object[]` | No |  |
-  | `findings[].evidence[].kind` | `enum(7 values)` | Yes |  |
-  | `findings[].evidence[].target` | `string` | No | Target identifier (file path, command ID, schema name). |
-  | `findings[].evidence[].location` | `string` | No | Location within the target (line number, JSON pointer). |
-  | `findings[].evidence[].excerpt` | `string` | No | Relevant excerpt from the target. |
-  | `findings[].details` | `Record<string, any>` | No |  |
-  | `recommendedActions` | `object[]` | No |  |
-  | `recommendedActions[].kind` | `enum(6 values)` | Yes |  |
-  | `recommendedActions[].title` | `string` | Yes |  |
-  | `recommendedActions[].command` | `string` | No | CLI command to run (for run_command kind). |
-  | `recommendedActions[].target` | `string` | No | Target file or resource. |
-  | `recommendedActions[].rationale` | `string` | No |  |
-  | `metadata` | `object` | No |  |
-  | `metadata.tool` | `string` | No |  |
-  | `metadata.command` | `string` | No |  |
-  | `metadata.version` | `string` | No |  |
-  | `metadata.generatedAt` | `string` | No |  |
-  | `metadata.adapter` | `string` | No |  |
-  | `metadata.model` | `string` | No |  |
-
-  <details>
-  <summary>JSON Schema</summary>
-
-  ```json
-  {
-    "type": "object",
-    "description": "Top-level result from an agent audit. Canonical schema for agent interoperability across toolchains.",
-    "required": [
-      "summary",
-      "riskLevel",
-      "findings"
-    ],
-    "properties": {
-      "summary": {
-        "type": "string"
-      },
-      "riskLevel": {
-        "type": "string",
-        "enum": [
-          "low",
-          "medium",
-          "high",
-          "critical"
-        ]
-      },
-      "findings": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "description": "A single finding from an agent audit or analysis.",
-          "required": [
-            "severity",
-            "category",
-            "message"
-          ],
-          "properties": {
-            "id": {
-              "type": "string",
-              "description": "Unique finding identifier."
-            },
-            "severity": {
-              "type": "string",
-              "enum": [
-                "info",
-                "warning",
-                "error",
-                "critical"
-              ]
-            },
-            "category": {
-              "type": "string",
-              "description": "Finding category (e.g. missing-policy, inconsistent-risk)."
-            },
-            "target": {
-              "type": "string",
-              "description": "Target of the finding (command ID, schema path)."
-            },
-            "location": {
-              "type": "string",
-              "description": "Location within the target."
-            },
-            "message": {
-              "type": "string"
-            },
-            "recommendation": {
-              "type": "string"
-            },
-            "confidence": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1,
-              "description": "Confidence score (0-1) for LLM-generated findings."
-            },
-            "evidence": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "description": "Evidence supporting an agent finding.",
-                "required": [
-                  "kind"
-                ],
-                "properties": {
-                  "kind": {
-                    "type": "string",
-                    "enum": [
-                      "file",
-                      "command",
-                      "schema",
-                      "diff",
-                      "stdout",
-                      "stderr",
-                      "text"
-                    ]
-                  },
-                  "target": {
-                    "type": "string",
-                    "description": "Target identifier (file path, command ID, schema name)."
-                  },
-                  "location": {
-                    "type": "string",
-                    "description": "Location within the target (line number, JSON pointer)."
-                  },
-                  "excerpt": {
-                    "type": "string",
-                    "description": "Relevant excerpt from the target."
-                  }
-                }
-              }
-            },
-            "details": {
-              "type": "object",
-              "additionalProperties": true
-            }
-          }
-        }
-      },
-      "recommendedActions": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "description": "A recommended action from an agent audit.",
-          "required": [
-            "kind",
-            "title"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "run_command",
-                "edit_file",
-                "review",
-                "confirm",
-                "block",
-                "ignore"
-              ]
-            },
-            "title": {
-              "type": "string"
-            },
-            "command": {
-              "type": "string",
-              "description": "CLI command to run (for run_command kind)."
-            },
-            "target": {
-              "type": "string",
-              "description": "Target file or resource."
-            },
-            "rationale": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "metadata": {
-        "type": "object",
-        "properties": {
-          "tool": {
-            "type": "string"
-          },
-          "command": {
-            "type": "string"
-          },
-          "version": {
-            "type": "string"
-          },
-          "generatedAt": {
-            "type": "string"
-          },
-          "adapter": {
-            "type": "string"
-          },
-          "model": {
-            "type": "string"
-          }
-        }
-      }
-    }
-  }
-  ```
-
-  </details>
 
 - **stderr:** format=`text`
 
@@ -914,15 +407,6 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 
 ```yaml
 x-agent: 
-  riskLevel: medium
-  requiresConfirmation: false
-  idempotent: false
-  idempotentNote: Safe to repeat (no persistent side effects beyond network calls), but LLM inference is non-deterministic — identical inputs may produce different findings, severity assignments, and recommendation text across runs.
-  sideEffects: 
-    - network
-  sideEffectNote: Makes LLM API calls to the configured adapter (e.g. OpenAI, Gemini, Cursor) unless --dry-run is specified. Incurs token cost and sends DSL content to the LLM provider.
-  safeDryRunOption: dry-run
-  expectedDurationMs: 120000
   retryableExitCodes: 
     - 12
   recommendedBeforeUse: 
@@ -1005,20 +489,9 @@ agent-contracts generate interface -o team-interface.yaml --dry-run
 
 ```yaml
 x-agent: 
-  riskLevel: medium
-  requiresConfirmation: false
-  idempotent: true
-  idempotentNote: Output is deterministic from DSL input, templates, policies, and bindings. Repeated runs produce identical files. Confirmation is not required because the command is idempotent and --dry-run / --check provide side-effect-free preview modes.
-  sideEffects: 
-    - file_write
-  sideEffectNote: Writes rendered template files, guardrail binding files, and/or team interface files to configured output paths. No file writes occur when --dry-run or --check is specified (--check applies to templates only).
-  safeDryRunOption: dry-run
   recommendedBeforeUse: 
     - Ensure agent-contracts.config.yaml exists with render targets and/or binding definitions.
     - Run validate first to confirm DSL is valid.
-  expectedDurationMs: 5000
-  retryableExitCodes: 
-
 ```
 
 ---

@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -31,6 +31,7 @@
     "lint": "eslint src/ test/",
     "typecheck": "tsc --noEmit",
     "generate:schema": "tsx scripts/generate-json-schema.ts",
+    "generate:cli": "cli-contracts generate typescript",
     "generate:docs": "cli-contracts docs",
     "version": "node -e \"const fs=require('fs');const f='cli-contract.yaml';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(/^  version: .*/m,'  version: '+process.env.npm_package_version))\" && git add cli-contract.yaml",
     "prepublishOnly": "npm run clean && npm run build"
@@ -67,7 +68,8 @@
     "handlebars": "^4.7.9",
     "yaml": "^2.8.3",
     "zod": "^4.3.6",
-    "zod-to-json-schema": "^3.25.2"
+    "zod-to-json-schema": "^3.25.2",
+    "cli-contracts": "^0.7.0"
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.138",
@@ -77,7 +79,6 @@
     "@openai/agents": "^0.11.1",
     "@types/node": "^25.6.0",
     "agent-contracts-runtime": "^0.13.0",
-    "cli-contracts": "^0.6.0",
     "eslint": "^10.2.0",
     "globals": "^17.5.0",
     "prettier": "^3.8.2",

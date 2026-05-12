@@ -1,0 +1,2 @@
+// client generation disabled
+export {};
