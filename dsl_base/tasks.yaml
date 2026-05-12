@@ -203,10 +203,12 @@ audit-semantic-design:
     - Check workflow gates are placed effectively
     - Detect guardrails declared but absent from execution path
     - Check semantic validations are distributed across phases
+    - Detect custom x- properties that replicate standard DSL control-flow features (gate, decision, entry_conditions)
   completion_criteria:
     - All agents reviewed for scope and overlap
     - Workflow gate placement analyzed
     - Guardrail enforcement path verified
+    - Custom x- property misuse flagged
     - Findings classified with severity and category
   execution_steps:
     - id: load-dsl

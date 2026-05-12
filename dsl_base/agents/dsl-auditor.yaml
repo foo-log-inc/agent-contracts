@@ -157,6 +157,7 @@ dsl-auditor:
         | 8 | Task with no completion_criteria defined | warning |
         | 9 | Agent can_write without corresponding required_validations | warning |
         | 10 | Circular delegation chains in workflow steps | critical |
+        | 11 | Custom x- properties replicating standard DSL control-flow (e.g. x-exit-conditions instead of gate steps, x-routing instead of decision steps) | warning |
 
     - title: "Prompt Audit Dimensions"
       content: |
