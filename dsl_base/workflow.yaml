@@ -72,6 +72,7 @@ dsl-audit:
     - type: delegate
       task: audit-semantic-design
       from_agent: dsl-auditor
+      depends_on: ["gate:dsl-audit-result"]
       description: >-
         DSL Auditor reviews DSL design for semantic coherence —
         role overlap, scope breadth, gate placement, guardrail
@@ -79,12 +80,14 @@ dsl-audit:
     - type: delegate
       task: audit-generated-prompts
       from_agent: dsl-auditor
+      depends_on: ["gate:dsl-audit-result"]
       description: >-
         DSL Auditor compares generated prompts against DSL intent —
         detects missing requirements, hallucinated permissions,
         ambiguous instructions.
     - type: gate
-      gate_kind: dsl-audit-result
+      gate_kind: dsl-audit-terminal
+      depends_on: [audit-semantic-design, audit-generated-prompts]
       description: >-
         Terminal gate — block if audit-generated-prompts detected
         hallucinated permissions (enforces dsl-no-hallucinated-permissions
