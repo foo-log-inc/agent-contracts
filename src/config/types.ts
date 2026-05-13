@@ -127,4 +127,5 @@ export interface ResolvedConfig {
   activeGuardrailPolicy?: string;
   paths?: Record<string, string>;
   teams?: Record<string, ResolvedTeamConfig>;
+  audit?: AuditConfig;
 }

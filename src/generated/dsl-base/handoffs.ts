@@ -38,11 +38,54 @@ export const DslTaskResultSchema = z.object({
 export type DslTaskResult = z.infer<typeof DslTaskResultSchema>;
 
 // ---------------------------------------------------------------------------
+// audit-result
+// ---------------------------------------------------------------------------
+
+export const AuditResultSchema = z.object({
+  summary: z.string(),
+  riskLevel: z.enum(["low", "medium", "high", "critical"]),
+  findings: z.array(z.object({
+  id: z.string().optional(),
+  severity: z.enum(["info", "warning", "error", "critical"]),
+  category: z.string(),
+  target: z.string().optional(),
+  location: z.string().optional(),
+  message: z.string(),
+  recommendation: z.string().optional(),
+  confidence: z.number().optional(),
+  evidence: z.array(z.object({
+  kind: z.enum(["file", "command", "schema", "diff", "stdout", "stderr", "text"]),
+  target: z.string().optional(),
+  location: z.string().optional(),
+  excerpt: z.string().optional(),
+})).optional(),
+  details: z.record(z.string(), z.unknown()).optional(),
+})),
+  recommendedActions: z.array(z.object({
+  kind: z.enum(["run_command", "edit_file", "review", "confirm", "block", "ignore"]),
+  title: z.string(),
+  command: z.string().optional(),
+  target: z.string().optional(),
+  rationale: z.string().optional(),
+})).optional(),
+  metadata: z.object({
+  tool: z.string().optional(),
+  command: z.string().optional(),
+  version: z.string().optional(),
+  generatedAt: z.string().optional(),
+  adapter: z.string().optional(),
+  model: z.string().optional(),
+}).optional(),
+});
+
+export type AuditResult = z.infer<typeof AuditResultSchema>;
+
+// ---------------------------------------------------------------------------
 // dsl-audit-result
 // ---------------------------------------------------------------------------
 
 export const DslAuditResultSchema = z.object({
-  audit_type: z.enum(["completeness", "semantic", "prompt"]),
+  audit_type: z.enum(["completeness", "semantic", "prompt", "extensions"]),
   total_dimensions: z.number(),
   pass_count: z.number(),
   miss_count: z.number(),
@@ -73,6 +116,7 @@ export type DslAuditResult = z.infer<typeof DslAuditResultSchema>;
 export const handoffSchemas = {
   "dsl-task-request": DslTaskRequestSchema,
   "dsl-task-result": DslTaskResultSchema,
+  "audit-result": AuditResultSchema,
   "dsl-audit-result": DslAuditResultSchema,
 } as const;
 
@@ -105,6 +149,13 @@ export const handoffs = {
       type: "dsl-task-result" as const,
       version: 1,
       payload: DslTaskResultSchema.parse(payload),
+    };
+  },
+  auditResult(payload: AuditResult): HandoffEnvelope<"audit-result"> {
+    return {
+      type: "audit-result" as const,
+      version: 1,
+      payload: AuditResultSchema.parse(payload),
     };
   },
   dslAuditResult(payload: DslAuditResult): HandoffEnvelope<"dsl-audit-result"> {

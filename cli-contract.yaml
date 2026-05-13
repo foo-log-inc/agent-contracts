@@ -515,17 +515,19 @@ commandSets:
         summary: Run LLM-based semantic audit on DSL definitions and generated outputs.
         description: >-
           Performs LLM-based semantic analysis on DSL definitions and/or
-          generated outputs. Three audit types are available: "render"
+          generated outputs. Four audit types are available: "render"
           checks whether generated files faithfully reflect the resolved
-          DSL, "dsl" reviews DSL design for semantic coherence, and
-          "prompt" verifies that generated prompts accurately express
-          DSL intent. Uses agent-contracts-runtime (optional peer
-          dependency) for LLM execution with handoff schema validation
-          and follow-up recovery.
+          DSL, "dsl" reviews DSL design for semantic coherence, "prompt"
+          verifies that generated prompts accurately express DSL intent,
+          and "extensions" detects declared x-* properties that are not
+          consumed by render templates or runtime codegen. Uses
+          agent-contracts-runtime (optional peer dependency) for LLM
+          execution with handoff schema validation and follow-up recovery.
         usage:
           - agent-contracts audit render -c agent-contracts.config.yaml
           - agent-contracts audit dsl -c agent-contracts.config.yaml
           - agent-contracts audit prompt -c agent-contracts.config.yaml
+          - agent-contracts audit extensions -c agent-contracts.config.yaml
           - agent-contracts audit all -c agent-contracts.config.yaml
           - agent-contracts audit dsl --dry-run -c agent-contracts.config.yaml
           - agent-contracts audit render --format json -c agent-contracts.config.yaml
@@ -550,10 +552,11 @@ commandSets:
             description: >-
               Audit type to run: render (semantic diff of generated
               outputs vs DSL), dsl (design coherence review), prompt
-              (generated prompt fidelity check), or all (run all three).
+              (generated prompt fidelity check), extensions (unconsumed
+              x-* property detection), or all (run all four).
             schema:
               type: string
-              enum: [render, dsl, prompt, all]
+              enum: [render, dsl, prompt, extensions, all]
               default: all
 
         options:

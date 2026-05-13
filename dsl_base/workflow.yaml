@@ -19,7 +19,8 @@ dsl-update:
       gate_kind: dsl-task-result
       description: >-
         Block if validation_result or lint_result did not pass in
-        update-dsl-definitions.
+        update-dsl-definitions.  Enforces dsl-validate-before-render
+        guardrail — prevents render from executing against invalid DSL.
     - type: delegate
       task: update-dsl-binding
       from_agent: dsl-designer
@@ -50,8 +51,9 @@ dsl-audit:
   description: >-
     DSL Audit — audit completeness of DSL definitions against generated
     prompts, detect gaps, and present improvement recommendations.
-    Executed by DSL Auditor. Supports three audit types: render (semantic
-    diff), dsl (design coherence), and prompt (prompt fidelity).
+    Executed by DSL Auditor. Supports four audit types: render (semantic
+    diff), dsl (design coherence), prompt (prompt fidelity), and
+    extensions (x-* consumption gap detection).
   entry_conditions:
     - DSL definition rendering is complete
   trigger: >-
@@ -77,6 +79,12 @@ dsl-audit:
         DSL Auditor reviews DSL design for semantic coherence —
         role overlap, scope breadth, gate placement, guardrail
         enforcement paths.
+    - type: gate
+      gate_kind: dsl-audit-result
+      depends_on: [audit-semantic-design]
+      description: >-
+        Semantic-design gate — block if critical design issues
+        detected (gate placement defects, handoff schema gaps).
     - type: delegate
       task: audit-generated-prompts
       from_agent: dsl-auditor
@@ -86,9 +94,23 @@ dsl-audit:
         detects missing requirements, hallucinated permissions,
         ambiguous instructions.
     - type: gate
-      gate_kind: dsl-audit-terminal
-      depends_on: [audit-semantic-design, audit-generated-prompts]
+      gate_kind: dsl-audit-result
+      depends_on: [audit-generated-prompts]
       description: >-
-        Terminal gate — block if audit-generated-prompts detected
-        hallucinated permissions (enforces dsl-no-hallucinated-permissions
-        guardrail at workflow level via stop_and_report escalation).
+        Hallucinated-permissions gate — block immediately if
+        audit-generated-prompts detected permissions not declared
+        in DSL (enforces dsl-no-hallucinated-permissions guardrail).
+    - type: delegate
+      task: audit-extension-consumption
+      from_agent: dsl-auditor
+      depends_on: ["gate:dsl-audit-result"]
+      description: >-
+        DSL Auditor checks x-* extension properties for consumption
+        gaps — declared but unused, populated but not rendered,
+        semantic overlap with standard DSL features.
+    - type: gate
+      gate_kind: dsl-audit-result
+      depends_on: [audit-semantic-design, audit-generated-prompts, audit-extension-consumption]
+      description: >-
+        Terminal gate — aggregates all audit results and blocks if
+        any critical-level findings remain unresolved.

@@ -8,6 +8,7 @@ export const ValidationSchema = z
     executor: z.string(),
     blocking: z.boolean(),
     produces_evidence: z.string().optional(),
+    description: z.string().optional(),
   })
   .passthrough();
 export type Validation = z.infer<typeof ValidationSchema>;

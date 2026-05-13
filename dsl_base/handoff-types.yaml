@@ -93,8 +93,8 @@ audit-result:
     $ref: "#/components/schemas/agent-audit-result"
 
 dsl-audit-result:
-  version: 3
-  description: Result of DSL audit (completeness, semantic design, or prompt fidelity)
+  version: 4
+  description: Result of DSL audit (completeness, semantic design, prompt fidelity, or extensions)
   schema:
     type: object
     properties:
@@ -104,6 +104,7 @@ dsl-audit-result:
           - completeness
           - semantic
           - prompt
+          - extensions
         description: Which audit task produced this result
       total_dimensions:
         type: integer
@@ -123,16 +124,36 @@ dsl-audit-result:
       prompts_reviewed:
         type: integer
         description: Number of generated prompts compared (prompt audit)
-      gate_analysis_complete:
-        type: boolean
+      completion_criteria_coverage:
+        type: object
+        properties:
+          all_dimensions_inspected:
+            type: boolean
+            description: All required dimensions were inspected for all agents
+          gaps_classified:
+            type: boolean
+            description: Every detected gap has a root-cause classification
+          gate_analysis_complete:
+            type: boolean
+            description: Workflow gate placement analysis has been performed
+          guardrail_enforcement_verified:
+            type: boolean
+            description: All declared guardrails verified to exist in execution paths
+          scope_overlap_analyzed:
+            type: boolean
+            description: All agents reviewed for responsibility scope and role overlap
+          x_property_misuse_checked:
+            type: boolean
+            description: Custom x-* properties checked for standard DSL overlap
+          hallucinated_permissions_checked:
+            type: boolean
+            description: Generated prompts verified for permissions not declared in DSL
+          extension_consumption_checked:
+            type: boolean
+            description: All declared extensions checked for template/runtime consumption
         description: >-
-          True when workflow gate placement analysis has been performed
-          (semantic audit completion criterion).
-      guardrail_enforcement_verified:
-        type: boolean
-        description: >-
-          True when all declared guardrails have been verified to exist
-          in execution paths (semantic audit completion criterion).
+          Per-criterion completion status. Each field maps to a
+          completion_criteria entry in the corresponding audit task.
       critical_gaps:
         type: array
         items:
@@ -180,3 +201,4 @@ dsl-audit-result:
       - total_dimensions
       - pass_count
       - miss_count
+      - completion_criteria_coverage

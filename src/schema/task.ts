@@ -22,7 +22,7 @@ export const TaskSchema = z
   .object({
     description: z.string(),
     target_agent: z.string(),
-    allowed_from_agents: z.array(z.string()),
+    allowed_from_agents: z.array(z.string()).default([]),
     workflow: z.string(),
     input_artifacts: z.array(z.string()),
     invocation_handoff: z.string(),

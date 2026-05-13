@@ -593,7 +593,7 @@ const handleScore: CommandHandlers["score"] = async (dir, opts) => {
 
 // ─── audit ──────────────────────────────────────────────────────
 
-const AUDIT_TYPES = ["render", "dsl", "prompt", "all"] as const;
+const AUDIT_TYPES = ["render", "dsl", "prompt", "extensions", "all"] as const;
 
 function parseAuditConfig(configObj: Record<string, unknown> | undefined): AuditConfig {
   if (!configObj) return {};

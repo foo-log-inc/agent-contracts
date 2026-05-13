@@ -3,8 +3,6 @@
 update-dsl-definitions:
   description: Create new or update existing agent-contracts DSL definitions
   target_agent: dsl-designer
-  allowed_from_agents:
-    - dsl-designer
   workflow: dsl-update
   input_artifacts:
     - dsl-source
@@ -43,8 +41,6 @@ update-dsl-definitions:
 update-dsl-binding:
   description: Create new or update existing software bindings
   target_agent: dsl-designer
-  allowed_from_agents:
-    - dsl-designer
   workflow: dsl-update
   input_artifacts:
     - dsl-source
@@ -79,8 +75,6 @@ update-dsl-binding:
 render-dsl-outputs:
   description: Render prompts and documents from DSL and check for drift
   target_agent: dsl-designer
-  allowed_from_agents:
-    - dsl-designer
   workflow: dsl-update
   input_artifacts:
     - dsl-source
@@ -110,8 +104,6 @@ render-dsl-outputs:
 check-dsl-score:
   description: Check DSL completeness score and identify improvement areas
   target_agent: dsl-designer
-  allowed_from_agents:
-    - dsl-designer
   workflow: dsl-update
   input_artifacts:
     - dsl-source
@@ -143,8 +135,6 @@ check-dsl-score:
 audit-dsl-completeness:
   description: Audit completeness of DSL definitions against generated prompts
   target_agent: dsl-auditor
-  allowed_from_agents:
-    - dsl-auditor
   workflow: dsl-audit
   input_artifacts:
     - dsl-source
@@ -185,8 +175,6 @@ audit-dsl-completeness:
 audit-semantic-design:
   description: Audit DSL design for semantic coherence
   target_agent: dsl-auditor
-  allowed_from_agents:
-    - dsl-auditor
   workflow: dsl-audit
   input_artifacts:
     - dsl-source
@@ -231,8 +219,6 @@ audit-semantic-design:
 audit-generated-prompts:
   description: Audit generated prompts against DSL intent
   target_agent: dsl-auditor
-  allowed_from_agents:
-    - dsl-auditor
   workflow: dsl-audit
   input_artifacts:
     - dsl-source
@@ -268,4 +254,47 @@ audit-generated-prompts:
       produces_artifact: dsl-audit-report
   escalation_criteria:
     - condition: Hallucinated permissions detected in generated prompts
+      action: stop_and_report
+
+audit-extension-consumption:
+  description: Audit declared x-* extensions for consumption gaps across render and runtime paths
+  target_agent: dsl-auditor
+  workflow: dsl-audit
+  input_artifacts:
+    - dsl-source
+    - dsl-generated-output
+  invocation_handoff: dsl-task-request
+  result_handoff: dsl-audit-result
+  validations:
+    - dsl-completeness-audit
+    - dsl-audit-report-validation
+  responsibilities:
+    - Cross-check extensions declarations against entity x-* usage
+    - Identify x-* properties populated in DSL but not consumed by any render template
+    - Detect semantic overlap between x-* extensions and standard DSL features
+    - Report runtime codegen reachability for each extension
+    - Distinguish intentional metadata-only extensions from consumption gaps
+  completion_criteria:
+    - All declared extensions checked for template and runtime consumption
+    - Unused extensions flagged with suggested action (remove, migrate to standard, or add template support)
+    - Runtime-unreachable extensions documented with explanation
+    - Findings classified with severity and category
+  execution_steps:
+    - id: collect-declarations
+      action: Collect extensions declarations and x-* usage map
+      reads_artifact: dsl-source
+      required: true
+    - id: collect-templates
+      action: Collect render template x-* references
+      reads_artifact: dsl-generated-output
+      required: true
+    - id: analyze-consumption
+      action: Cross-check declarations vs usage vs template references vs runtime fields
+    - id: analyze-semantics
+      action: Detect semantic overlap with standard DSL features
+    - id: produce-report
+      action: Produce extension consumption audit report
+      produces_artifact: dsl-audit-report
+  escalation_criteria:
+    - condition: Required extension with no consumption path detected
       action: stop_and_report

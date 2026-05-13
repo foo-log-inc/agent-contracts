@@ -75,6 +75,7 @@ const AUDIT_TYPE_TO_TASK: Record<AuditType, string> = {
   render: "audit-dsl-completeness",
   dsl: "audit-semantic-design",
   prompt: "audit-generated-prompts",
+  extensions: "audit-extension-consumption",
 };
 
 export interface AuditRunResult {
@@ -168,7 +169,7 @@ export async function runAllAudits(
   auditConfig: AuditConfig,
   options: Omit<AuditOptions, "auditType">,
 ): Promise<AuditRunResult[]> {
-  const types: AuditType[] = ["render", "dsl", "prompt"];
+  const types: AuditType[] = ["render", "dsl", "prompt", "extensions"];
   const results: AuditRunResult[] = [];
   for (const auditType of types) {
     results.push(await runAudit(dsl, config, auditConfig, { ...options, auditType }));

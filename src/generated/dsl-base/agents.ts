@@ -62,7 +62,8 @@ export const dslAuditor: AgentContract = {
   "Prioritize improvement recommendations (P0/P1/P2) with concrete fix proposals",
   "Report score-based improvement areas as audit recommendations (read-only; consumes dsl-score-report produced by dsl-designer)",
   "Review DSL design for semantic coherence (role overlap, scope breadth, gate placement)",
-  "Verify generated prompts faithfully represent DSL intent (no hallucinated permissions)"
+  "Verify generated prompts faithfully represent DSL intent (no hallucinated permissions)",
+  "Audit x-* extension consumption across render templates and runtime codegen paths"
 ],
   constraints: [
   "Do not directly modify DSL definitions (read-only analysis)",

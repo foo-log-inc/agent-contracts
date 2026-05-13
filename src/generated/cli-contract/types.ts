@@ -98,7 +98,7 @@ export type ScoreExitResult =
   | { exitCode: 1; stderr: unknown };
 
 export interface AuditArgs {
-  type?: "render" | "dsl" | "prompt" | "all";
+  type?: "render" | "dsl" | "prompt" | "extensions" | "all";
 }
 
 export interface AuditOptions {

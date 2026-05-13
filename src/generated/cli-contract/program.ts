@@ -137,7 +137,7 @@ export function createProgram(
   program
     .command("audit")
     .description("Run LLM-based semantic audit on DSL definitions and generated outputs.")
-    .argument("[type]", "Audit type to run: render (semantic diff of generated outputs vs DSL), dsl (design coherence review), prompt (generated prompt fidelity check), or all (run all three).")
+    .argument("[type]", "Audit type to run: render (semantic diff of generated outputs vs DSL), dsl (design coherence review), prompt (generated prompt fidelity check), extensions (unconsumed x-* property detection), or all (run all four).")
     .option("-c, --config <path>", "Path to agent-contracts.config.yaml.")
     .option("--team <id>", "Limit to one team (multi-team config only).")
     .option("--format <format>", "Output format.", "text")

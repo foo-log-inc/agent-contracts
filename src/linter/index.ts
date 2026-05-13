@@ -13,3 +13,4 @@ export { artifactRequiredValidationWiringRule } from "./rules/artifact-required-
 export { taskOutputValidationCompletenessRule } from "./rules/task-output-validation-completeness.js";
 export { entityGuardrailUndefinedRule, entityNoGuardrailsRule, guardrailOrphanedRule } from "./rules/entity-guardrail-binding.js";
 export { validationExecutorNoContextRule } from "./rules/validation-executor-no-context.js";
+export { extensionDeclaredButUnusedRule, extensionScopeMismatchRule, extensionUndeclaredUsageRule } from "./rules/extension-consumption.js";

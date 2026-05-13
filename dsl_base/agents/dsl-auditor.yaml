@@ -11,8 +11,6 @@ dsl-auditor:
     - dsl-score-report
   can_write_artifacts:
     - dsl-audit-report
-  can_invoke_agents:
-    - dsl-auditor
   can_execute_tools:
     - agent-contracts-cli
   can_perform_validations:
@@ -29,6 +27,7 @@ dsl-auditor:
     - Report score-based improvement areas as audit recommendations (read-only; consumes dsl-score-report produced by dsl-designer)
     - Review DSL design for semantic coherence (role overlap, scope breadth, gate placement)
     - Verify generated prompts faithfully represent DSL intent (no hallucinated permissions)
+    - Audit x-* extension consumption across render templates and runtime codegen paths
   constraints:
     - Do not directly modify DSL definitions (read-only analysis)
     - Do not execute agent-contracts score independently; consume dsl-score-report produced by dsl-designer only
@@ -48,6 +47,15 @@ dsl-auditor:
         When a MISS is detected, classify the root cause as one of:
         template gap, data gap, or DSL gap.
       severity: mandatory
+  anti_patterns:
+    - >-
+      Directly editing DSL source files or generated outputs —
+      dsl-auditor is read-only; produce fix proposals in
+      dsl-audit-report instead and let dsl-designer apply them.
+    - >-
+      Running render or generate commands — these produce
+      side-effect file writes that belong to dsl-designer's scope;
+      use read-only commands (validate, lint, score, audit) only.
   escalation_criteria:
     - condition: 3 or more critical-level gaps detected
       action: stop_and_report
@@ -175,3 +183,24 @@ dsl-auditor:
         | 8 | Task completion criteria not reflected in prompt | warning |
         | 9 | Delegatable tasks not described in prompt | info |
         | 10 | Guardrail rules not reflected in prompt | warning |
+
+    - title: "Extension Consumption Audit Dimensions"
+      content: |
+        When performing `audit extensions` (extension consumption audit), check:
+
+        | # | Dimension | Severity |
+        |---|-----------|----------|
+        | 1 | Declared extension never populated on any entity | warning |
+        | 2 | Populated x-* not declared in extensions (when declarations exist) | info |
+        | 3 | Populated x-* not referenced in any render template | warning |
+        | 4 | Declared scope vs actual usage node type mismatch | warning |
+        | 5 | x-* with required: true but no render template consumption path | critical |
+        | 6 | x-* replicates standard DSL feature (semantic overlap) | warning |
+        | 7 | x-* unreachable in runtime codegen (not in AgentContract/TaskContract/WorkflowContract fixed fields) | info |
+        | 8 | Template references x-* key that is never populated in DSL | warning |
+
+        For each finding, recommend one of:
+        - **Remove**: Extension is dead weight — remove from declarations and entities
+        - **Migrate**: Extension duplicates a standard DSL feature — migrate to the standard field
+        - **Add template**: Extension carries useful data — add template support to consume it
+        - **Document**: Extension is metadata-only (not intended for render/runtime) — add description clarifying intent

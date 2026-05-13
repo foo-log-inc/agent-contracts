@@ -168,12 +168,14 @@ export const auditSemanticDesign: TaskContract = {
   "Verify handoff schemas carry sufficient fields for task completion_criteria",
   "Check workflow gates are placed effectively",
   "Detect guardrails declared but absent from execution path",
-  "Check semantic validations are distributed across phases"
+  "Check semantic validations are distributed across phases",
+  "Detect custom x- properties that replicate standard DSL control-flow features (gate, decision, entry_conditions)"
 ],
   completion_criteria: [
   "All agents reviewed for scope and overlap",
   "Workflow gate placement analyzed",
   "Guardrail enforcement path verified",
+  "Custom x- property misuse flagged",
   "Findings classified with severity and category"
 ],
   optional: false,
@@ -208,6 +210,36 @@ export const auditGeneratedPrompts: TaskContract = {
   optional: false,
 };
 
+export const auditExtensionConsumption: TaskContract = {
+  id: "audit-extension-consumption",
+  description: "Audit declared x-* extensions for consumption gaps across render and runtime paths",
+  target_agent: "dsl-auditor",
+  allowed_from_agents: [
+  "dsl-auditor"
+],
+  workflow: "dsl-audit",
+  invocation_handoff: "dsl-task-request",
+  result_handoff: "dsl-audit-result",
+  input_artifacts: [
+  "dsl-source",
+  "dsl-generated-output"
+],
+  responsibilities: [
+  "Cross-check extensions declarations against entity x-* usage",
+  "Identify x-* properties populated in DSL but not consumed by any render template",
+  "Detect semantic overlap between x-* extensions and standard DSL features",
+  "Report runtime codegen reachability for each extension",
+  "Distinguish intentional metadata-only extensions from consumption gaps"
+],
+  completion_criteria: [
+  "All declared extensions checked for template and runtime consumption",
+  "Unused extensions flagged with suggested action (remove, migrate to standard, or add template support)",
+  "Runtime-unreachable extensions documented with explanation",
+  "Findings classified with severity and category"
+],
+  optional: false,
+};
+
 export const taskRegistry: Record<string, TaskContract> = {
   "update-dsl-definitions": updateDslDefinitions,
   "update-dsl-binding": updateDslBinding,
@@ -216,4 +248,5 @@ export const taskRegistry: Record<string, TaskContract> = {
   "audit-dsl-completeness": auditDslCompleteness,
   "audit-semantic-design": auditSemanticDesign,
   "audit-generated-prompts": auditGeneratedPrompts,
+  "audit-extension-consumption": auditExtensionConsumption,
 };

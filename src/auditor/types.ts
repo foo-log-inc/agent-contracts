@@ -1,4 +1,4 @@
-export type AuditType = "render" | "dsl" | "prompt";
+export type AuditType = "render" | "dsl" | "prompt" | "extensions";
 
 export type OutputFormat = "text" | "json" | "markdown";
 
