@@ -11,12 +11,14 @@ export interface DelegateStep {
   readonly description: string;
   readonly optional: boolean;
   readonly max_retries: number;
+  readonly depends_on?: readonly string[];
 }
 
 export interface GateStep {
   readonly type: "gate";
   readonly gate_kind: string;
   readonly description: string;
+  readonly depends_on?: readonly string[];
 }
 
 export type WorkflowStep = DelegateStep | GateStep;
@@ -89,7 +91,7 @@ export const dslUpdate: WorkflowContract = {
 
 export const dslAudit: WorkflowContract = {
   id: "dsl-audit",
-  description: "DSL Audit — audit completeness of DSL definitions against generated prompts, detect gaps, and present improvement recommendations. Executed by DSL Auditor. Supports three audit types: render (semantic diff), dsl (design coherence), and prompt (prompt fidelity).",
+  description: "DSL Audit — audit completeness of DSL definitions against generated prompts, detect gaps, and present improvement recommendations. Executed by DSL Auditor. Supports four audit types: render (semantic diff), dsl (design coherence), prompt (prompt fidelity), and extensions (x-* consumption gap detection).",
   trigger: "Execute when DSL completeness audit is needed. Typically run as a quality check after DSL updates.",
   entry_conditions: [
   "DSL definition rendering is complete"
@@ -115,6 +117,9 @@ export const dslAudit: WorkflowContract = {
       description: "DSL Auditor reviews DSL design for semantic coherence — role overlap, scope breadth, gate placement, guardrail enforcement paths.",
       optional: false,
       max_retries: 0,
+      depends_on: [
+  "gate:dsl-audit-result"
+],
     },
     {
       type: "delegate",
@@ -123,11 +128,30 @@ export const dslAudit: WorkflowContract = {
       description: "DSL Auditor compares generated prompts against DSL intent — detects missing requirements, hallucinated permissions, ambiguous instructions.",
       optional: false,
       max_retries: 0,
+      depends_on: [
+  "gate:dsl-audit-result"
+],
+    },
+    {
+      type: "delegate",
+      task: "audit-extension-consumption",
+      from_agent: "dsl-auditor",
+      description: "DSL Auditor checks x-* extension properties for consumption gaps — declared but unused, populated but not rendered, semantic overlap with standard DSL features.",
+      optional: false,
+      max_retries: 0,
+      depends_on: [
+  "gate:dsl-audit-result"
+],
     },
     {
       type: "gate",
-      gate_kind: "dsl-audit-result",
+      gate_kind: "dsl-audit-terminal",
       description: "Terminal gate — block if audit-generated-prompts detected hallucinated permissions (enforces dsl-no-hallucinated-permissions guardrail at workflow level via stop_and_report escalation).",
+      depends_on: [
+  "audit-semantic-design",
+  "audit-generated-prompts",
+  "audit-extension-consumption"
+],
     },
   ],
 };

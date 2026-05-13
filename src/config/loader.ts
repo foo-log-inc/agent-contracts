@@ -136,6 +136,7 @@ export async function loadConfig(
       activeGuardrailPolicy: undefined,
       paths: undefined,
       teams: resolveTeamConfigs(config.teams, configDir),
+      audit: config.audit ?? undefined,
     };
   }
 
@@ -147,6 +148,7 @@ export async function loadConfig(
     bindings: (config.bindings ?? []).map((b) => resolve(configDir, b)),
     activeGuardrailPolicy: config.active_guardrail_policy,
     paths: config.paths,
+    audit: config.audit ?? undefined,
   };
 }
 

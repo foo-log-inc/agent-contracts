@@ -8,7 +8,7 @@
 
 import { readFile } from "node:fs/promises";
 import * as yaml from "yaml";
-import type { Dsl } from "../schema/index.js";
+import type { Dsl, ScopeNodeType } from "../schema/index.js";
 import type { ResolvedConfig, ResolvedRenderTarget } from "../config/types.js";
 import {
   buildPerAgentContext,
@@ -99,6 +99,145 @@ function formatDslOverview(dsl: Dsl): string {
   ].join("\n");
 }
 
+interface XUsageEntry {
+  path: string;
+  nodeType: ScopeNodeType;
+  key: string;
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function collectAllXUsages(dsl: Dsl): XUsageEntry[] {
+  const entries: XUsageEntry[] = [];
+
+  function walk(obj: Record<string, unknown>, path: string, nodeType: ScopeNodeType): void {
+    for (const key of Object.keys(obj)) {
+      if (key.startsWith("x-") && key !== "x-extensions" && key !== "x-extensions-strict") {
+        entries.push({ path: path ? `${path}.${key}` : key, nodeType, key });
+      }
+    }
+  }
+
+  walk(dsl as unknown as Record<string, unknown>, "", "root");
+  if (isRecord(dsl.system)) walk(dsl.system as unknown as Record<string, unknown>, "system", "system");
+
+  for (const [id, a] of Object.entries(dsl.agents))
+    walk(a as unknown as Record<string, unknown>, `agents.${id}`, "agent");
+  for (const [id, t] of Object.entries(dsl.tasks))
+    walk(t as unknown as Record<string, unknown>, `tasks.${id}`, "task");
+  for (const [id, a] of Object.entries(dsl.artifacts))
+    walk(a as unknown as Record<string, unknown>, `artifacts.${id}`, "artifact");
+  for (const [id, t] of Object.entries(dsl.tools))
+    walk(t as unknown as Record<string, unknown>, `tools.${id}`, "tool");
+  for (const [id, v] of Object.entries(dsl.validations))
+    walk(v as unknown as Record<string, unknown>, `validations.${id}`, "validation");
+  for (const [id, h] of Object.entries(dsl.handoff_types))
+    walk(h as unknown as Record<string, unknown>, `handoff_types.${id}`, "handoff_type");
+  for (const [id, w] of Object.entries(dsl.workflow))
+    walk(w as unknown as Record<string, unknown>, `workflow.${id}`, "workflow");
+  for (const [id, p] of Object.entries(dsl.policies))
+    walk(p as unknown as Record<string, unknown>, `policies.${id}`, "policy");
+  for (const [id, g] of Object.entries(dsl.guardrails))
+    walk(g as unknown as Record<string, unknown>, `guardrails.${id}`, "guardrail");
+  for (const [id, gp] of Object.entries(dsl.guardrail_policies))
+    walk(gp as unknown as Record<string, unknown>, `guardrail_policies.${id}`, "guardrail_policy");
+
+  return entries;
+}
+
+function extractTemplateXReferences(config: ResolvedConfig): string[] {
+  const refs: string[] = [];
+  try {
+    const { readFileSync } = require("node:fs") as typeof import("node:fs");
+    for (const target of config.renders) {
+      try {
+        const content = readFileSync(target.template, "utf8");
+        const matches = content.matchAll(/\{\{[^}]*?(x-[\w-]+)[^}]*?\}\}/g);
+        for (const m of matches) refs.push(m[1]);
+      } catch { /* template may not exist */ }
+    }
+  } catch { /* fallback if fs unavailable */ }
+  return [...new Set(refs)];
+}
+
+function buildExtensionsContext(dsl: Dsl, config: ResolvedConfig): string {
+  const parts: string[] = [];
+
+  parts.push("## Extension Declarations");
+  const declaredKeys = Object.keys(dsl.extensions);
+  if (declaredKeys.length === 0) {
+    parts.push("(No extensions declared in `extensions` section)");
+  } else {
+    parts.push("```yaml\n" + yaml.stringify({ extensions: dsl.extensions }) + "```");
+  }
+
+  parts.push("## x-* Usage Map");
+  const usages = collectAllXUsages(dsl);
+  if (usages.length === 0) {
+    parts.push("(No x-* properties found on any entity)");
+  } else {
+    const byKey = new Map<string, XUsageEntry[]>();
+    for (const u of usages) {
+      let list = byKey.get(u.key);
+      if (!list) { list = []; byKey.set(u.key, list); }
+      list.push(u);
+    }
+    const lines: string[] = ["| Extension | Node Type | Path |", "|-----------|-----------|------|"];
+    for (const [key, entries] of byKey) {
+      for (const e of entries) {
+        lines.push(`| ${key} | ${e.nodeType} | ${e.path} |`);
+      }
+    }
+    parts.push(lines.join("\n"));
+  }
+
+  parts.push("## Template x-* References");
+  const templateRefs = extractTemplateXReferences(config);
+  if (templateRefs.length === 0) {
+    parts.push("(No x-* references found in render templates, or no templates configured)");
+  } else {
+    parts.push(templateRefs.map((r) => `- ${r}`).join("\n"));
+  }
+
+  parts.push("## Runtime Codegen Fixed Fields");
+  parts.push(
+    "The agent-contracts-runtime codegen templates emit only these fixed fields " +
+    "(x-* properties are not included in generated TypeScript contracts):\n" +
+    "- **AgentContract**: id, role_name, purpose, mode, dispatch_only, can_read_artifacts, " +
+    "can_write_artifacts, can_execute_tools, can_invoke_agents, can_return_handoffs, " +
+    "responsibilities, constraints, rules, escalation_criteria\n" +
+    "- **TaskContract**: id, description, target_agent, allowed_from_agents, workflow, " +
+    "invocation_handoff, result_handoff, input_artifacts, responsibilities, " +
+    "completion_criteria, optional\n" +
+    "- **WorkflowContract**: id, description, trigger, entry_conditions, steps",
+  );
+
+  const declaredSet = new Set(declaredKeys);
+  const usedKeys = new Set(usages.map((u) => u.key));
+  const templateRefSet = new Set(templateRefs);
+
+  parts.push("## Gap Summary");
+  const gaps: string[] = [];
+  for (const key of declaredKeys) {
+    if (!usedKeys.has(key)) gaps.push(`- **${key}**: declared but never populated on any entity`);
+  }
+  for (const key of usedKeys) {
+    if (declaredKeys.length > 0 && !declaredSet.has(key))
+      gaps.push(`- **${key}**: used on entities but not declared in extensions`);
+    if (!templateRefSet.has(key))
+      gaps.push(`- **${key}**: populated on entities but not referenced in any render template`);
+  }
+  if (gaps.length === 0) {
+    parts.push("(No obvious gaps detected by static analysis)");
+  } else {
+    parts.push(gaps.join("\n"));
+  }
+
+  return parts.join("\n\n");
+}
+
 export async function buildAuditContext(
   auditType: AuditType,
   dsl: Dsl,
@@ -123,6 +262,10 @@ export async function buildAuditContext(
     if (renderedFiles.length === 0) {
       sections.push("(No rendered agent prompt files found. Run `agent-contracts render` first.)");
     }
+  }
+
+  if (auditType === "extensions") {
+    sections.push(buildExtensionsContext(dsl, config));
   }
 
   if (auditType === "dsl") {

@@ -17,6 +17,11 @@ import {
   guardrailOrphanedRule,
 } from "./rules/entity-guardrail-binding.js";
 import { validationExecutorNoContextRule } from "./rules/validation-executor-no-context.js";
+import {
+  extensionDeclaredButUnusedRule,
+  extensionScopeMismatchRule,
+  extensionUndeclaredUsageRule,
+} from "./rules/extension-consumption.js";
 
 const builtinRules: LintRule[] = [
   validationCoverageRule,
@@ -34,6 +39,9 @@ const builtinRules: LintRule[] = [
   entityNoGuardrailsRule,
   guardrailOrphanedRule,
   validationExecutorNoContextRule,
+  extensionDeclaredButUnusedRule,
+  extensionScopeMismatchRule,
+  extensionUndeclaredUsageRule,
 ];
 
 export function lint(

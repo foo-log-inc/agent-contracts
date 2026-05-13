@@ -4,7 +4,7 @@ dsl-schema-validation:
   executor_type: tool
   executor: agent-contracts-cli
   blocking: true
-  x-description: >-
+  description: >-
     DSL schema validation via agent-contracts validate command.
     Performs type checks on all entities, verifies required fields,
     and checks cross-reference integrity.
@@ -15,7 +15,7 @@ dsl-lint-validation:
   executor_type: tool
   executor: agent-contracts-cli
   blocking: false
-  x-description: >-
+  description: >-
     Semantic validation via agent-contracts lint command.
     Checks naming conventions, unused entities, circular references,
     and other design quality aspects.
@@ -26,7 +26,7 @@ dsl-score-validation:
   executor_type: tool
   executor: agent-contracts-cli
   blocking: false
-  x-description: >-
+  description: >-
     Completeness evaluation via agent-contracts score command.
     Scores across 7 dimensions: artifact validation coverage,
     task validation coverage, guardrail policy coverage,
@@ -40,7 +40,7 @@ dsl-completeness-audit:
   executor: dsl-auditor
   blocking: false
   produces_evidence: dsl-audit-report
-  x-description: >-
+  description: >-
     19-dimension cross-check audit of DSL definitions against generated
     prompts. Verifies that all items defined in the DSL are correctly
     reflected in generated output.
@@ -51,7 +51,7 @@ dsl-score-report-validation:
   executor_type: tool
   executor: agent-contracts-cli
   blocking: false
-  x-description: >-
+  description: >-
     Validates that dsl-score-report has been produced and contains
     a valid score across all 7 dimensions.
 
@@ -61,6 +61,6 @@ dsl-audit-report-validation:
   executor_type: agent
   executor: dsl-auditor
   blocking: false
-  x-description: >-
+  description: >-
     Validates that dsl-audit-report contains findings classified
     as PASS/MISS/PARTIAL for all inspected dimensions.

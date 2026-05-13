@@ -19,6 +19,7 @@ export const taskAgentBindingRule: LintRule = {
 
     for (const [taskId, task] of Object.entries(dsl.tasks)) {
       for (const fromAgentId of task.allowed_from_agents) {
+        if (fromAgentId === task.target_agent) continue;
         const fromAgent = dsl.agents[fromAgentId];
         if (fromAgent && !fromAgent.can_invoke_agents.includes(task.target_agent)) {
           diagnostics.push({

@@ -70,4 +70,4 @@ dsl-audit-report:
     - submitted
   required_validations:
     - dsl-audit-report-validation
-  x-artifact-class: evidence
+  classification: evidence

@@ -11,6 +11,7 @@ export const ArtifactSchema = z
     states: z.array(z.string()),
     required_validations: z.array(z.string()).default([]),
     visibility: z.string().optional(),
+    classification: z.string().optional(),
     guardrails: z.array(z.string()).optional(),
   })
   .passthrough();

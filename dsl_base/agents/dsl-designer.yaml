@@ -15,8 +15,6 @@ dsl-designer:
     - dsl-source
     - dsl-generated-output
     - dsl-score-report
-  can_invoke_agents:
-    - dsl-designer
   can_execute_tools:
     - agent-contracts-cli
   can_perform_validations:

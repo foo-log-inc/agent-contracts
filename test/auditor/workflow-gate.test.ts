@@ -65,6 +65,7 @@ describe("workflow gate — LLM evaluation (dsl-audit)", () => {
         "audit-dsl-completeness": makeAuditResult({ miss_count: 0, critical_gaps: [] }),
         "audit-semantic-design": makeAuditResult({ audit_type: "semantic" }),
         "audit-generated-prompts": makeAuditResult({ audit_type: "prompt" }),
+        "audit-extension-consumption": makeAuditResult({ audit_type: "extensions" }),
       },
       gateApproval: true,
     });
@@ -115,6 +116,7 @@ describe("workflow gate — LLM evaluation (dsl-audit)", () => {
         "audit-dsl-completeness": makeAuditResult(),
         "audit-semantic-design": makeAuditResult({ audit_type: "semantic" }),
         "audit-generated-prompts": makeAuditResult({ audit_type: "prompt" }),
+        "audit-extension-consumption": makeAuditResult({ audit_type: "extensions" }),
       },
       gateApproval: false, // LLM would reject
     });

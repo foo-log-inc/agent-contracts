@@ -43,14 +43,19 @@ function deepClone(value: unknown): unknown {
 }
 
 /**
- * Resolve a JSON Pointer (RFC 6901) against the root document.
+ * Resolve a JSON Pointer (RFC 6901) against a root object.
  *
- * Expects `pointer` to start with `#/`. Segment escapes (`~0` → `~`, `~1` → `/`)
- * are handled per the specification.
+ * Expects `pointer` to start with `#/`. Segment escapes (`~0` → `~`,
+ * `~1` → `/`) are handled per the specification.
  *
- * @throws {DslLoadError} if a segment is not found or traverses a non-object.
+ * @returns `{ found: true, value }` if the pointer resolves, or
+ *          `{ found: false }` if any segment is missing.
+ * @throws {DslLoadError} if traversal hits a non-object.
  */
-function resolveJsonPointer(root: AnyRecord, pointer: string): unknown {
+function tryResolveJsonPointer(
+  root: AnyRecord,
+  pointer: string,
+): { found: true; value: unknown } | { found: false } {
   const path = pointer.slice(2);
   const segments = path.split("/").map((s) =>
     s.replace(/~1/g, "/").replace(/~0/g, "~"),
@@ -65,12 +70,24 @@ function resolveJsonPointer(root: AnyRecord, pointer: string): unknown {
     }
     current = (current as AnyRecord)[segment];
     if (current === undefined) {
-      throw new DslLoadError(
-        `Cannot resolve JSON Pointer "${pointer}": path segment "${segment}" not found`,
-      );
+      return { found: false };
     }
   }
-  return current;
+  return { found: true, value: current };
+}
+
+/**
+ * Strict variant — throws when the pointer target is missing.
+ * Used in Phase 2 (linking) where all sections are available.
+ */
+function resolveJsonPointer(root: AnyRecord, pointer: string): unknown {
+  const result = tryResolveJsonPointer(root, pointer);
+  if (!result.found) {
+    throw new DslLoadError(
+      `Cannot resolve JSON Pointer "${pointer}": target not found`,
+    );
+  }
+  return result.value;
 }
 
 function hasRefs(value: AnyRecord): value is AnyRecord & { $refs: string[] } {
@@ -125,11 +142,18 @@ function deepMergeRefs(
   return result;
 }
 
+// ===================================================================
+// Phase 1 — Assembly
+//
+// Loads external file $ref/$refs and resolves file-internal #/ pointers
+// against each file's own root.  Cross-section #/ pointers that can't
+// resolve within the file are preserved for Phase 2.
+// ===================================================================
+
 async function loadRefsSource(
   refPath: string,
   baseDir: string,
   resolving: Set<string>,
-  rootDoc: AnyRecord,
 ): Promise<AnyRecord> {
   const target = resolve(baseDir, refPath);
   const s = await fsStat(target).catch(() => null);
@@ -139,7 +163,7 @@ async function loadRefsSource(
       throw new DslLoadError(`Circular $refs detected: ${target}`, target);
     }
     resolving.add(target);
-    const result = await loadDirectoryAsMap(target, resolving, rootDoc);
+    const result = await loadDirectoryAsMap(target, resolving);
     resolving.delete(target);
     return result;
   }
@@ -161,11 +185,11 @@ async function loadRefsSource(
     );
   }
 
-  const resolved = (await resolveRefsDeep(
+  const resolved = (await assembleRefs(
     content,
     dirname(target),
     resolving,
-    rootDoc,
+    content as AnyRecord,
   )) as AnyRecord;
   resolving.delete(target);
   return resolved;
@@ -174,7 +198,6 @@ async function loadRefsSource(
 async function loadDirectoryAsMap(
   dirPath: string,
   resolving: Set<string>,
-  rootDoc: AnyRecord,
 ): Promise<AnyRecord> {
   let entries: string[];
   try {
@@ -210,11 +233,11 @@ async function loadDirectoryAsMap(
       );
     }
 
-    const resolved = (await resolveRefsDeep(
+    const resolved = (await assembleRefs(
       content,
       dirPath,
       resolving,
-      rootDoc,
+      content as AnyRecord,
     )) as AnyRecord;
 
     merged = deepMergeRefs(merged, resolved, filePath);
@@ -227,7 +250,6 @@ async function processRefs(
   obj: AnyRecord,
   baseDir: string,
   resolving: Set<string>,
-  rootDoc: AnyRecord,
 ): Promise<AnyRecord> {
   const refPaths = obj["$refs"] as string[];
   const inline: AnyRecord = {};
@@ -240,7 +262,7 @@ async function processRefs(
   let merged: AnyRecord = {};
 
   for (const refPath of refPaths) {
-    const loaded = await loadRefsSource(refPath, baseDir, resolving, rootDoc);
+    const loaded = await loadRefsSource(refPath, baseDir, resolving);
     merged = deepMergeRefs(merged, loaded, refPath);
   }
 
@@ -249,42 +271,56 @@ async function processRefs(
   return merged;
 }
 
-async function resolveRefsDeep(
+/**
+ * Phase 1 — Assembly.
+ *
+ * Recursively resolves external file `$ref` / `$refs` and builds the
+ * assembled document tree.
+ *
+ * `#/` pointers are resolved against `fileRoot` (the current file's
+ * own root).  If the target doesn't exist within the file, the `$ref`
+ * is preserved as-is — it likely references another section of the DSL
+ * and will be resolved in Phase 2 (linking).
+ */
+async function assembleRefs(
   data: unknown,
   baseDir: string,
   resolving: Set<string>,
-  rootDoc: AnyRecord,
+  fileRoot: AnyRecord,
 ): Promise<unknown> {
   if (typeof data !== "object" || data === null) return data;
 
   if (Array.isArray(data)) {
     return Promise.all(
-      data.map((item) => resolveRefsDeep(item, baseDir, resolving, rootDoc)),
+      data.map((item) => assembleRefs(item, baseDir, resolving, fileRoot)),
     );
   }
 
-  // $ref: string — replace this object entirely
   if (isRef(data)) {
     const refValue = data.$ref;
 
-    // JSON Pointer reference (#/...)
+    // In-document pointer — resolve against current file root.
+    // Preserve if not found (cross-section ref for Phase 2).
     if (refValue.startsWith("#/")) {
       if (resolving.has(refValue)) {
         throw new DslLoadError(`Circular $ref detected: ${refValue}`);
       }
+      const result = tryResolveJsonPointer(fileRoot, refValue);
+      if (!result.found) {
+        return data;
+      }
       resolving.add(refValue);
-      const target = resolveJsonPointer(rootDoc, refValue);
-      const resolved = await resolveRefsDeep(
-        deepClone(target),
+      const resolved = await assembleRefs(
+        deepClone(result.value),
         baseDir,
         resolving,
-        rootDoc,
+        fileRoot,
       );
       resolving.delete(refValue);
       return resolved;
     }
 
-    // File reference with optional JSON Pointer fragment (file.yaml#/path)
+    // External file reference (with optional #/fragment)
     const hashIdx = refValue.indexOf("#");
     const filePart = hashIdx >= 0 ? refValue.slice(0, hashIdx) : refValue;
     const fragment = hashIdx >= 0 ? refValue.slice(hashIdx) : null;
@@ -306,7 +342,7 @@ async function resolveRefsDeep(
         );
       }
       resolving.add(refTarget);
-      const result = await loadDirectoryAsMap(refTarget, resolving, rootDoc);
+      const result = await loadDirectoryAsMap(refTarget, resolving);
       resolving.delete(refTarget);
       return result;
     }
@@ -323,12 +359,13 @@ async function resolveRefsDeep(
     }
     resolving.add(refTarget);
     const content = await readYaml(refTarget);
-    const fileRoot = fragment ? content as AnyRecord : rootDoc;
-    let fileData = await resolveRefsDeep(
+    // Each file gets its own root scope for #/ pointer resolution.
+    const newFileRoot = isRecord(content) ? (content as AnyRecord) : fileRoot;
+    let fileData = await assembleRefs(
       content,
       dirname(refTarget),
       resolving,
-      fileRoot,
+      newFileRoot,
     );
     resolving.delete(refTarget);
 
@@ -347,18 +384,61 @@ async function resolveRefsDeep(
 
   let obj = data as AnyRecord;
 
-  // $refs: string[] — import files and deep-merge into this map
   if (hasRefs(obj)) {
-    obj = await processRefs(obj, baseDir, resolving, rootDoc);
+    obj = await processRefs(obj, baseDir, resolving);
   }
 
-  // Recurse into values
   const result: AnyRecord = {};
   for (const [key, value] of Object.entries(obj)) {
-    result[key] = await resolveRefsDeep(value, baseDir, resolving, rootDoc);
+    result[key] = await assembleRefs(value, baseDir, resolving, fileRoot);
   }
   return result;
 }
+
+// ===================================================================
+// Phase 2 — Linking
+//
+// Walks the assembled document and resolves all remaining #/ pointers
+// against the fully-expanded root.  No file I/O; pure pointer resolution.
+// Unresolvable pointers are errors — the document is fully assembled.
+// ===================================================================
+
+/**
+ * Phase 2 — Linking.
+ *
+ * Resolves every remaining `#/` pointer against the assembled document
+ * root.  Any pointer that can't be resolved is a genuine error — by
+ * this point the entire document has been assembled from all files.
+ */
+function linkDocPointers(data: unknown, rootDoc: AnyRecord): unknown {
+  if (typeof data !== "object" || data === null) return data;
+
+  if (Array.isArray(data)) {
+    return data.map((item) => linkDocPointers(item, rootDoc));
+  }
+
+  if (isRef(data)) {
+    const refValue = data.$ref;
+    if (refValue.startsWith("#/")) {
+      const target = resolveJsonPointer(rootDoc, refValue);
+      return linkDocPointers(deepClone(target), rootDoc);
+    }
+    // Non-#/ $ref should not remain after Phase 1 — preserve as-is
+    // (defensive; assembleRefs should have resolved all file refs).
+    return data;
+  }
+
+  const obj = data as AnyRecord;
+  const result: AnyRecord = {};
+  for (const [key, value] of Object.entries(obj)) {
+    result[key] = linkDocPointers(value, rootDoc);
+  }
+  return result;
+}
+
+// ===================================================================
+// Public API
+// ===================================================================
 
 function checkVersion(data: Record<string, unknown>, filePath: string): void {
   const version = data["version"];
@@ -391,13 +471,22 @@ export async function loadDsl(entryPath: string): Promise<LoadResult> {
   checkVersion(data, absPath);
 
   const baseDir = dirname(absPath);
-  const resolving = new Set<string>([absPath]);
-  const resolved = (await resolveRefsDeep(
+
+  // Phase 1 — Assembly: load all external files and resolve
+  // file-internal #/ pointers.  Cross-section #/ pointers are preserved.
+  const assembled = (await assembleRefs(
     data,
     baseDir,
-    resolving,
+    new Set<string>([absPath]),
     data,
   )) as Record<string, unknown>;
+
+  // Phase 2 — Linking: resolve remaining #/ pointers against the
+  // fully-assembled root.  Failure here is a genuine broken reference.
+  const resolved = linkDocPointers(
+    assembled,
+    assembled,
+  ) as Record<string, unknown>;
 
   return { data: resolved, filePath: absPath };
 }
