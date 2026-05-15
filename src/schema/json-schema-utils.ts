@@ -1,15 +1,18 @@
 type AnyRecord = Record<string, unknown>;
 
 /**
- * Shallow-merge an array of JSON Schema subschemas from an `allOf`.
- * Merges `properties`, `required`, and top-level scalars (`type`, `description`, etc.).
- * Handles one level of nesting only (sufficient for handoff schema composition).
+ * Recursively merge `allOf` arrays in a JSON Schema.
+ *
+ * Each `allOf` sub-schema is itself resolved first (handling nested
+ * `allOf`), then `properties`, `required`, and top-level scalars are
+ * merged. After merging, nested property schemas that contain their
+ * own `allOf` are also resolved so the output is fully flattened.
  */
 export function resolveAllOf(
   schema: AnyRecord,
 ): AnyRecord {
   const allOf = schema["allOf"];
-  if (!Array.isArray(allOf)) return schema;
+  if (!Array.isArray(allOf)) return resolveNestedProperties(schema);
 
   let mergedProperties: AnyRecord = {};
   let mergedRequired: string[] = [];
@@ -17,7 +20,7 @@ export function resolveAllOf(
 
   for (const sub of allOf) {
     if (typeof sub !== "object" || sub === null || Array.isArray(sub)) continue;
-    const subSchema = sub as AnyRecord;
+    const subSchema = resolveAllOf(sub as AnyRecord);
 
     if (
       subSchema["properties"] &&
@@ -56,10 +59,29 @@ export function resolveAllOf(
 
   const result: AnyRecord = { ...mergedTop };
   if (Object.keys(mergedProperties).length > 0) {
-    result["properties"] = mergedProperties;
+    result["properties"] = resolvePropertySchemas(mergedProperties);
   }
   if (mergedRequired.length > 0) {
     result["required"] = [...new Set(mergedRequired)];
+  }
+  return result;
+}
+
+function resolveNestedProperties(schema: AnyRecord): AnyRecord {
+  const props = schema["properties"];
+  if (!props || typeof props !== "object") return schema;
+  return { ...schema, properties: resolvePropertySchemas(props as AnyRecord) };
+}
+
+function resolvePropertySchemas(properties: AnyRecord): AnyRecord {
+  const result: AnyRecord = {};
+  for (const [key, value] of Object.entries(properties)) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const propSchema = value as AnyRecord;
+      result[key] = propSchema["allOf"] ? resolveAllOf(propSchema) : propSchema;
+    } else {
+      result[key] = value;
+    }
   }
   return result;
 }
