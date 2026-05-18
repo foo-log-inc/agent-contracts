@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.22.5",
+  "version": "0.22.6",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -64,12 +64,12 @@
     "@stoplight/spectral-functions": "^1.9.0",
     "@stoplight/spectral-rulesets": "^1.22.1",
     "ajv": "^8.18.0",
+    "cli-contracts": "^0.7.2",
     "commander": "^14.0.3",
     "handlebars": "^4.7.9",
     "yaml": "^2.8.3",
     "zod": "^4.3.6",
-    "zod-to-json-schema": "^3.25.2",
-    "cli-contracts": "^0.7.0"
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.138",
