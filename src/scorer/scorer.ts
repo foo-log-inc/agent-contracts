@@ -199,76 +199,6 @@ function schemaCompleteness(dsl: Dsl): DimensionResult {
   };
 }
 
-function crossReferenceBidirectionality(dsl: Dsl): DimensionResult {
-  let totalChecks = 0;
-  let passedChecks = 0;
-  const issues: string[] = [];
-
-  for (const [agentId, agent] of Object.entries(dsl.agents)) {
-    for (const toolId of agent.can_execute_tools) {
-      totalChecks++;
-      const tool = dsl.tools[toolId];
-      if (tool && tool.invokable_by.includes(agentId)) {
-        passedChecks++;
-      } else {
-        issues.push(`agent ${agentId} → tool ${toolId}`);
-      }
-    }
-
-    for (const artId of agent.can_write_artifacts) {
-      totalChecks++;
-      const art = dsl.artifacts[artId];
-      if (
-        art &&
-        (art.producers.includes(agentId) || art.editors.includes(agentId))
-      ) {
-        passedChecks++;
-      } else {
-        issues.push(`agent ${agentId} → artifact ${artId} (write)`);
-      }
-    }
-
-    for (const artId of agent.can_read_artifacts) {
-      totalChecks++;
-      const art = dsl.artifacts[artId];
-      if (
-        art &&
-        (art.consumers.includes(agentId) ||
-          art.producers.includes(agentId) ||
-          art.editors.includes(agentId))
-      ) {
-        passedChecks++;
-      } else {
-        issues.push(`agent ${agentId} → artifact ${artId} (read)`);
-      }
-    }
-  }
-
-  for (const [toolId, tool] of Object.entries(dsl.tools)) {
-    for (const agentId of tool.invokable_by) {
-      totalChecks++;
-      const agent = dsl.agents[agentId];
-      if (agent && agent.can_execute_tools.includes(toolId)) {
-        passedChecks++;
-      } else {
-        issues.push(`tool ${toolId} → agent ${agentId}`);
-      }
-    }
-  }
-
-  return {
-    id: "cross-reference-bidirectionality",
-    label: "Cross-reference bidirectionality",
-    score: passedChecks,
-    total: totalChecks,
-    percent: pct(passedChecks, totalChecks),
-    weight: 2,
-    recommendations:
-      issues.length > 0
-        ? [`${issues.length} unreciprocated cross-references: ${issues.slice(0, 5).join(", ")}${issues.length > 5 ? `, ... (${issues.length - 5} more)` : ""}`]
-        : [],
-  };
-}
 
 function entityGuardrailCoverage(dsl: Dsl): DimensionResult {
   const entitySections: Array<{ name: string; entities: Record<string, { guardrails?: string[] }> }> = [
@@ -376,7 +306,6 @@ export function score(dsl: Dsl): ScoreResult {
     guardrailPolicyCoverage(dsl),
     workflowValidationIntegration(dsl),
     schemaCompleteness(dsl),
-    crossReferenceBidirectionality(dsl),
     guardrailScopeResolution(dsl),
     entityGuardrailCoverage(dsl),
   ];

@@ -33,10 +33,10 @@ describe("score()", () => {
     expect(result.overall).toBeLessThanOrEqual(100);
   });
 
-  it("returns 8 dimensions", () => {
+  it("returns 7 dimensions", () => {
     const dsl = makeDsl({});
     const result = score(dsl);
-    expect(result.dimensions).toHaveLength(8);
+    expect(result.dimensions).toHaveLength(7);
   });
 
   it("returns 100 for an empty DSL (no entities = nothing to check)", () => {
@@ -253,28 +253,6 @@ describe("schema-completeness", () => {
   });
 });
 
-describe("cross-reference-bidirectionality", () => {
-  it("scores 100% when all refs are reciprocated", () => {
-    const dsl = makeDsl({
-      agents: { a1: { role_name: "R", purpose: "P", can_execute_tools: ["t1"], can_write_artifacts: ["art1"] } },
-      tools: { t1: { kind: "cli", invokable_by: ["a1"] } },
-      artifacts: { art1: { type: "code", owner: "a1", producers: ["a1"], editors: ["a1"], consumers: ["a1"], states: ["draft"] } },
-    });
-    const d = dim(score(dsl), "cross-reference-bidirectionality");
-    expect(d.percent).toBe(100);
-    expect(d.recommendations).toHaveLength(0);
-  });
-
-  it("detects unreciprocated agent→tool reference", () => {
-    const dsl = makeDsl({
-      agents: { a1: { role_name: "R", purpose: "P", can_execute_tools: ["t1"] } },
-      tools: { t1: { kind: "cli", invokable_by: [] } },
-    });
-    const d = dim(score(dsl), "cross-reference-bidirectionality");
-    expect(d.percent).toBeLessThan(100);
-    expect(d.recommendations[0]).toContain("agent a1");
-  });
-});
 
 describe("guardrail-scope-resolution", () => {
   it("scores 100% when all scope entries resolve", () => {
@@ -341,7 +319,7 @@ describe("score on full fixture", () => {
     const result = score(dsl);
     expect(result.overall).toBeGreaterThanOrEqual(0);
     expect(result.overall).toBeLessThanOrEqual(100);
-    expect(result.dimensions).toHaveLength(8);
+    expect(result.dimensions).toHaveLength(7);
     for (const d of result.dimensions) {
       expect(d.percent).toBeGreaterThanOrEqual(0);
       expect(d.percent).toBeLessThanOrEqual(100);
