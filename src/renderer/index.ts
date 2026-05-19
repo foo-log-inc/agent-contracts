@@ -5,6 +5,7 @@ export {
   getDslSection,
   filterIds,
   expandOutputPath,
+  hasUnresolvedPathVars,
   type RenderOptions,
 } from "./renderer.js";
 export {

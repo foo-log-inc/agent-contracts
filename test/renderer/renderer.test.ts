@@ -4,7 +4,7 @@ import { parse as parseYaml } from "yaml";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { DslSchema, type Dsl } from "../../src/schema/index.js";
 import { buildGlobalContext, buildPerAgentContext, buildWorkflowContext } from "../../src/renderer/context.js";
-import { renderFromConfig, checkDriftFromConfig, expandOutputPath } from "../../src/renderer/renderer.js";
+import { renderFromConfig, checkDriftFromConfig, expandOutputPath, hasUnresolvedPathVars } from "../../src/renderer/renderer.js";
 import { generateSequenceDiagram } from "../../src/renderer/sequence-diagram.js";
 import { generateOverviewFlowchart } from "../../src/renderer/overview-flowchart.js";
 import { artifactOwnershipRule } from "../../src/linter/rules/artifact-ownership.js";
@@ -1149,5 +1149,78 @@ describe("expandOutputPath", () => {
     const entity = { severity: "critical" };
     const result = expandOutputPath("guardrails/{guardrail.id}/{guardrail.severity}.md", "guardrail", "no-force-push", entity);
     expect(result).toBe("guardrails/no-force-push/critical.md");
+  });
+});
+
+describe("hasUnresolvedPathVars", () => {
+  it("returns false for fully resolved path", () => {
+    expect(hasUnresolvedPathVars("out/my-agent/file.md")).toBe(false);
+  });
+
+  it("returns true for path with unresolved variable", () => {
+    expect(hasUnresolvedPathVars("../{agent.x-claude-path}/CLAUDE.md")).toBe(true);
+  });
+
+  it("returns true for path with multiple unresolved variables", () => {
+    expect(hasUnresolvedPathVars("{agent.x-path}/{agent.name}/file.md")).toBe(true);
+  });
+
+  it("returns false for path with no braces", () => {
+    expect(hasUnresolvedPathVars("simple/path/file.md")).toBe(false);
+  });
+});
+
+describe("renderFromConfig - unresolved path skipping", () => {
+  it("skips rendering when output path has unresolved variables", async () => {
+    const templatePath = join(outputDir, "skip-unresolved.hbs");
+    mkdirSync(outputDir, { recursive: true });
+    writeFileSync(templatePath, "content for {{agent.id}}", "utf8");
+
+    const dsl = DslSchema.parse({
+      version: 1,
+      system: { id: "s", name: "S", default_workflow_order: ["implement"] },
+      agents: {
+        "agent-with-path": { role_name: "Dev", purpose: "dev", "x-claude-path": "packages/app" },
+        "agent-without-path": { role_name: "Reviewer", purpose: "review" },
+      },
+    });
+
+    const targets: ResolvedRenderTarget[] = [
+      {
+        template: templatePath,
+        context: "agent",
+        output: join(outputDir, "{agent.x-claude-path}/CLAUDE.md"),
+      },
+    ];
+
+    const files = await renderFromConfig(dsl, targets);
+    expect(files).toHaveLength(1);
+    expect(files[0]).toContain("packages/app/CLAUDE.md");
+  });
+
+  it("renders all agents when all paths resolve", async () => {
+    const templatePath = join(outputDir, "all-resolve.hbs");
+    mkdirSync(outputDir, { recursive: true });
+    writeFileSync(templatePath, "hi {{agent.id}}", "utf8");
+
+    const dsl = DslSchema.parse({
+      version: 1,
+      system: { id: "s", name: "S", default_workflow_order: ["implement"] },
+      agents: {
+        "a1": { role_name: "Dev", purpose: "dev", "x-claude-path": "pkg/a" },
+        "a2": { role_name: "QA", purpose: "qa", "x-claude-path": "pkg/b" },
+      },
+    });
+
+    const targets: ResolvedRenderTarget[] = [
+      {
+        template: templatePath,
+        context: "agent",
+        output: join(outputDir, "{agent.x-claude-path}/out.md"),
+      },
+    ];
+
+    const files = await renderFromConfig(dsl, targets);
+    expect(files).toHaveLength(2);
   });
 });
