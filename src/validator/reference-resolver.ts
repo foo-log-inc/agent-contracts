@@ -57,15 +57,23 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
   }
 
   for (const [id, art] of Object.entries(dsl.artifacts)) {
-    checkExists(art.owner, agentIds, "agents", `artifacts.${id}.owner`);
-    for (const ref of art.producers) {
-      checkExists(ref, agentIds, "agents", `artifacts.${id}.producers`);
+    if (art.owner) {
+      checkExists(art.owner, agentIds, "agents", `artifacts.${id}.owner`);
     }
-    for (const ref of art.editors) {
-      checkExists(ref, agentIds, "agents", `artifacts.${id}.editors`);
+    if (art.producers.length > 0) {
+      for (const ref of art.producers) {
+        checkExists(ref, agentIds, "agents", `artifacts.${id}.producers`);
+      }
     }
-    for (const ref of art.consumers) {
-      checkExists(ref, agentIds, "agents", `artifacts.${id}.consumers`);
+    if (art.editors.length > 0) {
+      for (const ref of art.editors) {
+        checkExists(ref, agentIds, "agents", `artifacts.${id}.editors`);
+      }
+    }
+    if (art.consumers.length > 0) {
+      for (const ref of art.consumers) {
+        checkExists(ref, agentIds, "agents", `artifacts.${id}.consumers`);
+      }
     }
     for (const ref of art.required_validations) {
       checkExists(ref, validationIds, "validations", `artifacts.${id}.required_validations`);
@@ -73,13 +81,15 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
   }
 
   for (const [id, art] of Object.entries(dsl.artifacts)) {
-    const ownerAgent = dsl.agents[art.owner];
-    if (ownerAgent && !ownerAgent.can_read_artifacts.includes(id)) {
-      diagnostics.push({
-        path: `artifacts.${id}.owner`,
-        message: `Agent "${art.owner}" owns artifact "${id}" but cannot read it (missing from can_read_artifacts)`,
-        code: "artifact-owner-no-read",
-      });
+    if (art.owner) {
+      const ownerAgent = dsl.agents[art.owner];
+      if (ownerAgent && !ownerAgent.can_read_artifacts.includes(id)) {
+        diagnostics.push({
+          path: `artifacts.${id}.owner`,
+          message: `Agent "${art.owner}" owns artifact "${id}" but cannot read it (missing from can_read_artifacts)`,
+          code: "artifact-owner-no-read",
+        });
+      }
     }
     for (const valId of art.required_validations) {
       const validation = dsl.validations[valId];
@@ -97,8 +107,10 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
   }
 
   for (const [id, tool] of Object.entries(dsl.tools)) {
-    for (const ref of tool.invokable_by) {
-      checkExists(ref, agentIds, "agents", `tools.${id}.invokable_by`);
+    if (tool.invokable_by.length > 0) {
+      for (const ref of tool.invokable_by) {
+        checkExists(ref, agentIds, "agents", `tools.${id}.invokable_by`);
+      }
     }
   }
 

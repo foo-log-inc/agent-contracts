@@ -15,7 +15,7 @@ export const ToolSchema = z
     description: z.string().optional(),
     input_artifacts: z.array(z.string()).default([]),
     output_artifacts: z.array(z.string()).default([]),
-    invokable_by: z.array(z.string()),
+    invokable_by: z.array(z.string()).default([]),
     side_effects: z.array(z.string()).default([]),
     commands: z.array(CommandSchema).default([]),
     guardrails: z.array(z.string()).optional(),

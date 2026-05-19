@@ -24,9 +24,9 @@ const ruleset: RulesetDefinition = {
     },
 
     "artifact-producers-ref": {
-      description: "Artifact producers must reference existing agents",
+      description: "(deprecated) Artifact producers must reference existing agents",
       message: "{{error}}",
-      severity: "error",
+      severity: "warn",
       given: "$.artifacts.*",
       then: {
         field: "producers",
@@ -36,9 +36,9 @@ const ruleset: RulesetDefinition = {
     },
 
     "artifact-editors-ref": {
-      description: "Artifact editors must reference existing agents",
+      description: "(deprecated) Artifact editors must reference existing agents",
       message: "{{error}}",
-      severity: "error",
+      severity: "warn",
       given: "$.artifacts.*",
       then: {
         field: "editors",
@@ -48,9 +48,9 @@ const ruleset: RulesetDefinition = {
     },
 
     "artifact-consumers-ref": {
-      description: "Artifact consumers must reference existing agents",
+      description: "(deprecated) Artifact consumers must reference existing agents",
       message: "{{error}}",
-      severity: "error",
+      severity: "warn",
       given: "$.artifacts.*",
       then: {
         field: "consumers",
@@ -246,9 +246,9 @@ const ruleset: RulesetDefinition = {
     // ========== 15.2.2 Artifact responsibility integrity ==========
 
     "artifact-editors-not-empty": {
-      description: "Artifact editors must not be empty (15.2.2)",
+      description: "(deprecated) Artifact editors must not be empty (15.2.2)",
       message: "{{error}}",
-      severity: "error",
+      severity: "info",
       given: "$.artifacts.*.editors",
       then: {
         function: editorsNotEmpty,

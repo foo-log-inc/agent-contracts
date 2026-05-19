@@ -16,7 +16,7 @@ export const artifactOwnershipRule: LintRule = {
       for (const step of task.execution_steps) {
         if (step.produces_artifact) {
           const artifact = dsl.artifacts[step.produces_artifact];
-          if (artifact) {
+          if (artifact && (artifact.producers.length > 0 || artifact.editors.length > 0)) {
             const canWrite =
               artifact.producers.includes(agentId) ||
               artifact.editors.includes(agentId);
@@ -33,7 +33,7 @@ export const artifactOwnershipRule: LintRule = {
 
         if (step.reads_artifact) {
           const artifact = dsl.artifacts[step.reads_artifact];
-          if (artifact) {
+          if (artifact && (artifact.consumers.length > 0 || artifact.producers.length > 0 || artifact.editors.length > 0)) {
             const canRead =
               artifact.consumers.includes(agentId) ||
               artifact.producers.includes(agentId) ||
