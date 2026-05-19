@@ -232,9 +232,9 @@ const ruleset: RulesetDefinition = {
     },
 
     "tool-invokable-by-ref": {
-      description: "Tool invokable_by must reference existing agents",
+      description: "(deprecated) Tool invokable_by must reference existing agents",
       message: "{{error}}",
-      severity: "error",
+      severity: "warn",
       given: "$.tools.*",
       then: {
         field: "invokable_by",
@@ -256,8 +256,8 @@ const ruleset: RulesetDefinition = {
     },
 
     "artifact-owner-exists": {
-      description: "Every artifact must have an owner",
-      severity: "error",
+      description: "(deprecated) Every artifact must have an owner",
+      severity: "warn",
       given: "$.artifacts.*",
       then: {
         field: "owner",

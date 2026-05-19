@@ -17,10 +17,10 @@ export const toolExecutionRule: LintRule = {
     for (const [agentId, agent] of Object.entries(dsl.agents)) {
       for (const toolId of agent.can_execute_tools) {
         const invokableBy = toolInvokableBy.get(toolId);
-        if (invokableBy && !invokableBy.has(agentId)) {
+        if (invokableBy && invokableBy.size > 0 && !invokableBy.has(agentId)) {
           diagnostics.push({
             ruleId: "tool-execution",
-            severity: "error",
+            severity: "warning",
             path: `agents.${agentId}.can_execute_tools`,
             message: `Agent "${agentId}" has can_execute_tools "${toolId}" but tool's invokable_by does not include "${agentId}"`,
           });
@@ -29,12 +29,13 @@ export const toolExecutionRule: LintRule = {
     }
 
     for (const [toolId, tool] of Object.entries(dsl.tools)) {
+      if (tool.invokable_by.length === 0) continue;
       for (const agentId of tool.invokable_by) {
         const agent = dsl.agents[agentId];
         if (agent && !agent.can_execute_tools.includes(toolId)) {
           diagnostics.push({
             ruleId: "tool-execution",
-            severity: "error",
+            severity: "warning",
             path: `tools.${toolId}.invokable_by`,
             message: `Tool "${toolId}" has invokable_by "${agentId}" but agent's can_execute_tools does not include "${toolId}"`,
           });

@@ -132,11 +132,20 @@ describe("validationCoverageRule", () => {
 describe("toolExecutionRule", () => {
   it("detects can_execute_tools ↔ invokable_by mismatch (agent side)", () => {
     const dsl = makeDsl({
+      agents: { a1: { role_name: "R", purpose: "P", can_execute_tools: ["t1"] }, a2: { role_name: "R2", purpose: "P2" } },
+      tools: { t1: { kind: "cli", invokable_by: ["a2"] } },
+    });
+    const diags = toolExecutionRule.run(dsl);
+    expect(diags.some((d) => d.message.includes("invokable_by does not include"))).toBe(true);
+  });
+
+  it("skips invokable_by check when invokable_by is empty (deprecated)", () => {
+    const dsl = makeDsl({
       agents: { a1: { role_name: "R", purpose: "P", can_execute_tools: ["t1"] } },
       tools: { t1: { kind: "cli", invokable_by: [] } },
     });
     const diags = toolExecutionRule.run(dsl);
-    expect(diags.some((d) => d.message.includes("invokable_by does not include"))).toBe(true);
+    expect(diags.some((d) => d.message.includes("invokable_by does not include"))).toBe(false);
   });
 
   it("detects invokable_by ↔ can_execute_tools mismatch (tool side)", () => {
@@ -289,6 +298,26 @@ describe("taskAgentBindingRule", () => {
 
   it("detects uses_tool bidirectional mismatch (tool invokable_by missing target)", () => {
     const dsl = makeDsl({
+      agents: { a1: { role_name: "R", purpose: "P", can_execute_tools: ["t1"], can_return_handoffs: ["h", "r"] }, a2: { role_name: "R2", purpose: "P2" } },
+      tools: { t1: { kind: "cli", invokable_by: ["a2"] } },
+      tasks: {
+        task1: {
+          description: "d", target_agent: "a1", allowed_from_agents: ["a1"],
+          workflow: "implement", input_artifacts: [], invocation_handoff: "h", result_handoff: "r",
+          execution_steps: [{ id: "s1", action: "Act", uses_tool: "t1" }],
+        },
+      },
+      handoff_types: {
+        h: { version: 1, schema: {} },
+        r: { version: 1, schema: {} },
+      },
+    });
+    const diags = taskAgentBindingRule.run(dsl);
+    expect(diags.some((d) => d.message.includes("invokable_by does not include"))).toBe(true);
+  });
+
+  it("skips invokable_by check when invokable_by is empty (deprecated)", () => {
+    const dsl = makeDsl({
       agents: { a1: { role_name: "R", purpose: "P", can_execute_tools: ["t1"], can_return_handoffs: ["h", "r"] } },
       tools: { t1: { kind: "cli", invokable_by: [] } },
       tasks: {
@@ -304,7 +333,7 @@ describe("taskAgentBindingRule", () => {
       },
     });
     const diags = taskAgentBindingRule.run(dsl);
-    expect(diags.some((d) => d.message.includes("invokable_by does not include"))).toBe(true);
+    expect(diags.some((d) => d.message.includes("invokable_by does not include"))).toBe(false);
   });
 });
 

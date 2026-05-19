@@ -86,10 +86,10 @@ export const taskAgentBindingRule: LintRule = {
             });
           }
           const tool = dsl.tools[step.uses_tool];
-          if (tool && !tool.invokable_by.includes(task.target_agent)) {
+          if (tool && tool.invokable_by.length > 0 && !tool.invokable_by.includes(task.target_agent)) {
             diagnostics.push({
               ruleId: "task-agent-binding",
-              severity: "error",
+              severity: "warning",
               path: `tasks.${taskId}.execution_steps`,
               message: `Task "${taskId}" step uses_tool "${step.uses_tool}" but tool's invokable_by does not include "${task.target_agent}"`,
             });
