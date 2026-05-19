@@ -704,6 +704,82 @@ artifacts:
 
 ---
 
+## artifact-contracts integration
+
+agent-contracts integrates with [artifact-contracts](https://github.com/foo-ogawa/artifact-contracts) and [cli-contracts](https://github.com/foo-ogawa/cli-contracts) to provide a unified artifact governance model.
+
+### Design principle
+
+Relationships flow in one direction: **agent → artifact**.
+
+- Agents declare which artifacts they own (`own_artifacts`), read (`can_read_artifacts`), or write (`can_write_artifacts`)
+- Tools declare which abstract slots map to project artifacts (`artifact_bindings`)
+- Artifact definitions themselves do not reference agents (the legacy `owner`/`producers`/`editors`/`consumers` fields are deprecated)
+
+### How it works
+
+**1. Define project artifacts** in `artifact-contracts.yaml` (project-specific):
+
+````yaml
+artifacts:
+  api-specs:
+    type: source
+    authority: canonical
+    path_patterns: ["specs/**/*.yaml"]
+  api-contracts:
+    type: generated-code
+    authority: generated
+    path_patterns: ["src/generated/**/*.ts"]
+````
+
+**2. Import artifacts** into your agent-contracts DSL via `$ref`:
+
+````yaml
+artifacts: { $ref: "./artifact-contracts.yaml#/artifacts" }
+````
+
+**3. cli-contracts define tools with domain-agnostic slot names** (reusable across projects):
+
+````yaml
+# cli-contract.yaml
+commands:
+  generate:
+    effects:
+      reads: [source-specs]
+      writes: [contract-output]
+````
+
+**4. Map abstract slots to project artifacts** using `artifact_bindings` on tools:
+
+````yaml
+tools:
+  micro-contracts:
+    kind: cli
+    cli_contract: tools/micro-contracts/cli-contract.yaml
+    artifact_bindings:
+      source-specs: api-specs
+      contract-output: api-contracts
+````
+
+**5. Agents reference tools and artifacts** directly:
+
+````yaml
+agents:
+  architect:
+    own_artifacts: [api-contracts, api-specs]
+    can_read_artifacts: [api-specs, api-contracts]
+    can_write_artifacts: [api-contracts]
+    can_execute_tools: [micro-contracts]
+````
+
+### Validation and linting
+
+- `own_artifacts` entries are validated to exist in the `artifacts` section
+- `artifact_bindings` values are validated to exist in the `artifacts` section
+- A lint rule warns if `own_artifacts` entries are not included in `can_read_artifacts`
+
+---
+
 ## Example: Workflow definition
 
 ````yaml
