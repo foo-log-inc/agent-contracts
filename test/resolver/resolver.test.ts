@@ -282,6 +282,59 @@ describe("mergeDsl", () => {
     expect(agents["agent-1"]["constraints"]).toEqual(["c0", "c1"]);
   });
 
+  it("throws on multiple merge operators in same object", () => {
+    const project = {
+      extends: "./base/",
+      agents: {
+        $remove: ["agent-1"],
+        $append: { "agent-new": { role_name: "N", purpose: "P" } },
+      },
+    };
+    expect(() => mergeDsl(base, project)).toThrow(MergeError);
+    expect(() => mergeDsl(base, project)).toThrow(/Multiple merge operators/);
+  });
+
+  it("throws on multiple operators in nested property", () => {
+    const project = {
+      extends: "./base/",
+      agents: {
+        "agent-1": {
+          constraints: { $append: ["c2"], $prepend: ["c0"] },
+        },
+      },
+    };
+    expect(() => mergeDsl(base, project)).toThrow(MergeError);
+    expect(() => mergeDsl(base, project)).toThrow(/Multiple merge operators/);
+  });
+
+  it("map $insert_after with overlapping existing key after anchor", () => {
+    const baseWithThree = {
+      ...base,
+      agents: {
+        "agent-a": { role_name: "A", purpose: "PA" },
+        "agent-b": { role_name: "B", purpose: "PB" },
+        "agent-c": { role_name: "C", purpose: "PC" },
+      },
+    };
+    const project = {
+      extends: "./base/",
+      agents: {
+        $insert_after: {
+          after: "agent-a",
+          entries: { "agent-c": { role_name: "C-updated", purpose: "PC-new" } },
+        },
+      },
+    };
+    const result = mergeDsl(baseWithThree, project);
+    const agents = result["agents"] as Record<string, Record<string, unknown>>;
+    expect(agents["agent-c"]["role_name"]).toBe("C-updated");
+    const keys = Object.keys(agents);
+    expect(keys.filter((k) => k === "agent-c")).toHaveLength(1);
+    expect(keys[0]).toBe("agent-a");
+    expect(keys[1]).toBe("agent-c");
+    expect(keys[2]).toBe("agent-b");
+  });
+
   it("scalar fields are directly overwritten", () => {
     const project = {
       extends: "./base/",
