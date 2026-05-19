@@ -69,7 +69,7 @@ export interface EntityValidationEntry {
   validation_id: string;
   kind: string;
   target_artifact: string;
-  executor_type: string;
+  executor_type?: string;
   blocking: boolean;
   produces_evidence?: string;
 }

@@ -60,9 +60,9 @@ export const toolExecutionRule: LintRule = {
     }
 
     for (const [valId, val] of Object.entries(dsl.validations)) {
-      if (val.executor_type !== "tool") continue;
+      if (val.executor_type !== "tool" || !val.executor) continue;
       const hasExecutor = Object.values(dsl.agents).some((a) =>
-        a.can_execute_tools.includes(val.executor),
+        a.can_execute_tools.includes(val.executor!),
       );
       if (!hasExecutor) {
         diagnostics.push({

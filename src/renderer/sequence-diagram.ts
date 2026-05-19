@@ -96,8 +96,8 @@ function collectReferencedIds(
     } else if (step.type === "validation") {
       const val = dsl.validations[step.validation];
       if (val) {
-        if (val.executor_type === "agent") addAgent(val.executor);
-        else tools.add(val.executor);
+        if (val.executor && val.executor_type === "agent") addAgent(val.executor);
+        else if (val.executor) tools.add(val.executor);
         artifacts.add(val.target_artifact);
       }
     }
