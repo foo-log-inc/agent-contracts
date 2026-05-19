@@ -246,6 +246,42 @@ describe("mergeDsl", () => {
     expect(agents["agent-1"]["constraints"]).toEqual(["c1"]);
   });
 
+  it("map $remove with sibling property overrides", () => {
+    const baseWithTwo = {
+      ...base,
+      agents: {
+        "agent-1": base.agents["agent-1"],
+        "agent-2": { role_name: "R2", purpose: "P2", constraints: ["x"] },
+      },
+    };
+    const project = {
+      extends: "./base/",
+      agents: {
+        $remove: ["agent-2"],
+        "agent-1": { constraints: { $append: ["c2"] } },
+      },
+    };
+    const result = mergeDsl(baseWithTwo, project);
+    const agents = result["agents"] as Record<string, Record<string, unknown>>;
+    expect(agents["agent-2"]).toBeUndefined();
+    expect(agents["agent-1"]["constraints"]).toEqual(["c1", "c2"]);
+  });
+
+  it("map $append with sibling property overrides", () => {
+    const project = {
+      extends: "./base/",
+      agents: {
+        $append: { "agent-new": { role_name: "New", purpose: "New" } },
+        "agent-1": { constraints: { $prepend: ["c0"] } },
+      },
+    };
+    const result = mergeDsl(base, project);
+    const agents = result["agents"] as Record<string, Record<string, unknown>>;
+    expect(agents["agent-new"]).toBeDefined();
+    expect(agents["agent-new"]["role_name"]).toBe("New");
+    expect(agents["agent-1"]["constraints"]).toEqual(["c0", "c1"]);
+  });
+
   it("scalar fields are directly overwritten", () => {
     const project = {
       extends: "./base/",

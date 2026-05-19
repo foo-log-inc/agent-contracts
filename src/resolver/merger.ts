@@ -231,12 +231,16 @@ export function deepMergeEntities(
   return result;
 }
 
+const OPERATOR_KEYS = new Set(["$append", "$prepend", "$insert_after", "$replace", "$remove"]);
+
 export function mergeEntityMaps(
   baseMap: AnyRecord,
   projectMap: AnyRecord,
   path: string,
   hasExtends: boolean,
 ): AnyRecord {
+  let result: AnyRecord;
+
   if (isRecord(projectMap) && !Array.isArray(projectMap)) {
     const op = hasOperator(projectMap);
     if (op) {
@@ -245,13 +249,16 @@ export function mergeEntityMaps(
           `Merge operator used without extends at ${path}`,
         );
       }
-      return applyMapMergeOperator(baseMap, projectMap, path);
+      result = applyMapMergeOperator(baseMap, projectMap, path);
+    } else {
+      result = { ...baseMap };
     }
+  } else {
+    result = { ...baseMap };
   }
 
-  const result = { ...baseMap };
-
   for (const [key, projVal] of Object.entries(projectMap)) {
+    if (OPERATOR_KEYS.has(key)) continue;
     const baseVal = result[key];
     if (baseVal !== undefined && isRecord(baseVal) && isRecord(projVal)) {
       result[key] = deepMergeEntities(
