@@ -12,7 +12,7 @@ function isRecord(v: unknown): v is AnyRecord {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-function hasOperator(obj: AnyRecord, path?: string): string | null {
+export function hasOperator(obj: AnyRecord, path?: string): string | null {
   const ops = ["$append", "$prepend", "$insert_after", "$replace", "$remove"];
   const found: string[] = [];
   for (const op of ops) {
@@ -35,7 +35,7 @@ function findIndexByIdOrValue(arr: AnyArray, target: string): number {
   });
 }
 
-function applyArrayMergeOperator(
+export function applyArrayMergeOperator(
   baseArray: AnyArray,
   operatorObj: AnyRecord,
   path: string,
@@ -216,7 +216,12 @@ export function deepMergeEntities(
       } else if (isRecord(baseVal)) {
         result[key] = applyMapMergeOperator(baseVal, projVal, `${path}.${key}`);
       } else {
-        result[key] = applyArrayMergeOperator([], projVal, `${path}.${key}`);
+        const op = hasOperator(projVal, `${path}.${key}`);
+        if (op === "$replace") {
+          result[key] = projVal["$replace"];
+        } else {
+          result[key] = applyArrayMergeOperator([], projVal, `${path}.${key}`);
+        }
       }
     } else if (
       isRecord(projVal) &&
@@ -239,6 +244,49 @@ export function deepMergeEntities(
 }
 
 const OPERATOR_KEYS = new Set(["$append", "$prepend", "$insert_after", "$replace", "$remove"]);
+
+export type SectionMode = "map" | "array" | "object";
+
+export function mergeSection(
+  base: unknown,
+  project: unknown,
+  path: string,
+  hasExtends: boolean,
+  mode: SectionMode,
+): unknown {
+  switch (mode) {
+    case "map": {
+      const baseMap = isRecord(base) ? (base as AnyRecord) : {};
+      return mergeEntityMaps(baseMap, project as AnyRecord, path, hasExtends);
+    }
+    case "array": {
+      const baseArr = Array.isArray(base) ? (base as AnyArray) : [];
+      if (isRecord(project) && hasOperator(project as AnyRecord, path)) {
+        if (!hasExtends) {
+          throw new MergeError(
+            `Merge operator used without extends at ${path}`,
+          );
+        }
+        return applyArrayMergeOperator(baseArr, project as AnyRecord, path);
+      }
+      const projArr = Array.isArray(project) ? (project as AnyArray) : [];
+      return [...baseArr, ...projArr];
+    }
+    case "object": {
+      const baseObj = isRecord(base) ? (base as AnyRecord) : {};
+      const projObj = isRecord(project) ? (project as AnyRecord) : {};
+      if (hasOperator(projObj, path)) {
+        if (!hasExtends) {
+          throw new MergeError(
+            `Merge operator used without extends at ${path}`,
+          );
+        }
+        return applyMapMergeOperator(baseObj, projObj, path);
+      }
+      return deepMergeEntities(baseObj, projObj, path, hasExtends);
+    }
+  }
+}
 
 export function mergeEntityMaps(
   baseMap: AnyRecord,
@@ -267,9 +315,10 @@ export function mergeEntityMaps(
   for (const [key, projVal] of Object.entries(projectMap)) {
     if (OPERATOR_KEYS.has(key)) continue;
     const baseVal = result[key];
-    if (baseVal !== undefined && isRecord(baseVal) && isRecord(projVal)) {
+    if (isRecord(projVal) && !Array.isArray(projVal)) {
+      const baseObj = isRecord(baseVal) ? baseVal : {};
       result[key] = deepMergeEntities(
-        baseVal,
+        baseObj,
         projVal as AnyRecord,
         `${path}.${key}`,
         hasExtends,
@@ -282,21 +331,22 @@ export function mergeEntityMaps(
   return result;
 }
 
-const MERGE_SECTIONS = [
-  "agents",
-  "tasks",
-  "artifacts",
-  "tools",
-  "validations",
-  "handoff_types",
-  "imports",
-  "workflow",
-  "policies",
-  "guardrails",
-  "guardrail_policies",
-  "components",
-  "extensions",
-];
+const DSL_SECTIONS: Record<string, SectionMode> = {
+  agents: "map",
+  tasks: "map",
+  artifacts: "map",
+  tools: "map",
+  validations: "map",
+  handoff_types: "map",
+  imports: "map",
+  workflow: "map",
+  policies: "map",
+  guardrails: "map",
+  guardrail_policies: "map",
+  components: "map",
+  extensions: "map",
+  system: "object",
+};
 
 export function mergeDsl(
   base: AnyRecord,
@@ -305,29 +355,14 @@ export function mergeDsl(
   const hasExtends = typeof project["extends"] === "string";
   const result: AnyRecord = { ...base, ...project };
 
-  if (project["system"] && base["system"]) {
-    result["system"] = deepMergeEntities(
-      base["system"] as AnyRecord,
-      project["system"] as AnyRecord,
-      "system",
-      hasExtends,
-    );
-  }
-
-  for (const section of MERGE_SECTIONS) {
-    const baseVal = base[section];
-    const projVal = project[section];
-
-    if (projVal === undefined) {
-      continue;
-    }
-
-    const baseMap = isRecord(baseVal) ? baseVal : {};
-    result[section] = mergeEntityMaps(
-      baseMap,
-      projVal as AnyRecord,
+  for (const [section, mode] of Object.entries(DSL_SECTIONS)) {
+    if (project[section] === undefined) continue;
+    result[section] = mergeSection(
+      base[section],
+      project[section],
       section,
       hasExtends,
+      mode,
     );
   }
 

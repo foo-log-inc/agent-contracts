@@ -379,6 +379,40 @@ describe("mergeDsl", () => {
     expect(() => mergeDsl(base, project)).toThrow("without extends");
   });
 
+  it("applies $replace on system section (object mode)", () => {
+    const project = {
+      extends: "./base/",
+      system: {
+        $replace: { id: "new", name: "New System", default_workflow_order: ["b"] },
+      },
+    };
+    const result = mergeDsl(base, project);
+    const sys = result["system"] as Record<string, unknown>;
+    expect(sys["id"]).toBe("new");
+    expect(sys["name"]).toBe("New System");
+    expect(sys["default_workflow_order"]).toEqual(["b"]);
+  });
+
+  it("applies nested operator on new entity key", () => {
+    const project = {
+      extends: "./base/",
+      agents: {
+        "agent-1": {
+          constraints: { $append: ["c2"] },
+        },
+        "agent-new": {
+          role_name: "New",
+          purpose: "New purpose",
+          constraints: { $replace: ["only-new"] },
+        },
+      },
+    };
+    const result = mergeDsl(base, project);
+    const agents = result["agents"] as Record<string, Record<string, unknown>>;
+    expect(agents["agent-1"]["constraints"]).toEqual(["c1", "c2"]);
+    expect(agents["agent-new"]["constraints"]).toEqual(["only-new"]);
+  });
+
   it("project > base priority (2-layer model)", () => {
     const project = {
       extends: "./base/",
