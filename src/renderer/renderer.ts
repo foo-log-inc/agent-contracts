@@ -356,6 +356,16 @@ export function expandOutputPath(
   );
 }
 
+import { CONTEXT_TYPES } from "../schema/context-type.js";
+
+const CONTEXT_TYPE_PATTERN = new RegExp(
+  `\\{(${CONTEXT_TYPES.join("|")})\\.[^}]+\\}`,
+);
+
+export function hasUnresolvedPathVars(path: string): boolean {
+  return CONTEXT_TYPE_PATTERN.test(path);
+}
+
 export function buildEntityContext(
   dsl: Dsl,
   context: ContextType,
@@ -437,6 +447,7 @@ export async function renderFromConfig(
         const output = compiled(ctx);
         const entity = section[entityId] as Record<string, unknown> | undefined;
         const outputPath = expandOutputPath(target.output, target.context, entityId, entity);
+        if (hasUnresolvedPathVars(outputPath)) continue;
         if (target.skip_empty && isEffectivelyEmpty(output)) {
           await removeIfExists(outputPath);
           continue;
@@ -505,6 +516,7 @@ export async function checkDriftFromConfig(
         const expected = compiled(ctx);
         const entity = section[entityId] as Record<string, unknown> | undefined;
         const outputPath = expandOutputPath(target.output, target.context, entityId, entity);
+        if (hasUnresolvedPathVars(outputPath)) continue;
         await checkExpectedVsExisting(expected, outputPath, target.skip_empty, diffs);
       }
     }

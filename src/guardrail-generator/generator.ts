@@ -20,6 +20,7 @@ import {
   getDslSection,
   filterIds,
   expandOutputPath,
+  hasUnresolvedPathVars,
 } from "../renderer/index.js";
 
 // Register the `json` template helper
@@ -443,10 +444,9 @@ export async function generateGuardrails(
           const rendered = compiled(mergedCtx);
 
           const entity = section[entityId] as Record<string, unknown> | undefined;
-          const resolvedOutput = resolveBindingRenderOutputPath(
-            expandOutputPath(renderTarget.output, context, entityId, entity),
-            paths,
-          );
+          const expandedOutput = expandOutputPath(renderTarget.output, context, entityId, entity);
+          if (hasUnresolvedPathVars(expandedOutput)) continue;
+          const resolvedOutput = resolveBindingRenderOutputPath(expandedOutput, paths);
           const outputPath = resolve(config.configDir, resolvedOutput);
 
           if (shouldSkipEmpty && rendered.trim().length === 0) {
