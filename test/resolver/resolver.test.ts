@@ -1,6 +1,7 @@
 import { resolve as resolvePath, join } from "node:path";
 import { describe, it, expect } from "vitest";
 import { mergeDsl, MergeError } from "../../src/resolver/merger.js";
+import { BaseResolveError } from "../../src/resolver/base-resolver.js";
 import { resolve } from "../../src/resolver/resolve.js";
 
 const fixturesDir = resolvePath(import.meta.dirname, "../fixtures");
@@ -250,7 +251,7 @@ describe("resolve() pipeline", () => {
       join(fixturesDir, "minimal/agent-contracts.yaml"),
     );
     expect(result.data["version"]).toBe(1);
-    expect(result.basePath).toBeUndefined();
+    expect(result.basePaths).toEqual([]);
   });
 
   it("resolves project with local base extends", async () => {
@@ -258,7 +259,7 @@ describe("resolve() pipeline", () => {
       join(fixturesDir, "base-resolve/project/agent-contracts.yaml"),
     );
 
-    expect(result.basePath).toBeDefined();
+    expect(result.basePaths.length).toBeGreaterThan(0);
 
     const agents = result.data["agents"] as Record<string, Record<string, unknown>>;
     const impl = agents["implementer"];
@@ -276,5 +277,48 @@ describe("resolve() pipeline", () => {
 
     const arts = result.data["artifacts"] as Record<string, Record<string, unknown>>;
     expect(arts["codebase"]["description"]).toBe("TypeScript monorepo");
+  });
+
+  it("resolves 3-level chained extends with merged guardrails", async () => {
+    const childPath = join(
+      fixturesDir,
+      "chained-extends/child/agent-contracts.yaml",
+    );
+    const parentPath = join(
+      fixturesDir,
+      "chained-extends/parent/agent-contracts.yaml",
+    );
+    const grandparentPath = join(
+      fixturesDir,
+      "chained-extends/grandparent/agent-contracts.yaml",
+    );
+
+    const result = await resolve(childPath);
+
+    const guardrails = result.data["guardrails"] as Record<
+      string,
+      Record<string, unknown>
+    >;
+    expect(guardrails["no-force-push"]["description"]).toBe(
+      "Force push is forbidden",
+    );
+    expect(guardrails["no-force-push"]["scope"]).toBe("commit");
+    expect(guardrails["no-rebase"]["description"]).toBe("Rebase is forbidden");
+    expect(guardrails["no-squash"]["description"]).toBe("Squash is forbidden");
+
+    expect(result.basePaths).toEqual([grandparentPath, parentPath]);
+  });
+
+  it("throws BaseResolveError on circular extends", async () => {
+    await expect(
+      resolve(
+        join(fixturesDir, "circular-extends/a/agent-contracts.yaml"),
+      ),
+    ).rejects.toThrow(BaseResolveError);
+    await expect(
+      resolve(
+        join(fixturesDir, "circular-extends/a/agent-contracts.yaml"),
+      ),
+    ).rejects.toThrow(/Circular/);
   });
 });
