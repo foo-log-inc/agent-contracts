@@ -12,12 +12,18 @@ function isRecord(v: unknown): v is AnyRecord {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-function hasOperator(obj: AnyRecord): string | null {
+function hasOperator(obj: AnyRecord, path?: string): string | null {
   const ops = ["$append", "$prepend", "$insert_after", "$replace", "$remove"];
+  const found: string[] = [];
   for (const op of ops) {
-    if (op in obj) return op;
+    if (op in obj) found.push(op);
   }
-  return null;
+  if (found.length > 1) {
+    throw new MergeError(
+      `Multiple merge operators in the same object at ${path ?? "unknown"}: ${found.join(", ")}`,
+    );
+  }
+  return found.length === 1 ? found[0] : null;
 }
 
 function findIndexByIdOrValue(arr: AnyArray, target: string): number {
@@ -34,7 +40,7 @@ function applyArrayMergeOperator(
   operatorObj: AnyRecord,
   path: string,
 ): AnyArray {
-  const op = hasOperator(operatorObj);
+  const op = hasOperator(operatorObj, path);
   if (!op) return baseArray;
 
   switch (op) {
@@ -116,9 +122,13 @@ function orderedInsertAfter(
   afterKey: string,
   entries: AnyRecord,
 ): AnyRecord {
+  const entryKeys = new Set(Object.keys(entries));
   const result: AnyRecord = {};
   let inserted = false;
   for (const key of Object.keys(base)) {
+    if (inserted && entryKeys.has(key)) {
+      continue;
+    }
     result[key] = base[key];
     if (key === afterKey) {
       for (const [ek, ev] of Object.entries(entries)) {
@@ -126,9 +136,6 @@ function orderedInsertAfter(
       }
       inserted = true;
     }
-  }
-  if (!inserted) {
-    return result;
   }
   return result;
 }
@@ -138,7 +145,7 @@ function applyMapMergeOperator(
   operatorObj: AnyRecord,
   path: string,
 ): AnyRecord {
-  const op = hasOperator(operatorObj);
+  const op = hasOperator(operatorObj, path);
   if (!op) return baseMap;
 
   switch (op) {
@@ -198,7 +205,7 @@ export function deepMergeEntities(
     const baseVal = result[key];
     const projVal = project[key];
 
-    if (isRecord(projVal) && hasOperator(projVal)) {
+    if (isRecord(projVal) && hasOperator(projVal, `${path}.${key}`)) {
       if (!hasExtends) {
         throw new MergeError(
           `Merge operator used without extends at ${path}.${key}`,
@@ -242,7 +249,7 @@ export function mergeEntityMaps(
   let result: AnyRecord;
 
   if (isRecord(projectMap) && !Array.isArray(projectMap)) {
-    const op = hasOperator(projectMap);
+    const op = hasOperator(projectMap, path);
     if (op) {
       if (!hasExtends) {
         throw new MergeError(
