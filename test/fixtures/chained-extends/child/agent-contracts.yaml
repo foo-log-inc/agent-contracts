@@ -1,0 +1,6 @@
+extends: ../parent
+version: 1
+guardrails:
+  no-squash:
+    description: "Squash is forbidden"
+    scope: merge

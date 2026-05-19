@@ -1,0 +1,5 @@
+version: 1
+guardrails:
+  no-force-push:
+    description: "Force push is forbidden"
+    scope: all

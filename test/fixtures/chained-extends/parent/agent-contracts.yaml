@@ -1,0 +1,8 @@
+extends: ../grandparent
+version: 1
+guardrails:
+  no-force-push:
+    scope: commit
+  no-rebase:
+    description: "Rebase is forbidden"
+    scope: all
