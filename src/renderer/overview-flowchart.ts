@@ -57,9 +57,9 @@ function collectPhaseOps(dsl: Dsl, wfId: string): PhaseOps {
     } else if (step.type === "validation") {
       const val = dsl.validations[step.validation];
       if (val) {
-        if (val.executor_type === "agent") {
+        if (val.executor_type === "agent" && val.executor) {
           addOp(agentOps, val.executor, "validate");
-        } else {
+        } else if (val.executor) {
           addOp(toolOps, val.executor, "verification");
         }
         addOp(artifactOps, val.target_artifact, "V");

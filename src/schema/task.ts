@@ -11,6 +11,8 @@ export const ExecutionStepSchema = z
     uses_tool: z.string().optional(),
     produces_artifact: z.string().optional(),
     reads_artifact: z.string().optional(),
+    validates_artifact: z.string().optional(),
+    validation_kind: z.enum(["schema", "mechanical", "semantic", "approval", "provenance", "traceability", "fidelity"]).optional(),
     depends_on: z.array(z.string()).optional(),
     skip_condition: z.string().optional(),
     wait_for_approval: z.boolean().optional(),

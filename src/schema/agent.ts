@@ -49,6 +49,7 @@ export const AgentSchema = z
   .object({
     role_name: z.string(),
     purpose: z.string(),
+    own_artifacts: z.array(z.string()).default([]),
     can_read_artifacts: z.array(z.string()).default([]),
     can_write_artifacts: z.array(z.string()).default([]),
     can_execute_tools: z.array(z.string()).default([]),

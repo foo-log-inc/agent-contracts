@@ -36,6 +36,9 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
   }
 
   for (const [id, agent] of Object.entries(dsl.agents)) {
+    for (const ref of agent.own_artifacts) {
+      checkExists(ref, artifactIds, "artifacts", `agents.${id}.own_artifacts`);
+    }
     for (const ref of agent.can_read_artifacts) {
       checkExists(ref, artifactIds, "artifacts", `agents.${id}.can_read_artifacts`);
     }
@@ -93,7 +96,7 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
     }
     for (const valId of art.required_validations) {
       const validation = dsl.validations[valId];
-      if (validation?.executor_type === "tool") {
+      if (validation?.executor_type === "tool" && validation.executor) {
         const tool = dsl.tools[validation.executor];
         if (tool && tool.invokable_by.length === 0) {
           diagnostics.push({
@@ -112,13 +115,16 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
         checkExists(ref, agentIds, "agents", `tools.${id}.invokable_by`);
       }
     }
+    for (const ref of Object.values(tool.artifact_bindings)) {
+      checkExists(ref, artifactIds, "artifacts", `tools.${id}.artifact_bindings`);
+    }
   }
 
   for (const [id, val] of Object.entries(dsl.validations)) {
     checkExists(val.target_artifact, artifactIds, "artifacts", `validations.${id}.target_artifact`);
-    if (val.executor_type === "tool") {
+    if (val.executor_type === "tool" && val.executor) {
       checkExists(val.executor, toolIds, "tools", `validations.${id}.executor`);
-    } else if (val.executor_type === "agent") {
+    } else if (val.executor_type === "agent" && val.executor) {
       checkExists(val.executor, agentIds, "agents", `validations.${id}.executor`);
     }
   }

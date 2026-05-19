@@ -15,6 +15,7 @@ export const validationExecutorNoContextRule: LintRule = {
     const diagnostics: LintDiagnostic[] = [];
 
     for (const [validationId, val] of Object.entries(dsl.validations)) {
+      if (!val.executor) continue;
       if (val.executor_type === "agent") {
         const agent = dsl.agents[val.executor];
         if (!agent) continue;

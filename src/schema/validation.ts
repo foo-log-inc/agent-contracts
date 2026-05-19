@@ -4,8 +4,8 @@ export const ValidationSchema = z
   .object({
     target_artifact: z.string(),
     kind: z.enum(["schema", "mechanical", "semantic", "approval", "provenance", "traceability", "fidelity"]),
-    executor_type: z.enum(["tool", "agent"]),
-    executor: z.string(),
+    executor_type: z.enum(["tool", "agent"]).optional(),
+    executor: z.string().optional(),
     blocking: z.boolean(),
     produces_evidence: z.string().optional(),
     description: z.string().optional(),
