@@ -22,7 +22,7 @@ export const ReplaceOperatorSchema = z.object({ $replace: z.any() });
 export type ReplaceOperator = z.infer<typeof ReplaceOperatorSchema>;
 
 export const RemoveOperatorSchema = z.object({
-  $remove: z.array(z.string()),
+  $remove: z.array(z.union([z.string(), z.object({ id: z.string() })])),
 });
 export type RemoveOperator = z.infer<typeof RemoveOperatorSchema>;
 
@@ -32,4 +32,4 @@ export type MergeableRecord<T> =
   | { $prepend: Record<string, unknown> }
   | { $insert_after: { after: string; entries: Record<string, unknown> } }
   | { $replace: unknown }
-  | { $remove: string[] };
+  | { $remove: (string | { id: string })[] };

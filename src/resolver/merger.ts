@@ -20,10 +20,13 @@ function hasOperator(obj: AnyRecord): string | null {
   return null;
 }
 
-function findIndexById(arr: AnyArray, id: string): number {
-  return arr.findIndex(
-    (item) => isRecord(item) && (item as AnyRecord)["id"] === id,
-  );
+function findIndexByIdOrValue(arr: AnyArray, target: string): number {
+  return arr.findIndex((item) => {
+    if (typeof item === "string") {
+      return item === target;
+    }
+    return isRecord(item) && (item as AnyRecord)["id"] === target;
+  });
 }
 
 function applyArrayMergeOperator(
@@ -47,7 +50,7 @@ function applyArrayMergeOperator(
       const spec = operatorObj["$insert_after"] as AnyRecord;
       const target = spec["target"] as string;
       const items = spec["items"] as AnyArray;
-      const idx = findIndexById(baseArray, target);
+      const idx = findIndexByIdOrValue(baseArray, target);
       if (idx === -1) {
         throw new MergeError(
           `$insert_after target "${target}" not found in base at ${path}`,
@@ -61,8 +64,31 @@ function applyArrayMergeOperator(
       return operatorObj["$replace"] as AnyArray;
     }
     case "$remove": {
-      const removeList = operatorObj["$remove"] as AnyRecord[];
-      const idsToRemove = new Set(removeList.map((r) => r["id"] as string));
+      const removeList = operatorObj["$remove"] as unknown[];
+      if (removeList.length === 0) {
+        return baseArray;
+      }
+
+      if (typeof removeList[0] === "string") {
+        const valuesToRemove = new Set(removeList as string[]);
+        const result = baseArray.filter((item) => {
+          if (typeof item === "string" && valuesToRemove.has(item)) {
+            valuesToRemove.delete(item);
+            return false;
+          }
+          return true;
+        });
+        if (valuesToRemove.size > 0) {
+          throw new MergeError(
+            `$remove values not found in base at ${path}: ${[...valuesToRemove].join(", ")}`,
+          );
+        }
+        return result;
+      }
+
+      const idsToRemove = new Set(
+        (removeList as AnyRecord[]).map((r) => r["id"] as string),
+      );
       const result = baseArray.filter((item) => {
         if (isRecord(item) && typeof (item as AnyRecord)["id"] === "string") {
           const itemId = (item as AnyRecord)["id"] as string;

@@ -122,6 +122,25 @@ describe("mergeDsl", () => {
     expect(() => mergeDsl(base, project)).toThrow("not found");
   });
 
+  it("applies $insert_after on string arrays by value", () => {
+    const project = {
+      extends: "./base/",
+      agents: {
+        "agent-1": {
+          constraints: {
+            $insert_after: {
+              target: "c1",
+              items: ["c1.5"],
+            },
+          },
+        },
+      },
+    };
+    const result = mergeDsl(base, project);
+    const agents = result["agents"] as Record<string, Record<string, unknown>>;
+    expect(agents["agent-1"]["constraints"]).toEqual(["c1", "c1.5"]);
+  });
+
   it("applies $replace operator", () => {
     const project = {
       extends: "./base/",
@@ -161,6 +180,70 @@ describe("mergeDsl", () => {
     };
     expect(() => mergeDsl(base, project)).toThrow(MergeError);
     expect(() => mergeDsl(base, project)).toThrow("not found");
+  });
+
+  it("applies $remove on string arrays by value", () => {
+    const project = {
+      extends: "./base/",
+      agents: {
+        "agent-1": {
+          constraints: { $remove: ["c1"] },
+        },
+      },
+    };
+    const result = mergeDsl(base, project);
+    const agents = result["agents"] as Record<string, Record<string, unknown>>;
+    expect(agents["agent-1"]["constraints"]).toEqual([]);
+  });
+
+  it("applies $remove on string arrays preserving remaining items", () => {
+    const baseMulti = {
+      ...base,
+      agents: {
+        "agent-1": {
+          ...base.agents["agent-1"],
+          constraints: ["c1", "c2", "c3"],
+        },
+      },
+    };
+    const project = {
+      extends: "./base/",
+      agents: {
+        "agent-1": {
+          constraints: { $remove: ["c2"] },
+        },
+      },
+    };
+    const result = mergeDsl(baseMulti, project);
+    const agents = result["agents"] as Record<string, Record<string, unknown>>;
+    expect(agents["agent-1"]["constraints"]).toEqual(["c1", "c3"]);
+  });
+
+  it("throws on $remove with non-existent string value", () => {
+    const project = {
+      extends: "./base/",
+      agents: {
+        "agent-1": {
+          constraints: { $remove: ["nonexistent"] },
+        },
+      },
+    };
+    expect(() => mergeDsl(base, project)).toThrow(MergeError);
+    expect(() => mergeDsl(base, project)).toThrow("not found");
+  });
+
+  it("$remove with empty array is no-op", () => {
+    const project = {
+      extends: "./base/",
+      agents: {
+        "agent-1": {
+          constraints: { $remove: [] },
+        },
+      },
+    };
+    const result = mergeDsl(base, project);
+    const agents = result["agents"] as Record<string, Record<string, unknown>>;
+    expect(agents["agent-1"]["constraints"]).toEqual(["c1"]);
   });
 
   it("scalar fields are directly overwritten", () => {
