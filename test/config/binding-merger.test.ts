@@ -248,4 +248,126 @@ describe("mergeBinding", () => {
     const renders = result["renders"] as unknown[];
     expect(renders).toHaveLength(1);
   });
+
+  it("applies $replace operator on renders", () => {
+    const base = {
+      software: "cursor",
+      version: 1,
+      renders: [
+        { context: "system", output: "base.md", inline_template: "base-tpl" },
+      ],
+    };
+    const project = {
+      extends: "./base.yaml",
+      software: "cursor",
+      version: 1,
+      renders: {
+        $replace: [
+          { context: "agent", output: "child.md", inline_template: "child-tpl" },
+        ],
+      },
+    };
+    const result = mergeBinding(base, project);
+    const renders = result["renders"] as unknown[];
+    expect(renders).toHaveLength(1);
+    expect(renders[0]).toEqual(
+      expect.objectContaining({ context: "agent", output: "child.md" }),
+    );
+  });
+
+  it("applies $append operator on renders", () => {
+    const base = {
+      software: "cursor",
+      version: 1,
+      renders: [
+        { context: "system", output: "base.md", inline_template: "base-tpl" },
+      ],
+    };
+    const project = {
+      extends: "./base.yaml",
+      software: "cursor",
+      version: 1,
+      renders: {
+        $append: [
+          { context: "agent", output: "added.md", inline_template: "added" },
+        ],
+      },
+    };
+    const result = mergeBinding(base, project);
+    const renders = result["renders"] as unknown[];
+    expect(renders).toHaveLength(2);
+    expect(renders[0]).toEqual(expect.objectContaining({ context: "system" }));
+    expect(renders[1]).toEqual(expect.objectContaining({ context: "agent" }));
+  });
+
+  it("applies $remove operator on renders by id", () => {
+    const base = {
+      software: "cursor",
+      version: 1,
+      renders: [
+        { id: "r1", context: "system", output: "sys.md", inline_template: "s" },
+        { id: "r2", context: "agent", output: "agent.md", inline_template: "a" },
+      ],
+    };
+    const project = {
+      extends: "./base.yaml",
+      software: "cursor",
+      version: 1,
+      renders: {
+        $remove: [{ id: "r1" }],
+      },
+    };
+    const result = mergeBinding(base, project);
+    const renders = result["renders"] as unknown[];
+    expect(renders).toHaveLength(1);
+    expect(renders[0]).toEqual(expect.objectContaining({ id: "r2" }));
+  });
+
+  it("applies $prepend operator on renders", () => {
+    const base = {
+      software: "cursor",
+      version: 1,
+      renders: [
+        { context: "system", output: "base.md", inline_template: "base-tpl" },
+      ],
+    };
+    const project = {
+      extends: "./base.yaml",
+      software: "cursor",
+      version: 1,
+      renders: {
+        $prepend: [
+          { context: "agent", output: "first.md", inline_template: "first" },
+        ],
+      },
+    };
+    const result = mergeBinding(base, project);
+    const renders = result["renders"] as unknown[];
+    expect(renders).toHaveLength(2);
+    expect(renders[0]).toEqual(expect.objectContaining({ context: "agent" }));
+    expect(renders[1]).toEqual(expect.objectContaining({ context: "system" }));
+  });
+
+  it("applies $replace on reporting section (object mode)", () => {
+    const base = {
+      software: "cursor",
+      version: 1,
+      reporting: {
+        commands: { lint: "npm run lint" },
+        fail_open: true,
+      },
+    };
+    const project = {
+      extends: "./base.yaml",
+      software: "cursor",
+      version: 1,
+      reporting: {
+        $replace: { commands: { test: "npm test" }, fail_open: false },
+      },
+    };
+    const result = mergeBinding(base, project);
+    const reporting = result["reporting"] as Record<string, unknown>;
+    expect(reporting["commands"]).toEqual({ test: "npm test" });
+    expect(reporting["fail_open"]).toBe(false);
+  });
 });
