@@ -4,7 +4,7 @@ import { parse as parseYaml } from "yaml";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { DslSchema, type Dsl } from "../../src/schema/index.js";
 import { buildGlobalContext, buildPerAgentContext, buildWorkflowContext } from "../../src/renderer/context.js";
-import { renderFromConfig, checkDriftFromConfig } from "../../src/renderer/renderer.js";
+import { renderFromConfig, checkDriftFromConfig, expandOutputPath } from "../../src/renderer/renderer.js";
 import { generateSequenceDiagram } from "../../src/renderer/sequence-diagram.js";
 import { generateOverviewFlowchart } from "../../src/renderer/overview-flowchart.js";
 import { artifactOwnershipRule } from "../../src/linter/rules/artifact-ownership.js";
@@ -1095,5 +1095,59 @@ describe("guardrailCoverageMatrix helper", () => {
     expect(files).toHaveLength(1);
     const content = readFileSync(outputPath, "utf8");
     expect(content).toBe("STARTEND");
+  });
+});
+
+describe("expandOutputPath", () => {
+  it("expands {context.id} without entity", () => {
+    const result = expandOutputPath("out/{agent.id}/file.md", "agent", "my-agent");
+    expect(result).toBe("out/my-agent/file.md");
+  });
+
+  it("expands {context.id} with entity", () => {
+    const entity = { role_name: "architect", "x-claude-path": "backend" };
+    const result = expandOutputPath("out/{agent.id}/file.md", "agent", "my-agent", entity);
+    expect(result).toBe("out/my-agent/file.md");
+  });
+
+  it("expands standard fields from entity", () => {
+    const entity = { role_name: "architect", "x-claude-path": "backend" };
+    const result = expandOutputPath("{agent.role_name}/file.md", "agent", "my-agent", entity);
+    expect(result).toBe("architect/file.md");
+  });
+
+  it("expands x-* extension fields from entity", () => {
+    const entity = { role_name: "architect", "x-claude-path": "packages/backend" };
+    const result = expandOutputPath("../{agent.x-claude-path}/CLAUDE.md", "agent", "my-agent", entity);
+    expect(result).toBe("../packages/backend/CLAUDE.md");
+  });
+
+  it("leaves pattern unresolved when field is undefined", () => {
+    const entity = { role_name: "architect" };
+    const result = expandOutputPath("../{agent.x-claude-path}/CLAUDE.md", "agent", "my-agent", entity);
+    expect(result).toBe("../{agent.x-claude-path}/CLAUDE.md");
+  });
+
+  it("leaves pattern unresolved when entity is undefined", () => {
+    const result = expandOutputPath("../{agent.x-claude-path}/CLAUDE.md", "agent", "my-agent");
+    expect(result).toBe("../{agent.x-claude-path}/CLAUDE.md");
+  });
+
+  it("leaves pattern unresolved when field value is not a string", () => {
+    const entity = { "x-path": 123 };
+    const result = expandOutputPath("../{agent.x-path}/CLAUDE.md", "agent", "my-agent", entity);
+    expect(result).toBe("../{agent.x-path}/CLAUDE.md");
+  });
+
+  it("expands multiple different fields in one pattern", () => {
+    const entity = { "x-claude-path": "frontend", role_name: "dev" };
+    const result = expandOutputPath("{agent.x-claude-path}/{agent.role_name}/{agent.id}.md", "agent", "ui-agent", entity);
+    expect(result).toBe("frontend/dev/ui-agent.md");
+  });
+
+  it("works with guardrail context", () => {
+    const entity = { severity: "critical" };
+    const result = expandOutputPath("guardrails/{guardrail.id}/{guardrail.severity}.md", "guardrail", "no-force-push", entity);
+    expect(result).toBe("guardrails/no-force-push/critical.md");
   });
 });
