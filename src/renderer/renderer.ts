@@ -339,8 +339,21 @@ export function filterIds(
   return allIds;
 }
 
-export function expandOutputPath(pattern: string, context: ContextType, entityId: string): string {
-  return pattern.replace(new RegExp(`\\{${context}\\.id\\}`, "g"), entityId);
+export function expandOutputPath(
+  pattern: string,
+  context: ContextType,
+  entityId: string,
+  entity?: Record<string, unknown>,
+): string {
+  return pattern.replace(
+    new RegExp(`\\{${context}\\.([^}]+)\\}`, "g"),
+    (_match, field: string) => {
+      if (field === "id") return entityId;
+      if (entity === undefined) return _match;
+      const value = entity[field];
+      return typeof value === "string" ? value : _match;
+    },
+  );
 }
 
 export function buildEntityContext(
@@ -422,7 +435,8 @@ export async function renderFromConfig(
       for (const entityId of ids) {
         const ctx = buildEntityContext(dsl, target.context, entityId);
         const output = compiled(ctx);
-        const outputPath = expandOutputPath(target.output, target.context, entityId);
+        const entity = section[entityId] as Record<string, unknown> | undefined;
+        const outputPath = expandOutputPath(target.output, target.context, entityId, entity);
         if (target.skip_empty && isEffectivelyEmpty(output)) {
           await removeIfExists(outputPath);
           continue;
@@ -489,7 +503,8 @@ export async function checkDriftFromConfig(
       for (const entityId of ids) {
         const ctx = buildEntityContext(dsl, target.context, entityId);
         const expected = compiled(ctx);
-        const outputPath = expandOutputPath(target.output, target.context, entityId);
+        const entity = section[entityId] as Record<string, unknown> | undefined;
+        const outputPath = expandOutputPath(target.output, target.context, entityId, entity);
         await checkExpectedVsExisting(expected, outputPath, target.skip_empty, diffs);
       }
     }

@@ -45,7 +45,8 @@ async function loadRenderedFiles(
     const section = getDslSection(dsl, target.context);
     const ids = filterIds(Object.keys(section), target.include, target.exclude);
     for (const entityId of ids) {
-      const outputPath = expandOutputPath(target.output, target.context, entityId);
+      const entity = section[entityId] as Record<string, unknown> | undefined;
+      const outputPath = expandOutputPath(target.output, target.context, entityId, entity);
       try {
         const content = await readFile(outputPath, "utf8");
         entries.push({ agent_id: entityId, path: outputPath, content });

@@ -442,8 +442,9 @@ export async function generateGuardrails(
           const mergedCtx = { ...entityCtx, vars, paths, binding, resolved_checks: checkResult.resolved };
           const rendered = compiled(mergedCtx);
 
+          const entity = section[entityId] as Record<string, unknown> | undefined;
           const resolvedOutput = resolveBindingRenderOutputPath(
-            expandOutputPath(renderTarget.output, context, entityId),
+            expandOutputPath(renderTarget.output, context, entityId, entity),
             paths,
           );
           const outputPath = resolve(config.configDir, resolvedOutput);
