@@ -4,7 +4,7 @@ import { parse as parseYaml } from "yaml";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { DslSchema, type Dsl } from "../../src/schema/index.js";
 import { buildGlobalContext, buildPerAgentContext, buildWorkflowContext } from "../../src/renderer/context.js";
-import { renderFromConfig, checkDriftFromConfig, expandOutputPath, hasUnresolvedPathVars } from "../../src/renderer/renderer.js";
+import { renderFromConfig, checkDriftFromConfig, expandOutputPath, hasUnresolvedPathVars, buildEntityContext } from "../../src/renderer/renderer.js";
 import { generateSequenceDiagram } from "../../src/renderer/sequence-diagram.js";
 import { generateOverviewFlowchart } from "../../src/renderer/overview-flowchart.js";
 import { artifactOwnershipRule } from "../../src/linter/rules/artifact-ownership.js";
@@ -200,6 +200,10 @@ function systemTarget(tpl: string, out: string): ResolvedRenderTarget {
   return { template: tpl, context: "system", output: out };
 }
 
+function navigationIndexTarget(tpl: string, out: string): ResolvedRenderTarget {
+  return { template: tpl, context: "navigation-index", output: out };
+}
+
 describe("renderFromConfig", () => {
   it("generates per-agent md files", async () => {
     const targets: ResolvedRenderTarget[] = [
@@ -231,6 +235,22 @@ describe("renderFromConfig", () => {
     const content = readFileSync(overviewFile!, "utf8");
     expect(content).toContain("Full Fixture");
     expect(content).toContain("main-architect");
+  });
+
+  it("generates navigation-index output file", async () => {
+    const outputPath = join(outputDir, "navigation-index.txt");
+    const targets: ResolvedRenderTarget[] = [
+      navigationIndexTarget(
+        join(templateDir, "navigation-index.hbs"),
+        outputPath,
+      ),
+    ];
+    const files = await renderFromConfig(fullDsl, targets);
+    expect(files).toEqual([outputPath]);
+    const content = readFileSync(outputPath, "utf8");
+    expect(content).toContain("System: full-system");
+    expect(content).toContain("Artifact: spec-md");
+    expect(content).toContain("Artifact: codebase");
   });
 
   it("renders x- properties when present", async () => {
@@ -319,6 +339,33 @@ describe("checkDriftFromConfig", () => {
     const result = await checkDriftFromConfig(fullDsl, targets);
     expect(result.hasDrift).toBe(false);
     expect(result.diffs).toHaveLength(0);
+  });
+
+  it("returns no drift for navigation-index when file is up to date", async () => {
+    const outputPath = join(outputDir, "nav-index-drift.txt");
+    const targets: ResolvedRenderTarget[] = [
+      navigationIndexTarget(
+        join(templateDir, "navigation-index.hbs"),
+        outputPath,
+      ),
+    ];
+    await renderFromConfig(fullDsl, targets);
+    const result = await checkDriftFromConfig(fullDsl, targets);
+    expect(result.hasDrift).toBe(false);
+    expect(result.diffs).toHaveLength(0);
+  });
+
+  it("returns drift for navigation-index when file is missing", async () => {
+    const emptyDir = join(import.meta.dirname, "../__empty_nav_output__");
+    const targets: ResolvedRenderTarget[] = [
+      navigationIndexTarget(
+        join(templateDir, "navigation-index.hbs"),
+        join(emptyDir, "navigation-index.txt"),
+      ),
+    ];
+    const result = await checkDriftFromConfig(fullDsl, targets);
+    expect(result.hasDrift).toBe(true);
+    expect(result.diffs).toContain(join(emptyDir, "navigation-index.txt"));
   });
 
   it("returns drift when files are missing", async () => {

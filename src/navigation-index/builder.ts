@@ -1,5 +1,6 @@
 import type { Dsl, Tool } from "../schema/index.js";
 import { resolveToolExtends } from "../resolver/tool-extends.js";
+import { loadCliContractSlots, resolveSlotDirection } from "./cli-contract-loader.js";
 import type {
   ArtifactOperation,
   ArtifactRoute,
@@ -51,11 +52,15 @@ function extractToolArtifactLinks(
 
   if (tool.cli_contract) {
     const command = tool.command ?? "";
+    const slotInfo = loadCliContractSlots(tool.cli_contract);
+
     for (const [slot, artifactId] of Object.entries(tool.artifact_bindings ?? {})) {
+      const direction = slotInfo ? resolveSlotDirection(slot, command, slotInfo) : "read";
+
       links.push({
         toolId,
         artifactId,
-        direction: "read",
+        direction,
         slot,
         command,
       });

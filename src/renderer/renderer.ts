@@ -20,6 +20,7 @@ import {
 } from "./context.js";
 import { generateSequenceDiagram } from "./sequence-diagram.js";
 import { generateOverviewFlowchart } from "./overview-flowchart.js";
+import { buildNavigationIndex } from "../navigation-index/index.js";
 
 Handlebars.registerHelper("eq", (a: unknown, b: unknown) => a === b);
 
@@ -397,6 +398,8 @@ export function buildEntityContext(
       return buildGuardrailPolicyContext(dsl, entityId);
     case "system":
       return buildSystemContext(dsl);
+    case "navigation-index":
+      return buildNavigationIndex(dsl) as unknown as Record<string, unknown>;
   }
 }
 
@@ -427,8 +430,11 @@ export async function renderFromConfig(
     const templateContent = await loadTemplate(target.template);
     const compiled = Handlebars.compile(templateContent, { noEscape: false });
 
-    if (target.context === "system") {
-      const ctx = buildSystemContext(dsl, options);
+    if (target.context === "system" || target.context === "navigation-index") {
+      const ctx =
+        target.context === "system"
+          ? buildSystemContext(dsl, options)
+          : (buildNavigationIndex(dsl) as unknown as Record<string, unknown>);
       const output = compiled(ctx);
       if (target.skip_empty && isEffectivelyEmpty(output)) {
         await removeIfExists(target.output);
@@ -502,8 +508,11 @@ export async function checkDriftFromConfig(
     const templateContent = await loadTemplate(target.template);
     const compiled = Handlebars.compile(templateContent, { noEscape: false });
 
-    if (target.context === "system") {
-      const ctx = buildSystemContext(dsl, options);
+    if (target.context === "system" || target.context === "navigation-index") {
+      const ctx =
+        target.context === "system"
+          ? buildSystemContext(dsl, options)
+          : (buildNavigationIndex(dsl) as unknown as Record<string, unknown>);
       const expected = compiled(ctx);
       await checkExpectedVsExisting(expected, target.output, target.skip_empty, diffs);
     } else {

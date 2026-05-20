@@ -22,6 +22,7 @@ import {
   expandOutputPath,
   hasUnresolvedPathVars,
 } from "../renderer/index.js";
+import { buildNavigationIndex } from "../navigation-index/index.js";
 
 // Register the `json` template helper
 Handlebars.registerHelper("json", (value: unknown) => {
@@ -410,9 +411,12 @@ export async function generateGuardrails(
       const shouldSkipEmpty = renderTarget.skip_empty === true;
       const context = renderTarget.context as ContextType;
 
-      if (context === "system") {
-        const sysCtx = buildSystemContext(dsl);
-        const mergedCtx = { ...sysCtx, vars, paths, binding, resolved_checks: checkResult.resolved };
+      if (context === "system" || context === "navigation-index") {
+        const baseCtx =
+          context === "system"
+            ? buildSystemContext(dsl)
+            : (buildNavigationIndex(dsl) as unknown as Record<string, unknown>);
+        const mergedCtx = { ...baseCtx, vars, paths, binding, resolved_checks: checkResult.resolved };
         const rendered = compiled(mergedCtx);
 
         const resolvedOutput = resolveBindingRenderOutputPath(renderTarget.output, paths);

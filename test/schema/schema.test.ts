@@ -27,6 +27,8 @@ import {
   WorkflowSchema,
   WorkflowStepSchema,
   resolveAllOf,
+  ContextTypeSchema,
+  ITERABLE_CONTEXT_TYPES,
 } from "../../src/schema/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1204,5 +1206,16 @@ describe("resolveAllOf", () => {
     const props = result["properties"] as Record<string, unknown>;
     expect(props["a"]).toEqual({ type: "string" });
     expect(props["b"]).toEqual({ type: "number" });
+  });
+});
+
+describe("ContextTypeSchema", () => {
+  it("accepts navigation-index as a valid context type", () => {
+    expect(ContextTypeSchema.parse("navigation-index")).toBe("navigation-index");
+  });
+
+  it("excludes navigation-index from iterable context types", () => {
+    expect(ITERABLE_CONTEXT_TYPES).not.toContain("navigation-index");
+    expect(ITERABLE_CONTEXT_TYPES).not.toContain("system");
   });
 });

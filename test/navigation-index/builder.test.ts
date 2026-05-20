@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { resolve } from "node:path";
 import { DslSchema, type Dsl } from "../../src/schema/index.js";
 import { buildNavigationIndex } from "../../src/navigation-index/builder.js";
+import { buildEntityContext } from "../../src/renderer/renderer.js";
+
+const speckeeperCliContract = resolve(
+  import.meta.dirname,
+  "../fixtures/cli-contracts/speckeeper-cli-contract.yaml",
+);
 
 function makeDsl(partial: Partial<Record<string, unknown>>): Dsl {
   return DslSchema.parse({
@@ -103,7 +110,7 @@ describe("buildNavigationIndex", () => {
     expect(index.artifacts["test-code"].operations.consumers[0]?.tool).toBe("reader");
   });
 
-  it("handles cli_contract + artifact_bindings as read-only operations", () => {
+  it("falls back to read-only when cli-contract file is unavailable", () => {
     const dsl = makeDsl({
       artifacts: {
         "design-dir": { type: "source", authority: "canonical" },
@@ -140,6 +147,143 @@ describe("buildNavigationIndex", () => {
 
     expect(index.artifacts["speckeeper-config"].operations.validators).toHaveLength(1);
     expect(index.artifacts["speckeeper-config"].operations.validators[0]?.slot).toBe("config");
+  });
+
+  describe("cli-contract slot direction resolution", () => {
+    const baseArtifacts = {
+      "design-dir": { type: "source", authority: "canonical" },
+      "design-models": { type: "source", authority: "canonical" },
+      "output-docs": { type: "documentation", authority: "generated" },
+      "workspace-cache": { type: "cache", authority: "derived" },
+    };
+
+    it("resolves lint command bindings as read from cli-contract effects", () => {
+      const dsl = makeDsl({
+        artifacts: baseArtifacts,
+        tools: {
+          base: {
+            kind: "cli",
+            cli_contract: speckeeperCliContract,
+            artifact_bindings: {
+              "spec-source": "design-dir",
+              "design-models": "design-models",
+            },
+          },
+          "speckeeper-lint": {
+            extends: "base",
+            command: "lint",
+            kind: "linter",
+            invokable_by: ["reviewer"],
+          },
+        },
+      });
+
+      const index = buildNavigationIndex(dsl);
+
+      expect(index.artifacts["design-dir"].operations.producers).toEqual([]);
+      expect(index.artifacts["design-dir"].operations.validators).toHaveLength(1);
+      expect(index.artifacts["design-dir"].operations.validators[0]).toMatchObject({
+        tool: "speckeeper-lint",
+        command: "lint",
+        slot: "spec-source",
+      });
+
+      expect(index.artifacts["design-models"].operations.producers).toEqual([]);
+      expect(index.artifacts["design-models"].operations.validators).toHaveLength(1);
+      expect(index.artifacts["design-models"].operations.validators[0]?.slot).toBe("design-models");
+    });
+
+    it("resolves build command bindings with read and write from cli-contract effects", () => {
+      const dsl = makeDsl({
+        artifacts: baseArtifacts,
+        tools: {
+          base: {
+            kind: "cli",
+            cli_contract: speckeeperCliContract,
+            artifact_bindings: {
+              "spec-source": "design-dir",
+              "output-docs": "output-docs",
+            },
+          },
+          "speckeeper-build": {
+            extends: "base",
+            command: "build",
+            kind: "cli",
+            invokable_by: ["builder"],
+          },
+        },
+      });
+
+      const index = buildNavigationIndex(dsl);
+
+      const designDirConsumer = index.artifacts["design-dir"].operations.consumers.find(
+        (op) => op.tool === "speckeeper-build",
+      );
+      expect(designDirConsumer).toMatchObject({
+        tool: "speckeeper-build",
+        command: "build",
+        slot: "spec-source",
+      });
+
+      const outputDocsProducer = index.artifacts["output-docs"].operations.producers.find(
+        (op) => op.tool === "speckeeper-build",
+      );
+      expect(outputDocsProducer).toMatchObject({
+        tool: "speckeeper-build",
+        command: "build",
+        slot: "output-docs",
+      });
+    });
+
+    it("treats readwrite artifactSlots direction as write when not listed in command effects", () => {
+      const dsl = makeDsl({
+        artifacts: baseArtifacts,
+        tools: {
+          "cache-sync": {
+            kind: "cli",
+            cli_contract: speckeeperCliContract,
+            command: "sync",
+            invokable_by: ["builder"],
+            artifact_bindings: {
+              "workspace-cache": "workspace-cache",
+            },
+          },
+        },
+      });
+
+      const index = buildNavigationIndex(dsl);
+
+      expect(index.artifacts["workspace-cache"].operations.producers).toHaveLength(1);
+      expect(index.artifacts["workspace-cache"].operations.producers[0]).toMatchObject({
+        tool: "cache-sync",
+        command: "sync",
+        slot: "workspace-cache",
+      });
+    });
+
+    it("falls back to read when cli-contract path does not exist", () => {
+      const dsl = makeDsl({
+        artifacts: {
+          "design-dir": { type: "source", authority: "canonical" },
+        },
+        tools: {
+          "missing-contract": {
+            kind: "linter",
+            cli_contract: "nonexistent/cli-contract.yaml",
+            command: "lint",
+            invokable_by: ["reviewer"],
+            artifact_bindings: {
+              "spec-source": "design-dir",
+            },
+          },
+        },
+      });
+
+      const index = buildNavigationIndex(dsl);
+
+      expect(index.artifacts["design-dir"].operations.validators).toHaveLength(1);
+      expect(index.artifacts["design-dir"].operations.producers).toEqual([]);
+    });
   });
 
   it("maps agents to artifact owners, editors, and readers", () => {
@@ -396,5 +540,25 @@ describe("buildNavigationIndex", () => {
     expect(ops.validators.map((op) => op.tool).sort()).toEqual(["checker", "linter"]);
     expect(ops.consumers.map((op) => op.tool)).toEqual(["reader"]);
     expect(ops.producers).toEqual([]);
+  });
+});
+
+describe("buildEntityContext with navigation-index", () => {
+  it("returns a ProjectNavigationIndex-shaped object", () => {
+    const dsl = makeDsl({
+      artifacts: {
+        specs: { type: "source", authority: "canonical" },
+      },
+    });
+
+    const ctx = buildEntityContext(dsl, "navigation-index", "");
+
+    expect(ctx.version).toBe("1.0.0");
+    expect(ctx.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(ctx.system).toEqual({ id: "test-system", name: "Test System" });
+    expect(ctx.artifacts).toBeDefined();
+    expect((ctx.artifacts as Record<string, unknown>).specs).toMatchObject({
+      id: "specs",
+    });
   });
 });
