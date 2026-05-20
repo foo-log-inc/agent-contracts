@@ -164,6 +164,36 @@ describe("Spectral lint — artifact responsibility integrity", () => {
     const ed = diags.filter((d) => d.ruleId === "artifact-editors-not-empty");
     expect(ed.length).toBe(1);
   });
+
+  it("skips empty editors when all deprecated ownership fields are empty", async () => {
+    const dsl = makeDsl({
+      agents: {
+        a: {
+          role_name: "A",
+          purpose: "P",
+          can_read_artifacts: [],
+          can_write_artifacts: [],
+          can_execute_tools: [],
+          can_perform_validations: [],
+          can_invoke_agents: [],
+          can_return_handoffs: [],
+        },
+      },
+      artifacts: {
+        art: {
+          type: "document",
+          producers: [],
+          editors: [],
+          consumers: [],
+          states: ["draft"],
+          required_validations: [],
+        },
+      },
+    });
+    const diags = await spectralLint(dsl);
+    const ed = diags.filter((d) => d.ruleId === "artifact-editors-not-empty");
+    expect(ed).toHaveLength(0);
+  });
 });
 
 describe("Spectral lint — handoff integrity", () => {
@@ -225,7 +255,7 @@ describe("Spectral lint — agent behavioral integrity", () => {
         arch: {
           role_name: "A",
           purpose: "P",
-          can_read_artifacts: [],
+          can_read_artifacts: ["other-art"],
           can_write_artifacts: [],
           can_execute_tools: [],
           can_perform_validations: [],

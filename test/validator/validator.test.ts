@@ -339,7 +339,7 @@ describe("checkReferences", () => {
     const dsl = DslSchema.parse({
       version: 1,
       system: { id: "s", name: "S", default_workflow_order: ["p"] },
-      agents: { owner: { role_name: "R", purpose: "P", can_read_artifacts: [] } },
+      agents: { owner: { role_name: "R", purpose: "P", can_read_artifacts: ["other-art"] } },
       artifacts: {
         art1: {
           type: "code",
@@ -490,7 +490,7 @@ describe("checkReferences", () => {
       version: 1,
       system: { id: "s", name: "S", default_workflow_order: ["p"] },
       agents: {
-        a1: { role_name: "R", purpose: "P", can_read_artifacts: [], prerequisites: [{ action: "read", target: "art1", required: true }] },
+        a1: { role_name: "R", purpose: "P", can_read_artifacts: ["other-art"], prerequisites: [{ action: "read", target: "art1", required: true }] },
         a2: { role_name: "R", purpose: "P", can_read_artifacts: ["art1"] },
       },
       artifacts: {

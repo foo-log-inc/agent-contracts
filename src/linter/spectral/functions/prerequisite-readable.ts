@@ -13,6 +13,7 @@ export default createRulesetFunction<AgentObj, null>(
   (targetVal, _options, context) => {
     const readable = new Set(targetVal.can_read_artifacts ?? []);
     const prereqs = targetVal.prerequisites ?? [];
+    if (readable.size === 0) return [];
     const results: { message: string; path: (string | number)[] }[] = [];
 
     for (let i = 0; i < prereqs.length; i++) {

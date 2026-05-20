@@ -18,6 +18,7 @@ import {
 } from "./rules/entity-guardrail-binding.js";
 import { validationExecutorNoContextRule } from "./rules/validation-executor-no-context.js";
 import { artifactOwnershipConsistencyRule } from "./rules/artifact-ownership-consistency.js";
+import { deprecatedOwnershipFieldsRule } from "./rules/deprecated-ownership-fields.js";
 import {
   extensionDeclaredButUnusedRule,
   extensionScopeMismatchRule,
@@ -45,6 +46,7 @@ const builtinRules: LintRule[] = [
   guardrailOrphanedRule,
   validationExecutorNoContextRule,
   artifactOwnershipConsistencyRule,
+  deprecatedOwnershipFieldsRule,
   extensionDeclaredButUnusedRule,
   extensionScopeMismatchRule,
   extensionUndeclaredUsageRule,

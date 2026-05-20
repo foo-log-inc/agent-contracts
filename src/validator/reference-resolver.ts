@@ -86,7 +86,7 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
   for (const [id, art] of Object.entries(dsl.artifacts)) {
     if (art.owner) {
       const ownerAgent = dsl.agents[art.owner];
-      if (ownerAgent && !ownerAgent.can_read_artifacts.includes(id)) {
+      if (ownerAgent && ownerAgent.can_read_artifacts.length > 0 && !ownerAgent.can_read_artifacts.includes(id)) {
         diagnostics.push({
           path: `artifacts.${id}.owner`,
           message: `Agent "${art.owner}" owns artifact "${id}" but cannot read it (missing from can_read_artifacts)`,
@@ -206,14 +206,16 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
           code: "result-handoff-not-returnable",
         });
       }
-      for (let j = 0; j < task.input_artifacts.length; j++) {
-        const inputId = task.input_artifacts[j];
-        if (!targetAgent.can_read_artifacts.includes(inputId)) {
-          diagnostics.push({
-            path: `tasks.${id}.input_artifacts[${j}]`,
-            message: `Input artifact "${inputId}" is not in target agent "${task.target_agent}" can_read_artifacts`,
-            code: "input-artifact-not-readable",
-          });
+      if (targetAgent.can_read_artifacts.length > 0) {
+        for (let j = 0; j < task.input_artifacts.length; j++) {
+          const inputId = task.input_artifacts[j];
+          if (!targetAgent.can_read_artifacts.includes(inputId)) {
+            diagnostics.push({
+              path: `tasks.${id}.input_artifacts[${j}]`,
+              message: `Input artifact "${inputId}" is not in target agent "${task.target_agent}" can_read_artifacts`,
+              code: "input-artifact-not-readable",
+            });
+          }
         }
       }
     }
@@ -230,7 +232,7 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
     if (agent.prerequisites) {
       for (let j = 0; j < agent.prerequisites.length; j++) {
         const pre = agent.prerequisites[j];
-        if (!agent.can_read_artifacts.includes(pre.target)) {
+        if (agent.can_read_artifacts.length > 0 && !agent.can_read_artifacts.includes(pre.target)) {
           diagnostics.push({
             path: `agents.${id}.prerequisites[${j}].target`,
             message: `Prerequisite target "${pre.target}" is not in agent "${id}" can_read_artifacts`,

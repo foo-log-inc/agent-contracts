@@ -4,13 +4,6 @@ dsl-auditor:
     Audit completeness of agent-contracts DSL definitions against generated
     agent prompts, detect gaps, and present improvement recommendations.
   mode: read-write
-  can_read_artifacts:
-    - dsl-source
-    - dsl-generated-output
-    - dsl-audit-report
-    - dsl-score-report
-  can_write_artifacts:
-    - dsl-audit-report
   can_execute_tools:
     - agent-contracts-cli
   can_perform_validations:
@@ -36,8 +29,9 @@ dsl-auditor:
   rules:
     - id: R-AUDIT-001
       description: >-
-        Audit must cover all 19 dimensions: purpose, mode, can_read_artifacts,
-        can_write_artifacts, can_invoke_agents, tools, can_perform_validations,
+        Audit must cover all 19 dimensions: purpose, mode,
+        can_read_artifacts (deprecated), can_write_artifacts (deprecated),
+        can_invoke_agents, tools, can_perform_validations,
         responsibilities, constraints, rules, escalation_criteria, x-authority,
         supported_tasks, delegatable_tasks, handoff_schemas, guardrails,
         anti_patterns, x-audit-checklist, x-sections.
@@ -75,8 +69,8 @@ dsl-auditor:
         |---|-----------|------------|
         | 1 | purpose | high |
         | 2 | mode | high |
-        | 3 | can_read_artifacts | high |
-        | 4 | can_write_artifacts + required_validations | **critical** |
+        | 3 | can_read_artifacts (deprecated) | high |
+        | 4 | can_write_artifacts + required_validations (deprecated: can_write_artifacts) | **critical** |
         | 5 | can_invoke_agents | high |
         | 6 | tools (can_execute_tools → tools.yaml) | medium |
         | 7 | can_perform_validations | high |

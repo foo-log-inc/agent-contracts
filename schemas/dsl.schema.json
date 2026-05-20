@@ -86,6 +86,13 @@
           "purpose": {
             "type": "string"
           },
+          "own_artifacts": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "can_read_artifacts": {
             "default": [],
             "type": "array",
@@ -284,6 +291,7 @@
         "required": [
           "role_name",
           "purpose",
+          "own_artifacts",
           "can_read_artifacts",
           "can_write_artifacts",
           "can_execute_tools",
@@ -310,6 +318,7 @@
             "type": "string"
           },
           "allowed_from_agents": {
+            "default": [],
             "type": "array",
             "items": {
               "type": "string"
@@ -373,6 +382,21 @@
                 },
                 "reads_artifact": {
                   "type": "string"
+                },
+                "validates_artifact": {
+                  "type": "string"
+                },
+                "validation_kind": {
+                  "type": "string",
+                  "enum": [
+                    "schema",
+                    "mechanical",
+                    "semantic",
+                    "approval",
+                    "provenance",
+                    "traceability",
+                    "fidelity"
+                  ]
                 },
                 "depends_on": {
                   "type": "array",
@@ -543,24 +567,28 @@
             "type": "string"
           },
           "producers": {
+            "default": [],
             "type": "array",
             "items": {
               "type": "string"
             }
           },
           "editors": {
+            "default": [],
             "type": "array",
             "items": {
               "type": "string"
             }
           },
           "consumers": {
+            "default": [],
             "type": "array",
             "items": {
               "type": "string"
             }
           },
           "states": {
+            "default": [],
             "type": "array",
             "items": {
               "type": "string"
@@ -576,16 +604,55 @@
           "visibility": {
             "type": "string"
           },
+          "classification": {
+            "type": "string"
+          },
           "guardrails": {
             "type": "array",
             "items": {
               "type": "string"
             }
+          },
+          "authority": {
+            "type": "string",
+            "enum": [
+              "canonical",
+              "derived",
+              "generated",
+              "control"
+            ]
+          },
+          "path_patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "exclude_patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "manual_edit": {
+            "type": "string",
+            "enum": [
+              "allowed",
+              "discouraged",
+              "forbidden"
+            ]
+          },
+          "change_control": {
+            "type": "string",
+            "enum": [
+              "none",
+              "approval-required",
+              "regeneration-required"
+            ]
           }
         },
         "required": [
           "type",
-          "owner",
           "producers",
           "editors",
           "consumers",
@@ -607,6 +674,12 @@
           "kind": {
             "type": "string"
           },
+          "extends": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
           "description": {
             "type": "string"
           },
@@ -625,8 +698,22 @@
             }
           },
           "invokable_by": {
+            "default": [],
             "type": "array",
             "items": {
+              "type": "string"
+            }
+          },
+          "cli_contract": {
+            "type": "string"
+          },
+          "artifact_bindings": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
               "type": "string"
             }
           },
@@ -684,10 +771,10 @@
           }
         },
         "required": [
-          "kind",
           "input_artifacts",
           "output_artifacts",
           "invokable_by",
+          "artifact_bindings",
           "side_effects",
           "commands"
         ],
@@ -733,13 +820,14 @@
           },
           "produces_evidence": {
             "type": "string"
+          },
+          "description": {
+            "type": "string"
           }
         },
         "required": [
           "target_artifact",
           "kind",
-          "executor_type",
-          "executor",
           "blocking"
         ],
         "additionalProperties": {}

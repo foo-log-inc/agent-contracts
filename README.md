@@ -1383,7 +1383,7 @@ Each `context` type provides a different rendering scope:
 | Context | Scope | Output | Key variables |
 |---------|-------|--------|---------------|
 | `system` | Single file | `output` as-is | `system`, `dsl`, `guardrailEnforcement`\*, `bindings`\* |
-| `navigation-index` | Single file | `output` as-is | `version`, `generated_at`, `system`, `artifacts` (full `ProjectNavigationIndex`) |
+| `navigation_index` | Single file | `output` as-is | `version`, `generated_at`, `system`, `artifacts` (full `ProjectNavigationIndex`) |
 | `agent` | Per agent | `{agent.id}` in output path | `agent`, `receivableTasks`, `delegatableTasks`, `relatedArtifacts`, `relatedTools`, `relatedHandoffTypes`, `mergedBehavior`, `relatedGuardrails`, `relatedValidations`, `dsl` |
 | `task` | Per task | `{task.id}` in output path | `task`, `targetAgent`, `relatedGuardrails`, `relatedValidations`, `dsl` |
 | `artifact` | Per artifact | `{artifact.id}` in output path | `artifact`, `relatedTools`, `relatedValidations`, `relatedGuardrails`, `producerAgents`, `consumerAgents`, `editorAgents`, `createdInWorkflows`, `dsl` |

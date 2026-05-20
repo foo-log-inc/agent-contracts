@@ -2,7 +2,7 @@
 
 Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows. Provides static validation, semantic linting, prompt rendering, guardrail generation, and completeness scoring for agent contract definitions.
 
-**Version:** 0.22.6
+**Version:** 0.30.0
 
 ## Table of Contents
 
@@ -226,7 +226,7 @@ agent-contracts render --quiet
 
 ```yaml
 x-agent: 
-  recommendedBeforeUse: 
+  recommended_before_use: 
     - Ensure agent-contracts.config.yaml exists with render targets.
     - Run validate first to confirm DSL is valid.
 ```
@@ -275,7 +275,7 @@ agent-contracts check --format json --quiet
 
 ```yaml
 x-agent: 
-  recommendedBeforeUse: 
+  recommended_before_use: 
     - Ensure agent-contracts.config.yaml exists.
 ```
 
@@ -392,7 +392,7 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
   | Property | Type | Required | Description |
   |---|---|---|---|
   | `summary` | `string` | Yes |  |
-  | `riskLevel` | `"low" \| "medium" \| "high" \| "critical"` | Yes |  |
+  | `risk_level` | `"low" \| "medium" \| "high" \| "critical"` | Yes |  |
   | `findings` | `object[]` | Yes |  |
   | `findings[].id` | `string` | No | Unique finding identifier. |
   | `findings[].severity` | `"info" \| "warning" \| "error" \| "critical"` | Yes |  |
@@ -408,17 +408,17 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
   | `findings[].evidence[].location` | `string` | No | Location within the target (line number, JSON pointer). |
   | `findings[].evidence[].excerpt` | `string` | No | Relevant excerpt from the target. |
   | `findings[].details` | `Record<string, any>` | No |  |
-  | `recommendedActions` | `object[]` | No |  |
-  | `recommendedActions[].kind` | `enum(6 values)` | Yes |  |
-  | `recommendedActions[].title` | `string` | Yes |  |
-  | `recommendedActions[].command` | `string` | No | CLI command to run (for run_command kind). |
-  | `recommendedActions[].target` | `string` | No | Target file or resource. |
-  | `recommendedActions[].rationale` | `string` | No |  |
+  | `recommended_actions` | `object[]` | No |  |
+  | `recommended_actions[].kind` | `enum(6 values)` | Yes |  |
+  | `recommended_actions[].title` | `string` | Yes |  |
+  | `recommended_actions[].command` | `string` | No | CLI command to run (for run_command kind). |
+  | `recommended_actions[].target` | `string` | No | Target file or resource. |
+  | `recommended_actions[].rationale` | `string` | No |  |
   | `metadata` | `object` | No |  |
   | `metadata.tool` | `string` | No |  |
   | `metadata.command` | `string` | No |  |
   | `metadata.version` | `string` | No |  |
-  | `metadata.generatedAt` | `string` | No |  |
+  | `metadata.generated_at` | `string` | No |  |
   | `metadata.adapter` | `string` | No |  |
   | `metadata.model` | `string` | No |  |
 
@@ -431,14 +431,14 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
     "description": "Top-level result from an agent audit. Canonical schema for agent interoperability across toolchains.",
     "required": [
       "summary",
-      "riskLevel",
+      "risk_level",
       "findings"
     ],
     "properties": {
       "summary": {
         "type": "string"
       },
-      "riskLevel": {
+      "risk_level": {
         "type": "string",
         "enum": [
           "low",
@@ -538,7 +538,7 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
           }
         }
       },
-      "recommendedActions": {
+      "recommended_actions": {
         "type": "array",
         "items": {
           "type": "object",
@@ -588,7 +588,7 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
           "version": {
             "type": "string"
           },
-          "generatedAt": {
+          "generated_at": {
             "type": "string"
           },
           "adapter": {
@@ -616,7 +616,7 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
   | Property | Type | Required | Description |
   |---|---|---|---|
   | `summary` | `string` | Yes |  |
-  | `riskLevel` | `"low" \| "medium" \| "high" \| "critical"` | Yes |  |
+  | `risk_level` | `"low" \| "medium" \| "high" \| "critical"` | Yes |  |
   | `findings` | `object[]` | Yes |  |
   | `findings[].id` | `string` | No | Unique finding identifier. |
   | `findings[].severity` | `"info" \| "warning" \| "error" \| "critical"` | Yes |  |
@@ -632,17 +632,17 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
   | `findings[].evidence[].location` | `string` | No | Location within the target (line number, JSON pointer). |
   | `findings[].evidence[].excerpt` | `string` | No | Relevant excerpt from the target. |
   | `findings[].details` | `Record<string, any>` | No |  |
-  | `recommendedActions` | `object[]` | No |  |
-  | `recommendedActions[].kind` | `enum(6 values)` | Yes |  |
-  | `recommendedActions[].title` | `string` | Yes |  |
-  | `recommendedActions[].command` | `string` | No | CLI command to run (for run_command kind). |
-  | `recommendedActions[].target` | `string` | No | Target file or resource. |
-  | `recommendedActions[].rationale` | `string` | No |  |
+  | `recommended_actions` | `object[]` | No |  |
+  | `recommended_actions[].kind` | `enum(6 values)` | Yes |  |
+  | `recommended_actions[].title` | `string` | Yes |  |
+  | `recommended_actions[].command` | `string` | No | CLI command to run (for run_command kind). |
+  | `recommended_actions[].target` | `string` | No | Target file or resource. |
+  | `recommended_actions[].rationale` | `string` | No |  |
   | `metadata` | `object` | No |  |
   | `metadata.tool` | `string` | No |  |
   | `metadata.command` | `string` | No |  |
   | `metadata.version` | `string` | No |  |
-  | `metadata.generatedAt` | `string` | No |  |
+  | `metadata.generated_at` | `string` | No |  |
   | `metadata.adapter` | `string` | No |  |
   | `metadata.model` | `string` | No |  |
 
@@ -655,14 +655,14 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
     "description": "Top-level result from an agent audit. Canonical schema for agent interoperability across toolchains.",
     "required": [
       "summary",
-      "riskLevel",
+      "risk_level",
       "findings"
     ],
     "properties": {
       "summary": {
         "type": "string"
       },
-      "riskLevel": {
+      "risk_level": {
         "type": "string",
         "enum": [
           "low",
@@ -762,7 +762,7 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
           }
         }
       },
-      "recommendedActions": {
+      "recommended_actions": {
         "type": "array",
         "items": {
           "type": "object",
@@ -812,7 +812,7 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
           "version": {
             "type": "string"
           },
-          "generatedAt": {
+          "generated_at": {
             "type": "string"
           },
           "adapter": {
@@ -843,9 +843,9 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 
 ```yaml
 x-agent: 
-  retryableExitCodes: 
+  retryable_exit_codes: 
     - 12
-  recommendedBeforeUse: 
+  recommended_before_use: 
     - Ensure agent-contracts.config.yaml exists with render targets.
     - Run validate first to confirm DSL is valid.
     - Install agent-contracts-runtime if not using --dry-run.
@@ -925,7 +925,7 @@ agent-contracts generate interface -o team-interface.yaml --dry-run
 
 ```yaml
 x-agent: 
-  recommendedBeforeUse: 
+  recommended_before_use: 
     - Ensure agent-contracts.config.yaml exists with render targets and/or binding definitions.
     - Run validate first to confirm DSL is valid.
 ```

@@ -201,7 +201,7 @@ function systemTarget(tpl: string, out: string): ResolvedRenderTarget {
 }
 
 function navigationIndexTarget(tpl: string, out: string): ResolvedRenderTarget {
-  return { template: tpl, context: "navigation-index", output: out };
+  return { template: tpl, context: "navigation_index", output: out };
 }
 
 describe("renderFromConfig", () => {

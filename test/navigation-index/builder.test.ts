@@ -551,7 +551,7 @@ describe("buildEntityContext with navigation-index", () => {
       },
     });
 
-    const ctx = buildEntityContext(dsl, "navigation-index", "");
+    const ctx = buildEntityContext(dsl, "navigation_index", "");
 
     expect(ctx.version).toBe("1.0.0");
     expect(ctx.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);

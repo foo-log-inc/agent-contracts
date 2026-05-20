@@ -1210,12 +1210,12 @@ describe("resolveAllOf", () => {
 });
 
 describe("ContextTypeSchema", () => {
-  it("accepts navigation-index as a valid context type", () => {
-    expect(ContextTypeSchema.parse("navigation-index")).toBe("navigation-index");
+  it("accepts navigation_index as a valid context type", () => {
+    expect(ContextTypeSchema.parse("navigation_index")).toBe("navigation_index");
   });
 
-  it("excludes navigation-index from iterable context types", () => {
-    expect(ITERABLE_CONTEXT_TYPES).not.toContain("navigation-index");
+  it("excludes navigation_index from iterable context types", () => {
+    expect(ITERABLE_CONTEXT_TYPES).not.toContain("navigation_index");
     expect(ITERABLE_CONTEXT_TYPES).not.toContain("system");
   });
 });

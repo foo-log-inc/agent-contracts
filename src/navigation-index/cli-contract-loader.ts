@@ -15,7 +15,7 @@ function extractStringArray(value: unknown): string[] {
 function extractArtifactSlots(
   doc: Record<string, unknown>,
 ): Record<string, { direction: "read" | "write" | "readwrite" }> | null {
-  const slots = doc.artifactSlots;
+  const slots = doc.artifact_slots;
   if (!slots || typeof slots !== "object") return null;
 
   const result: Record<string, { direction: "read" | "write" | "readwrite" }> = {};
@@ -34,7 +34,7 @@ function extractCommandEffects(
   doc: Record<string, unknown>,
 ): Record<string, { reads: string[]; writes: string[] }> {
   const result: Record<string, { reads: string[]; writes: string[] }> = {};
-  const commandSets = doc.commandSets;
+  const commandSets = doc.command_sets;
   if (!commandSets || typeof commandSets !== "object") return result;
 
   for (const setDef of Object.values(commandSets)) {

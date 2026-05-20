@@ -1,9 +1,9 @@
-cliContracts: 0.1.0
+cli_contracts: 0.1.0
 info:
   title: speckeeper
   version: 1.0.0
 
-artifactSlots:
+artifact_slots:
   spec-source:
     description: "Specification files"
     direction: read
@@ -20,7 +20,7 @@ artifactSlots:
     description: "Shared workspace cache"
     direction: readwrite
 
-commandSets:
+command_sets:
   speckeeper:
     commands:
       lint:

@@ -398,7 +398,7 @@ export function buildEntityContext(
       return buildGuardrailPolicyContext(dsl, entityId);
     case "system":
       return buildSystemContext(dsl);
-    case "navigation-index":
+    case "navigation_index":
       return buildNavigationIndex(dsl) as unknown as Record<string, unknown>;
   }
 }
@@ -430,7 +430,7 @@ export async function renderFromConfig(
     const templateContent = await loadTemplate(target.template);
     const compiled = Handlebars.compile(templateContent, { noEscape: false });
 
-    if (target.context === "system" || target.context === "navigation-index") {
+    if (target.context === "system" || target.context === "navigation_index") {
       const ctx =
         target.context === "system"
           ? buildSystemContext(dsl, options)
@@ -508,7 +508,7 @@ export async function checkDriftFromConfig(
     const templateContent = await loadTemplate(target.template);
     const compiled = Handlebars.compile(templateContent, { noEscape: false });
 
-    if (target.context === "system" || target.context === "navigation-index") {
+    if (target.context === "system" || target.context === "navigation_index") {
       const ctx =
         target.context === "system"
           ? buildSystemContext(dsl, options)

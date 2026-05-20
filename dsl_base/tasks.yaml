@@ -48,6 +48,7 @@ update-dsl-binding:
   result_handoff: dsl-task-result
   validations:
     - dsl-schema-validation
+    - dsl-lint-validation
   responsibilities:
     - Add and update guardrail_impl check definitions
     - Configure outputs section templates and inline templates
@@ -82,6 +83,7 @@ render-dsl-outputs:
   result_handoff: dsl-task-result
   validations:
     - dsl-schema-validation
+    - dsl-completeness-audit
   responsibilities:
     - Generate prompts and documents via agent-contracts render
     - Detect and resolve drift using render --check

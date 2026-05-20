@@ -15,7 +15,7 @@ export const commandDefinitions = {
         "file": {
           "mode": "read",
           "exists": false,
-          "mediaType": "application/yaml",
+          "media_type": "application/yaml",
           "encoding": "utf-8"
         }
       },
@@ -55,7 +55,7 @@ export const commandDefinitions = {
         "file": {
           "mode": "read",
           "exists": false,
-          "mediaType": "application/yaml",
+          "media_type": "application/yaml",
           "encoding": "utf-8"
         }
       },
@@ -102,7 +102,7 @@ export const commandDefinitions = {
         "file": {
           "mode": "read",
           "exists": false,
-          "mediaType": "application/yaml",
+          "media_type": "application/yaml",
           "encoding": "utf-8"
         }
       },
@@ -141,14 +141,14 @@ export const commandDefinitions = {
   },
   "render": {
     "effects": {
-      "riskLevel": "medium",
+      "risk_level": "medium",
       "writes": [
         {
           "target": "configured render output paths",
           "description": "rendered template files from DSL input",
           "overwrite": true,
           "idempotent": true,
-          "idempotentNote": "Output is deterministic from DSL input and templates. Repeated runs produce identical files."
+          "idempotent_note": "Output is deterministic from DSL input and templates. Repeated runs produce identical files."
         }
       ]
     },
@@ -161,7 +161,7 @@ export const commandDefinitions = {
         "file": {
           "mode": "read",
           "exists": false,
-          "mediaType": "application/yaml",
+          "media_type": "application/yaml",
           "encoding": "utf-8"
         }
       },
@@ -197,7 +197,7 @@ export const commandDefinitions = {
         "file": {
           "mode": "read",
           "exists": false,
-          "mediaType": "application/yaml",
+          "media_type": "application/yaml",
           "encoding": "utf-8"
         }
       },
@@ -244,7 +244,7 @@ export const commandDefinitions = {
         "file": {
           "mode": "read",
           "exists": false,
-          "mediaType": "application/yaml",
+          "media_type": "application/yaml",
           "encoding": "utf-8"
         }
       },
@@ -275,11 +275,11 @@ export const commandDefinitions = {
   },
   "audit": {
     "effects": {
-      "riskLevel": "medium",
+      "risk_level": "medium",
       "network": {
         "description": "LLM API calls to configured adapter (e.g. OpenAI, Gemini, Cursor). Incurs token cost and sends DSL content to the LLM provider.",
         "idempotent": false,
-        "idempotentNote": "LLM inference is non-deterministic — identical inputs may produce different findings across runs."
+        "idempotent_note": "LLM inference is non-deterministic — identical inputs may produce different findings across runs."
       }
     },
     "options": [
@@ -291,7 +291,7 @@ export const commandDefinitions = {
         "file": {
           "mode": "read",
           "exists": false,
-          "mediaType": "application/yaml",
+          "media_type": "application/yaml",
           "encoding": "utf-8"
         }
       },
@@ -377,14 +377,14 @@ export const commandDefinitions = {
   },
   "generate": {
     "effects": {
-      "riskLevel": "low",
+      "risk_level": "low",
       "writes": [
         {
           "target": "configured render, guardrail, and interface output paths",
           "description": "template files, guardrail binding files, and/or team interface files generated from DSL input",
           "overwrite": true,
           "idempotent": true,
-          "idempotentNote": "Output is deterministic from DSL input, templates, policies, and bindings. Repeated runs produce identical files."
+          "idempotent_note": "Output is deterministic from DSL input, templates, policies, and bindings. Repeated runs produce identical files."
         }
       ]
     },
@@ -397,7 +397,7 @@ export const commandDefinitions = {
         "file": {
           "mode": "read",
           "exists": false,
-          "mediaType": "application/yaml",
+          "media_type": "application/yaml",
           "encoding": "utf-8"
         }
       },
@@ -428,7 +428,7 @@ export const commandDefinitions = {
         },
         "file": {
           "mode": "write",
-          "mediaType": "application/yaml",
+          "media_type": "application/yaml",
           "encoding": "utf-8"
         }
       },
@@ -469,7 +469,7 @@ export const commandDefinitions = {
         "file": {
           "mode": "read",
           "exists": false,
-          "mediaType": "application/yaml",
+          "media_type": "application/yaml",
           "encoding": "utf-8"
         }
       },
@@ -508,32 +508,32 @@ export const commandDefinitions = {
 } as const;
 
 export function deriveCommandPolicy(
-  commandId: string,
+  command_id: string,
   optionValues: Record<string, unknown>,
 ): IntrospectionResult {
-  const def = commandDefinitions[commandId as keyof typeof commandDefinitions];
-  if (!def) throw new Error(`Unknown command: ${commandId}`);
+  const def = commandDefinitions[command_id as keyof typeof commandDefinitions];
+  if (!def) throw new Error(`Unknown command: ${command_id}`);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cmdDef = def as any;
   const options: Record<string, { value: unknown; specified: boolean; definition: any }> = {};
-  const activeOptions: string[] = [];
+  const active_options: string[] = [];
 
   for (const optDef of cmdDef.options ?? []) {
     const value = optionValues[optDef.name];
     const specified = optDef.name in optionValues && value !== undefined;
     options[optDef.name] = { value, specified, definition: optDef };
     if (isOptionActive(optDef, value, specified)) {
-      activeOptions.push(optDef.name);
+      active_options.push(optDef.name);
     }
   }
 
   const policy = derivePolicy({
-    commandId,
-    commandEffects: cmdDef.effects,
+    command_id,
+    command_effects: cmdDef.effects,
     options,
     env: cmdDef.env,
   });
 
-  return { command: commandId, activeOptions, policy };
+  return { command: command_id, active_options, policy };
 }

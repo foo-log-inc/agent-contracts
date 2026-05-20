@@ -411,7 +411,7 @@ export async function generateGuardrails(
       const shouldSkipEmpty = renderTarget.skip_empty === true;
       const context = renderTarget.context as ContextType;
 
-      if (context === "system" || context === "navigation-index") {
+      if (context === "system" || context === "navigation_index") {
         const baseCtx =
           context === "system"
             ? buildSystemContext(dsl)
