@@ -11,7 +11,9 @@ export type Command = z.infer<typeof CommandSchema>;
 
 export const ToolSchema = z
   .object({
-    kind: z.string(),
+    kind: z.string().optional(),
+    extends: z.string().optional(),
+    command: z.string().optional(),
     description: z.string().optional(),
     input_artifacts: z.array(z.string()).default([]),
     output_artifacts: z.array(z.string()).default([]),

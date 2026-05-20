@@ -117,9 +117,9 @@ export interface AuditOptions {
 export type AuditExitCode = 0 | 1 | 10 | 11 | 12;
 
 export type AuditExitResult =
-  { exitCode: 0; stdout: { summary: string; riskLevel: "low" | "medium" | "high" | "critical"; findings: { id?: string; severity: "info" | "warning" | "error" | "critical"; category: string; target?: string; location?: string; message: string; recommendation?: string; confidence?: number; evidence?: { kind: "file" | "command" | "schema" | "diff" | "stdout" | "stderr" | "text"; target?: string; location?: string; excerpt?: string }[]; details?: Record<string, unknown> }[]; recommendedActions?: { kind: "run_command" | "edit_file" | "review" | "confirm" | "block" | "ignore"; title: string; command?: string; target?: string; rationale?: string }[]; metadata?: { tool?: string; command?: string; version?: string; generatedAt?: string; adapter?: string; model?: string } } }
+  { exitCode: 0; stdout: { summary: string; risk_level: "low" | "medium" | "high" | "critical"; findings: { id?: string; severity: "info" | "warning" | "error" | "critical"; category: string; target?: string; location?: string; message: string; recommendation?: string; confidence?: number; evidence?: { kind: "file" | "command" | "schema" | "diff" | "stdout" | "stderr" | "text"; target?: string; location?: string; excerpt?: string }[]; details?: Record<string, unknown> }[]; recommended_actions?: { kind: "run_command" | "edit_file" | "review" | "confirm" | "block" | "ignore"; title: string; command?: string; target?: string; rationale?: string }[]; metadata?: { tool?: string; command?: string; version?: string; generated_at?: string; adapter?: string; model?: string } } }
   | { exitCode: 1; stderr: unknown }
-  | { exitCode: 10; stdout: { summary: string; riskLevel: "low" | "medium" | "high" | "critical"; findings: { id?: string; severity: "info" | "warning" | "error" | "critical"; category: string; target?: string; location?: string; message: string; recommendation?: string; confidence?: number; evidence?: { kind: "file" | "command" | "schema" | "diff" | "stdout" | "stderr" | "text"; target?: string; location?: string; excerpt?: string }[]; details?: Record<string, unknown> }[]; recommendedActions?: { kind: "run_command" | "edit_file" | "review" | "confirm" | "block" | "ignore"; title: string; command?: string; target?: string; rationale?: string }[]; metadata?: { tool?: string; command?: string; version?: string; generatedAt?: string; adapter?: string; model?: string } }; stderr: unknown }
+  | { exitCode: 10; stdout: { summary: string; risk_level: "low" | "medium" | "high" | "critical"; findings: { id?: string; severity: "info" | "warning" | "error" | "critical"; category: string; target?: string; location?: string; message: string; recommendation?: string; confidence?: number; evidence?: { kind: "file" | "command" | "schema" | "diff" | "stdout" | "stderr" | "text"; target?: string; location?: string; excerpt?: string }[]; details?: Record<string, unknown> }[]; recommended_actions?: { kind: "run_command" | "edit_file" | "review" | "confirm" | "block" | "ignore"; title: string; command?: string; target?: string; rationale?: string }[]; metadata?: { tool?: string; command?: string; version?: string; generated_at?: string; adapter?: string; model?: string } }; stderr: unknown }
   | { exitCode: 11; stderr: unknown }
   | { exitCode: 12; stderr: unknown };
 
@@ -141,5 +141,23 @@ export interface GenerateOptions {
 export type GenerateExitCode = 0 | 1;
 
 export type GenerateExitResult =
+  { exitCode: 0; stdout: unknown }
+  | { exitCode: 1; stderr: unknown };
+
+export interface NavigationIndexArgs {
+  dir?: string;
+}
+
+export interface NavigationIndexOptions {
+  config?: string;
+  team?: string;
+  format?: "json" | "yaml";
+  artifact?: string;
+  quiet?: boolean;
+}
+
+export type NavigationIndexExitCode = 0 | 1;
+
+export type NavigationIndexExitResult =
   { exitCode: 0; stdout: unknown }
   | { exitCode: 1; stderr: unknown };

@@ -11,6 +11,7 @@ import { mergeIntegrityRule } from "../../src/linter/rules/merge-integrity.js";
 import { artifactRequiredValidationWiringRule } from "../../src/linter/rules/artifact-required-validation-wiring.js";
 import { taskOutputValidationCompletenessRule } from "../../src/linter/rules/task-output-validation-completeness.js";
 import { semanticValidationPhaseCoverageRule } from "../../src/linter/rules/semantic-validation-phase-coverage.js";
+import { deprecatedOwnershipFieldsRule } from "../../src/linter/rules/deprecated-ownership-fields.js";
 
 const fixturesDir = resolve(import.meta.dirname, "../fixtures");
 
@@ -245,7 +246,7 @@ describe("taskAgentBindingRule", () => {
 
   it("detects execution_steps.produces_artifact not in agent can_write_artifacts", () => {
     const dsl = makeDsl({
-      agents: { a1: { role_name: "R", purpose: "P", can_write_artifacts: [] } },
+      agents: { a1: { role_name: "R", purpose: "P", can_write_artifacts: ["other-art"] } },
       artifacts: { art1: { type: "doc", owner: "a1", producers: ["a1"], editors: ["a1"], consumers: ["a1"], states: ["draft"] } },
       tasks: {
         t1: {
@@ -262,7 +263,7 @@ describe("taskAgentBindingRule", () => {
   it("detects input_artifacts not in target agent can_read_artifacts", () => {
     const dsl = makeDsl({
       agents: {
-        a1: { role_name: "R", purpose: "P", can_read_artifacts: [] },
+        a1: { role_name: "R", purpose: "P", can_read_artifacts: ["other-art"] },
       },
       artifacts: { art1: { type: "doc", owner: "a1", producers: ["a1"], editors: ["a1"], consumers: ["a1"], states: ["draft"] } },
       tasks: {
@@ -687,6 +688,61 @@ describe("taskOutputValidationCompletenessRule", () => {
     expect(diags.length).toBe(1);
     expect(diags[0].message).toContain("v2");
     expect(diags[0].message).not.toContain("v1,");
+  });
+});
+
+describe("deprecatedOwnershipFieldsRule", () => {
+  it("warns when artifact uses deprecated ownership fields", () => {
+    const dsl = makeDsl({
+      agents: { a1: { role_name: "R", purpose: "P" } },
+      artifacts: {
+        art1: {
+          type: "code",
+          owner: "a1",
+          producers: ["a1"],
+          editors: ["a1"],
+          consumers: ["a1"],
+          states: ["draft"],
+        },
+      },
+    });
+    const diags = deprecatedOwnershipFieldsRule.run(dsl);
+    expect(diags.length).toBe(4);
+    expect(diags.every((d) => d.ruleId === "deprecated-ownership-fields")).toBe(true);
+    expect(diags.every((d) => d.severity === "warning")).toBe(true);
+    expect(diags[0].message).toContain("artifact_bindings + artifact_slots");
+  });
+
+  it("warns when agent uses deprecated permission fields", () => {
+    const dsl = makeDsl({
+      agents: {
+        a1: {
+          role_name: "R",
+          purpose: "P",
+          own_artifacts: ["art1"],
+          can_read_artifacts: ["art1"],
+          can_write_artifacts: ["art1"],
+        },
+      },
+      artifacts: {
+        art1: { type: "code", states: ["draft"] },
+      },
+    });
+    const diags = deprecatedOwnershipFieldsRule.run(dsl);
+    expect(diags.length).toBe(3);
+    expect(diags.every((d) => d.ruleId === "deprecated-ownership-fields")).toBe(true);
+    expect(diags[0].message).toContain("artifact_bindings + artifact_slots");
+  });
+
+  it("passes when deprecated fields are empty", () => {
+    const dsl = makeDsl({
+      agents: { a1: { role_name: "R", purpose: "P" } },
+      artifacts: {
+        art1: { type: "code", states: ["draft"] },
+      },
+    });
+    const diags = deprecatedOwnershipFieldsRule.run(dsl);
+    expect(diags).toHaveLength(0);
   });
 });
 

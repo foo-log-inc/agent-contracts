@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=./node_modules/cli-contracts/schemas/cli-contract.schema.json
-cliContracts: 0.1.0
+cli_contracts: 0.1.0
 
 info:
   title: agent-contracts CLI
-  version: 0.22.6
+  version: 0.30.0
   description: >-
     Declarative YAML DSL toolkit for defining, validating, and rendering
     multi-agent development workflows. Provides static validation,
@@ -15,12 +15,12 @@ info:
     name: foo-ogawa
     url: https://github.com/foo-ogawa/agent-contracts
 
-commandSets:
+command_sets:
   agent-contracts:
     summary: Agent contracts tooling — validate, lint, render DSL files.
     executable: agent-contracts
 
-    globalOptions:
+    global_options:
       - name: version
         aliases: [V]
         description: Print version and exit.
@@ -59,31 +59,31 @@ commandSets:
             file:
               mode: read
               exists: true
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
         options:
           - name: config
             aliases: [c]
             description: Path to agent-contracts.config.yaml.
-            valueName: path
+            value_name: path
             schema:
               type: string
             file:
               mode: read
               exists: false
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
           - name: team
             description: Limit to one team (multi-team config only).
-            valueName: id
+            value_name: id
             schema:
               type: string
 
           - name: format
             description: Output format.
-            valueName: format
+            value_name: format
             schema:
               type: string
               enum: [text, json]
@@ -103,7 +103,7 @@ commandSets:
             description: Resolved DSL output successfully.
             stdout:
               format: '{options.format}'
-              schemaNote: >-
+              schema_note: >-
                 Output format depends on --format option. Defaults to
                 text (YAML representation); json produces a JSON object.
 
@@ -138,31 +138,31 @@ commandSets:
             file:
               mode: read
               exists: true
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
         options:
           - name: config
             aliases: [c]
             description: Path to agent-contracts.config.yaml.
-            valueName: path
+            value_name: path
             schema:
               type: string
             file:
               mode: read
               exists: false
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
           - name: team
             description: Limit to one team (multi-team config only).
-            valueName: id
+            value_name: id
             schema:
               type: string
 
           - name: format
             description: Diagnostic output format.
-            valueName: format
+            value_name: format
             schema:
               type: string
               enum: [text, json]
@@ -185,7 +185,7 @@ commandSets:
             description: Validation passed. No errors found.
             stdout:
               format: '{options.format}'
-              schemaNote: >-
+              schema_note: >-
                 Output format depends on --format option. Text shows
                 human-readable diagnostics; json produces structured
                 validation results.
@@ -220,31 +220,31 @@ commandSets:
             file:
               mode: read
               exists: true
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
         options:
           - name: config
             aliases: [c]
             description: Path to agent-contracts.config.yaml.
-            valueName: path
+            value_name: path
             schema:
               type: string
             file:
               mode: read
               exists: false
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
           - name: team
             description: Limit to one team (multi-team config only).
-            valueName: id
+            value_name: id
             schema:
               type: string
 
           - name: format
             description: Output format.
-            valueName: format
+            value_name: format
             schema:
               type: string
               enum: [text, json]
@@ -267,7 +267,7 @@ commandSets:
             description: Lint passed. No errors or warnings.
             stdout:
               format: '{options.format}'
-              schemaNote: >-
+              schema_note: >-
                 Output format depends on --format option. Text shows
                 human-readable diagnostics; json produces structured
                 lint results.
@@ -295,13 +295,13 @@ commandSets:
           - agent-contracts render --quiet
 
         effects:
-          riskLevel: medium
+          risk_level: medium
           writes:
             - target: "configured render output paths"
               description: "rendered template files from DSL input"
               overwrite: true
               idempotent: true
-              idempotentNote: >-
+              idempotent_note: >-
                 Output is deterministic from DSL input and templates.
                 Repeated runs produce identical files.
 
@@ -309,18 +309,18 @@ commandSets:
           - name: config
             aliases: [c]
             description: Path to agent-contracts.config.yaml.
-            valueName: path
+            value_name: path
             schema:
               type: string
             file:
               mode: read
               exists: false
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
           - name: team
             description: Limit to one team (multi-team config only).
-            valueName: id
+            value_name: id
             schema:
               type: string
 
@@ -350,7 +350,7 @@ commandSets:
               format: text
 
         x-agent:
-          recommendedBeforeUse:
+          recommended_before_use:
             - Ensure agent-contracts.config.yaml exists with render targets.
             - Run validate first to confirm DSL is valid.
 
@@ -374,24 +374,24 @@ commandSets:
           - name: config
             aliases: [c]
             description: Path to agent-contracts.config.yaml.
-            valueName: path
+            value_name: path
             schema:
               type: string
             file:
               mode: read
               exists: false
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
           - name: team
             description: Limit to one team (multi-team config only).
-            valueName: id
+            value_name: id
             schema:
               type: string
 
           - name: format
             description: Diagnostic output format.
-            valueName: format
+            value_name: format
             schema:
               type: string
               enum: [text, json]
@@ -414,7 +414,7 @@ commandSets:
             description: All checks passed.
             stdout:
               format: '{options.format}'
-              schemaNote: >-
+              schema_note: >-
                 Output format depends on --format option. Text shows
                 human-readable pipeline summary; json produces structured
                 results per pipeline stage.
@@ -427,7 +427,7 @@ commandSets:
               format: text
 
         x-agent:
-          recommendedBeforeUse:
+          recommended_before_use:
             - Ensure agent-contracts.config.yaml exists.
 
       # ── score ─────────────────────────────────────────
@@ -457,31 +457,31 @@ commandSets:
             file:
               mode: read
               exists: true
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
         options:
           - name: config
             aliases: [c]
             description: Path to agent-contracts.config.yaml.
-            valueName: path
+            value_name: path
             schema:
               type: string
             file:
               mode: read
               exists: false
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
           - name: team
             description: Limit to one team (multi-team config only).
-            valueName: id
+            value_name: id
             schema:
               type: string
 
           - name: format
             description: Output format.
-            valueName: format
+            value_name: format
             schema:
               type: string
               enum: [text, json]
@@ -489,7 +489,7 @@ commandSets:
 
           - name: threshold
             description: Minimum score; exit 1 if below (for CI gates).
-            valueName: number
+            value_name: number
             schema:
               type: integer
 
@@ -498,7 +498,7 @@ commandSets:
             description: Score calculated (and above threshold if specified).
             stdout:
               format: '{options.format}'
-              schemaNote: >-
+              schema_note: >-
                 Output format depends on --format option. Text shows
                 human-readable score breakdown; json produces structured
                 score object with per-dimension details.
@@ -534,14 +534,14 @@ commandSets:
           - agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 
         effects:
-          riskLevel: medium
+          risk_level: medium
           network:
             description: >-
               LLM API calls to configured adapter (e.g. OpenAI,
               Gemini, Cursor). Incurs token cost and sends DSL
               content to the LLM provider.
             idempotent: false
-            idempotentNote: >-
+            idempotent_note: >-
               LLM inference is non-deterministic — identical inputs
               may produce different findings across runs.
 
@@ -563,24 +563,24 @@ commandSets:
           - name: config
             aliases: [c]
             description: Path to agent-contracts.config.yaml.
-            valueName: path
+            value_name: path
             schema:
               type: string
             file:
               mode: read
               exists: false
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
           - name: team
             description: Limit to one team (multi-team config only).
-            valueName: id
+            value_name: id
             schema:
               type: string
 
           - name: format
             description: Output format.
-            valueName: format
+            value_name: format
             schema:
               type: string
               enum: [text, json, markdown]
@@ -590,7 +590,7 @@ commandSets:
             description: >-
               Limit audit scope to specified entities
               (e.g. agents:architect,implementer).
-            valueName: entities
+            value_name: entities
             schema:
               type: string
 
@@ -604,13 +604,13 @@ commandSets:
             description: >-
               SDK adapter to use for LLM calls
               (overrides config audit.adapter).
-            valueName: name
+            value_name: name
             schema:
               type: string
 
           - name: model
             description: LLM model override (overrides config audit.model).
-            valueName: name
+            value_name: name
             schema:
               type: string
 
@@ -618,7 +618,7 @@ commandSets:
             description: >-
               Minimum finding severity that causes exit 10
               (info|warning|error|critical).
-            valueName: level
+            value_name: level
             schema:
               type: string
               enum: [info, warning, error, critical]
@@ -627,7 +627,7 @@ commandSets:
           - name: output
             aliases: [o]
             description: Write result to a file instead of stdout.
-            valueName: file
+            value_name: file
             schema:
               type: string
             file:
@@ -638,7 +638,7 @@ commandSets:
             description: >-
               Alias for --format. When both are specified, --report-format
               takes precedence.
-            valueName: fmt
+            value_name: fmt
             schema:
               type: string
               enum: [text, json, markdown]
@@ -665,7 +665,7 @@ commandSets:
                 $ref: './dsl_base/components.yaml#/schemas/agent-audit-result'
             stderr:
               format: text
-              schemaNote: >-
+              schema_note: >-
                 Summary diagnostic on stderr. Structured findings are
                 emitted on stdout in the requested format.
 
@@ -681,8 +681,8 @@ commandSets:
               format: text
 
         x-agent:
-          retryableExitCodes: [12]
-          recommendedBeforeUse:
+          retryable_exit_codes: [12]
+          recommended_before_use:
             - Ensure agent-contracts.config.yaml exists with render targets.
             - Run validate first to confirm DSL is valid.
             - Install agent-contracts-runtime if not using --dry-run.
@@ -711,7 +711,7 @@ commandSets:
           - agent-contracts generate interface -o team-interface.yaml --dry-run
 
         effects:
-          riskLevel: low
+          risk_level: low
           writes:
             - target: "configured render, guardrail, and interface output paths"
               description: >-
@@ -719,7 +719,7 @@ commandSets:
                 interface files generated from DSL input
               overwrite: true
               idempotent: true
-              idempotentNote: >-
+              idempotent_note: >-
                 Output is deterministic from DSL input, templates,
                 policies, and bindings. Repeated runs produce
                 identical files.
@@ -738,18 +738,18 @@ commandSets:
           - name: config
             aliases: [c]
             description: Path to agent-contracts.config.yaml.
-            valueName: path
+            value_name: path
             schema:
               type: string
             file:
               mode: read
               exists: false
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
           - name: team
             description: Limit to one team (multi-team config only).
-            valueName: id
+            value_name: id
             schema:
               type: string
 
@@ -763,7 +763,7 @@ commandSets:
 
           - name: binding
             description: Filter to specific software binding(s). Guardrails type only.
-            valueName: name
+            value_name: name
             repeatable: true
             schema:
               type: string
@@ -771,17 +771,17 @@ commandSets:
           - name: output
             aliases: [o]
             description: Output path for generated team interface. Interface type only.
-            valueName: path
+            value_name: path
             schema:
               type: string
             file:
               mode: write
-              mediaType: application/yaml
+              media_type: application/yaml
               encoding: utf-8
 
           - name: format
             description: Output format for team interface (yaml or json). Interface type only.
-            valueName: format
+            value_name: format
             schema:
               type: string
               enum: [yaml, json]
@@ -813,6 +813,89 @@ commandSets:
               format: text
 
         x-agent:
-          recommendedBeforeUse:
+          recommended_before_use:
             - Ensure agent-contracts.config.yaml exists with render targets and/or binding definitions.
             - Run validate first to confirm DSL is valid.
+
+      # ── navigation-index ──────────────────────────────
+      navigation-index:
+        summary: Build artifact-centric navigation index from resolved DSL.
+        description: >-
+          Compiles a structured navigation index that maps each artifact
+          to its operations (producer, validator, consumer tools), agent
+          permissions (owner, editor, reader), inter-artifact relations,
+          and recommended action routes. The index is a queryable model
+          for runtime planners, guardrails, and governance tools.
+        usage:
+          - agent-contracts navigation-index
+          - agent-contracts navigation-index --format json
+          - agent-contracts navigation-index --artifact api-contracts
+          - agent-contracts navigation-index -c agent-contracts.config.yaml
+
+        arguments:
+          - name: dir
+            index: 0
+            required: false
+            description: Path to agent-contracts.yaml.
+            schema:
+              type: string
+              default: agent-contracts.yaml
+            file:
+              mode: read
+              exists: true
+              media_type: application/yaml
+              encoding: utf-8
+
+        options:
+          - name: config
+            aliases: [c]
+            description: Path to agent-contracts.config.yaml.
+            value_name: path
+            schema:
+              type: string
+            file:
+              mode: read
+              exists: false
+              media_type: application/yaml
+              encoding: utf-8
+
+          - name: team
+            description: Limit to one team (multi-team config only).
+            value_name: id
+            schema:
+              type: string
+
+          - name: format
+            description: Output format.
+            value_name: format
+            schema:
+              type: string
+              enum: [json, yaml]
+              default: json
+
+          - name: artifact
+            description: Filter output to a single artifact by ID.
+            value_name: id
+            schema:
+              type: string
+
+          - name: quiet
+            description: Suppress informational output.
+            schema:
+              type: boolean
+              default: false
+
+        exits:
+          '0':
+            description: Navigation index built successfully.
+            stdout:
+              format: '{options.format}'
+              schema_note: >-
+                Output format depends on --format option. JSON produces a
+                ProjectNavigationIndex object; yaml produces its YAML
+                representation.
+
+          '1':
+            description: Build failed — schema validation error, config error, or resolution failure.
+            stderr:
+              format: text

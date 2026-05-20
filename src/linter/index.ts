@@ -7,6 +7,7 @@ export { taskAgentBindingRule } from "./rules/task-agent-binding.js";
 export { mergeIntegrityRule } from "./rules/merge-integrity.js";
 export { artifactOwnershipRule } from "./rules/artifact-ownership.js";
 export { artifactOwnershipConsistencyRule } from "./rules/artifact-ownership-consistency.js";
+export { deprecatedOwnershipFieldsRule } from "./rules/deprecated-ownership-fields.js";
 export { toolCommandsRule } from "./rules/tool-commands.js";
 export { guardrailPolicyCoverageRule } from "./rules/guardrail-policy-coverage.js";
 export { yamlReservedKeySafetyRule } from "./rules/yaml-reserved-key-safety.js";

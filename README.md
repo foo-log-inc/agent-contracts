@@ -214,6 +214,8 @@ A **Tool** defines an invokable CLI/MCP tool:
 * kind (cli, mcp, etc.)
 * input/output artifacts
 * invokable_by (which agents can use it)
+* `extends` — inherit from a base tool definition
+* `command` — single command name (alternative to `commands[]`)
 * `commands` — structured list of sub-commands with `category`, `reads`, `writes`, and `purpose`
 
 ### Workflow
@@ -337,6 +339,8 @@ Design regressions become testable.
 * **Guardrail policies** with configurable enforcement (block/warn/shadow/info)
 * **Software bindings** (DI) for tool-specific guardrail implementation (Cursor, Git, GitHub)
 * **Guardrail generation** from DSL + policy + bindings via `generate guardrails`
+* **Navigation index** — compile-time artifact-centric model mapping artifacts to operations, agent permissions, relations, and action routes
+* **Tool `extends`** — tool inheritance for sharing `cli_contract`, `artifact_bindings`, and other metadata across related tool definitions
 * **Interface generation** from DSL via `generate interface` for cross-team contracts
 * **Flexible file splitting** via `$ref` (replacement), `$refs` (import + deep-merge), and JSON Pointer `$ref` (in-document)
 * **Multi-team collaboration** via `team_interface` (public boundary), `imports` (team consumption), and `team_task` (cross-team delegation)
@@ -741,12 +745,26 @@ artifacts: { $ref: "./artifact-contracts.yaml#/artifacts" }
 **3. cli-contracts define tools with domain-agnostic slot names** (reusable across projects):
 
 ````yaml
-# cli-contract.yaml
-commands:
-  generate:
-    effects:
-      reads: [source-specs]
-      writes: [contract-output]
+# cli-contract.yaml (tool's interface)
+artifactSlots:
+  source-specs:
+    description: "Source specification files"
+    direction: read
+  contract-output:
+    description: "Generated contract output"
+    direction: write
+
+commandSets:
+  tool-name:
+    commands:
+      generate:
+        summary: Generate contracts
+        effects:
+          reads: [source-specs]
+          writes: [contract-output]
+        exits:
+          '0':
+            description: Success
 ````
 
 **4. Map abstract slots to project artifacts** using `artifact_bindings` on tools:
@@ -1111,6 +1129,7 @@ npx agent-contracts
 | `agent-contracts score [path]`    | Calculate DSL completeness score                       |
 | `agent-contracts audit <type>`    | Run LLM-based semantic audit (render/dsl/prompt/all)   |
 | `agent-contracts check`           | Run resolve → validate → lint → render --check         |
+| `agent-contracts navigation-index` | Build artifact-centric navigation index |
 | `agent-contracts render`          | _(deprecated)_ Alias for `generate templates`          |
 
 The `[path]` argument defaults to `agent-contracts.yaml` in the current directory.
@@ -1223,6 +1242,9 @@ agent-contracts audit dsl -c agent-contracts.config.yaml
 agent-contracts audit render -c agent-contracts.config.yaml --format json
 agent-contracts audit all -c agent-contracts.config.yaml --adapter claude
 agent-contracts audit dsl -c agent-contracts.config.yaml --dry-run
+agent-contracts navigation-index
+agent-contracts navigation-index --format yaml
+agent-contracts navigation-index --artifact api-contracts
 ````
 
 ---
@@ -1361,6 +1383,7 @@ Each `context` type provides a different rendering scope:
 | Context | Scope | Output | Key variables |
 |---------|-------|--------|---------------|
 | `system` | Single file | `output` as-is | `system`, `dsl`, `guardrailEnforcement`\*, `bindings`\* |
+| `navigation_index` | Single file | `output` as-is | `version`, `generated_at`, `system`, `artifacts` (full `ProjectNavigationIndex`) |
 | `agent` | Per agent | `{agent.id}` in output path | `agent`, `receivableTasks`, `delegatableTasks`, `relatedArtifacts`, `relatedTools`, `relatedHandoffTypes`, `mergedBehavior`, `relatedGuardrails`, `relatedValidations`, `dsl` |
 | `task` | Per task | `{task.id}` in output path | `task`, `targetAgent`, `relatedGuardrails`, `relatedValidations`, `dsl` |
 | `artifact` | Per artifact | `{artifact.id}` in output path | `artifact`, `relatedTools`, `relatedValidations`, `relatedGuardrails`, `producerAgents`, `consumerAgents`, `editorAgents`, `createdInWorkflows`, `dsl` |

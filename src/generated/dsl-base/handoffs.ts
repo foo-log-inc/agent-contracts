@@ -43,7 +43,7 @@ export type DslTaskResult = z.infer<typeof DslTaskResultSchema>;
 
 export const AuditResultSchema = z.object({
   summary: z.string(),
-  riskLevel: z.enum(["low", "medium", "high", "critical"]),
+  risk_level: z.enum(["low", "medium", "high", "critical"]),
   findings: z.array(z.object({
   id: z.string().optional(),
   severity: z.enum(["info", "warning", "error", "critical"]),
@@ -61,7 +61,7 @@ export const AuditResultSchema = z.object({
 })).optional(),
   details: z.record(z.string(), z.unknown()).optional(),
 })),
-  recommendedActions: z.array(z.object({
+  recommended_actions: z.array(z.object({
   kind: z.enum(["run_command", "edit_file", "review", "confirm", "block", "ignore"]),
   title: z.string(),
   command: z.string().optional(),
@@ -72,7 +72,7 @@ export const AuditResultSchema = z.object({
   tool: z.string().optional(),
   command: z.string().optional(),
   version: z.string().optional(),
-  generatedAt: z.string().optional(),
+  generated_at: z.string().optional(),
   adapter: z.string().optional(),
   model: z.string().optional(),
 }).optional(),

@@ -78,18 +78,18 @@ schemas:
     description: >-
       Top-level result from an agent audit.
       Canonical schema for agent interoperability across toolchains.
-    required: [summary, riskLevel, findings]
+    required: [summary, risk_level, findings]
     properties:
       summary:
         type: string
-      riskLevel:
+      risk_level:
         type: string
         enum: [low, medium, high, critical]
       findings:
         type: array
         items:
           $ref: "#/schemas/agent-finding"
-      recommendedActions:
+      recommended_actions:
         type: array
         items:
           $ref: "#/schemas/agent-recommended-action"
@@ -102,7 +102,7 @@ schemas:
             type: string
           version:
             type: string
-          generatedAt:
+          generated_at:
             type: string
           adapter:
             type: string

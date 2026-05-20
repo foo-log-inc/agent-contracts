@@ -18,11 +18,16 @@ import {
 } from "./rules/entity-guardrail-binding.js";
 import { validationExecutorNoContextRule } from "./rules/validation-executor-no-context.js";
 import { artifactOwnershipConsistencyRule } from "./rules/artifact-ownership-consistency.js";
+import { deprecatedOwnershipFieldsRule } from "./rules/deprecated-ownership-fields.js";
 import {
   extensionDeclaredButUnusedRule,
   extensionScopeMismatchRule,
   extensionUndeclaredUsageRule,
 } from "./rules/extension-consumption.js";
+import { bindingCompletenessRule } from "./rules/binding-completeness.js";
+import { bindingDirectionMatchRule } from "./rules/binding-direction-match.js";
+import { slotDeclarationExistsRule } from "./rules/slot-declaration-exists.js";
+import { configPathConsistencyRule } from "./rules/config-path-consistency.js";
 
 const builtinRules: LintRule[] = [
   validationCoverageRule,
@@ -41,9 +46,14 @@ const builtinRules: LintRule[] = [
   guardrailOrphanedRule,
   validationExecutorNoContextRule,
   artifactOwnershipConsistencyRule,
+  deprecatedOwnershipFieldsRule,
   extensionDeclaredButUnusedRule,
   extensionScopeMismatchRule,
   extensionUndeclaredUsageRule,
+  bindingCompletenessRule,
+  bindingDirectionMatchRule,
+  slotDeclarationExistsRule,
+  configPathConsistencyRule,
 ];
 
 export function lint(

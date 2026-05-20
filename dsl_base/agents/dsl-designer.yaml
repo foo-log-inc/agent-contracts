@@ -6,15 +6,6 @@ dsl-designer:
     Holds specification knowledge of DSL structure, schemas, merge operators,
     and variable substitution.
   mode: read-write
-  can_read_artifacts:
-    - dsl-source
-    - dsl-generated-output
-    - dsl-score-report
-    - dsl-audit-report
-  can_write_artifacts:
-    - dsl-source
-    - dsl-generated-output
-    - dsl-score-report
   can_execute_tools:
     - agent-contracts-cli
   can_perform_validations:
@@ -47,8 +38,7 @@ dsl-designer:
     - id: R-DSL-002
       description: >-
         When adding a new agent, explicitly define all permission fields:
-        can_read_artifacts, can_write_artifacts, can_invoke_agents,
-        can_execute_tools, can_perform_validations.
+        can_invoke_agents, can_execute_tools, can_perform_validations.
       severity: mandatory
     - id: R-DSL-003
       description: >-
@@ -137,8 +127,8 @@ dsl-designer:
           purpose: string              # Agent purpose (required)
           mode: read-write | read-only # Operation mode (default: read-write)
           dispatch_only: boolean       # true = dispatch only, no implementation (default: false)
-          can_read_artifacts: []       # Readable artifact ID list
-          can_write_artifacts: []      # Writable artifact ID list
+          can_read_artifacts: []       # (deprecated) Readable artifact ID list
+          can_write_artifacts: []      # (deprecated) Writable artifact ID list
           can_execute_tools: []        # Executable tool ID list
           can_perform_validations: []  # Executable validation ID list
           can_invoke_agents: []        # Invocable agent ID list
@@ -190,10 +180,10 @@ dsl-designer:
         <artifact-id>:
           type: doc | schema | code | config | html
           description: string          # Description (required)
-          owner: string                # Owner agent ID (required)
-          producers: []                # Producer agent ID list
-          editors: []                  # Editor agent ID list
-          consumers: []                # Consumer agent ID list
+          owner: string                # (deprecated) Owner agent ID
+          producers: []                # (deprecated) Producer agent ID list
+          editors: []                  # (deprecated) Editor agent ID list
+          consumers: []                # (deprecated) Consumer agent ID list
           states: []                   # Lifecycle states
           required_validations: []     # Required validation ID list
           visibility: project | team | external

@@ -12,8 +12,8 @@ interface EffectWrite {
   overwrite?: boolean;
   destructive?: boolean;
   idempotent?: boolean;
-  idempotencyKey?: string;
-  idempotentNote?: string;
+  idempotency_key?: string;
+  idempotent_note?: string;
 }
 
 interface EffectRead {
@@ -25,17 +25,17 @@ interface NetworkEffect {
   description?: string;
   domains?: string[];
   idempotent?: boolean;
-  idempotencyKey?: string;
-  idempotentNote?: string;
+  idempotency_key?: string;
+  idempotent_note?: string;
 }
 
 interface Effects {
-  riskLevel?: RiskLevel;
+  risk_level?: RiskLevel;
   reads?: EffectRead[];
   writes?: EffectWrite[];
   network?: NetworkEffect | boolean;
-  executionMode?: ExecutionMode;
-  requiresConfirmation?: boolean;
+  execution_mode?: ExecutionMode;
+  requires_confirmation?: boolean;
 }
 
 interface FileContract {
@@ -75,8 +75,8 @@ export type DerivedWriteEffect =
       overwrite?: boolean;
       destructive?: boolean;
       idempotent?: boolean;
-      idempotencyKey?: string;
-      idempotentNote?: string;
+      idempotency_key?: string;
+      idempotent_note?: string;
       source: string;
     };
 
@@ -84,26 +84,26 @@ export interface DerivedNetworkEffect {
   description?: string;
   domains?: string[];
   idempotent?: boolean;
-  idempotencyKey?: string;
-  idempotentNote?: string;
+  idempotency_key?: string;
+  idempotent_note?: string;
   source: string;
 }
 
 export interface DerivedPolicy {
-  riskLevel: RiskLevel;
-  requiresConfirmation: boolean;
+  risk_level: RiskLevel;
+  requires_confirmation: boolean;
   idempotent: boolean;
-  sideEffects: string[];
+  side_effects: string[];
   reads: DerivedReadEffect[];
   writes: DerivedWriteEffect[];
   network?: DerivedNetworkEffect[];
-  executionMode?: ExecutionMode;
-  requiresSecrets?: string[];
+  execution_mode?: ExecutionMode;
+  requires_secrets?: string[];
 }
 
 export interface IntrospectionResult {
   command: string;
-  activeOptions: string[];
+  active_options: string[];
   policy: DerivedPolicy;
 }
 
@@ -113,8 +113,8 @@ export interface OptionInput {
 }
 
 export interface PolicyDerivationInput {
-  commandId: string;
-  commandEffects?: Effects;
+  command_id: string;
+  command_effects?: Effects;
   options: Record<
     string,
     OptionInput & { definition: Option }
@@ -172,9 +172,9 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
   let executionMode: ExecutionMode | undefined;
   let explicitConfirmation: boolean | undefined;
 
-  if (input.commandEffects) {
-    const ce = input.commandEffects;
-    riskLevels.push(ce.riskLevel ?? "low");
+  if (input.command_effects) {
+    const ce = input.command_effects;
+    riskLevels.push(ce.risk_level ?? "low");
 
     if (ce.writes) {
       sideEffects.add("file_write");
@@ -186,9 +186,9 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
           overwrite: w.overwrite,
           destructive: w.destructive,
           ...(w.idempotent !== undefined ? { idempotent: w.idempotent } : {}),
-          ...(w.idempotencyKey ? { idempotencyKey: w.idempotencyKey } : {}),
-          ...(w.idempotentNote ? { idempotentNote: w.idempotentNote } : {}),
-          source: `command:${input.commandId}`,
+          ...(w.idempotency_key ? { idempotency_key: w.idempotency_key } : {}),
+          ...(w.idempotent_note ? { idempotent_note: w.idempotent_note } : {}),
+          source: `command:${input.command_id}`,
         });
       }
     }
@@ -199,7 +199,7 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
           kind: "semantic",
           target: r.target,
           description: r.description,
-          source: `command:${input.commandId}`,
+          source: `command:${input.command_id}`,
         });
       }
     }
@@ -211,19 +211,19 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
           ...(ce.network.description ? { description: ce.network.description } : {}),
           ...(ce.network.domains ? { domains: ce.network.domains } : {}),
           ...(ce.network.idempotent !== undefined ? { idempotent: ce.network.idempotent } : {}),
-          ...(ce.network.idempotencyKey ? { idempotencyKey: ce.network.idempotencyKey } : {}),
-          ...(ce.network.idempotentNote ? { idempotentNote: ce.network.idempotentNote } : {}),
-          source: `command:${input.commandId}`,
+          ...(ce.network.idempotency_key ? { idempotency_key: ce.network.idempotency_key } : {}),
+          ...(ce.network.idempotent_note ? { idempotent_note: ce.network.idempotent_note } : {}),
+          source: `command:${input.command_id}`,
         });
       }
     }
 
-    if (ce.executionMode) {
-      executionMode = ce.executionMode;
+    if (ce.execution_mode) {
+      executionMode = ce.execution_mode;
     }
 
-    if (ce.requiresConfirmation !== undefined) {
-      explicitConfirmation = ce.requiresConfirmation;
+    if (ce.requires_confirmation !== undefined) {
+      explicitConfirmation = ce.requires_confirmation;
     }
   }
 
@@ -259,7 +259,7 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
 
     if (definition.effects) {
       const eff = definition.effects;
-      riskLevels.push(eff.riskLevel ?? "low");
+      riskLevels.push(eff.risk_level ?? "low");
 
       if (eff.writes) {
         sideEffects.add("file_write");
@@ -271,8 +271,8 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
             overwrite: w.overwrite,
             destructive: w.destructive,
             ...(w.idempotent !== undefined ? { idempotent: w.idempotent } : {}),
-            ...(w.idempotencyKey ? { idempotencyKey: w.idempotencyKey } : {}),
-            ...(w.idempotentNote ? { idempotentNote: w.idempotentNote } : {}),
+            ...(w.idempotency_key ? { idempotency_key: w.idempotency_key } : {}),
+            ...(w.idempotent_note ? { idempotent_note: w.idempotent_note } : {}),
             source: `option:${optName}`,
           });
         }
@@ -296,19 +296,19 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
             ...(eff.network.description ? { description: eff.network.description } : {}),
             ...(eff.network.domains ? { domains: eff.network.domains } : {}),
             ...(eff.network.idempotent !== undefined ? { idempotent: eff.network.idempotent } : {}),
-            ...(eff.network.idempotencyKey ? { idempotencyKey: eff.network.idempotencyKey } : {}),
-            ...(eff.network.idempotentNote ? { idempotentNote: eff.network.idempotentNote } : {}),
+            ...(eff.network.idempotency_key ? { idempotency_key: eff.network.idempotency_key } : {}),
+            ...(eff.network.idempotent_note ? { idempotent_note: eff.network.idempotent_note } : {}),
             source: `option:${optName}`,
           });
         }
       }
 
-      if (eff.executionMode && !executionMode) {
-        executionMode = eff.executionMode;
+      if (eff.execution_mode && !executionMode) {
+        executionMode = eff.execution_mode;
       }
 
-      if (eff.requiresConfirmation !== undefined && explicitConfirmation === undefined) {
-        explicitConfirmation = eff.requiresConfirmation;
+      if (eff.requires_confirmation !== undefined && explicitConfirmation === undefined) {
+        explicitConfirmation = eff.requires_confirmation;
       }
     }
   }
@@ -339,14 +339,14 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
     networkEffects.every((n) => n.idempotent === true);
 
   return {
-    riskLevel: finalRiskLevel,
-    requiresConfirmation,
+    risk_level: finalRiskLevel,
+    requires_confirmation: requiresConfirmation,
     idempotent,
-    sideEffects: [...sideEffects],
+    side_effects: [...sideEffects],
     reads,
     writes,
     ...(networkEffects.length > 0 ? { network: networkEffects } : {}),
-    ...(executionMode ? { executionMode } : {}),
-    ...(requiresSecrets ? { requiresSecrets } : {}),
+    ...(executionMode ? { execution_mode: executionMode } : {}),
+    ...(requiresSecrets ? { requires_secrets: requiresSecrets } : {}),
   };
 }

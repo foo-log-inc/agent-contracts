@@ -1,0 +1,49 @@
+cli_contracts: 0.1.0
+info:
+  title: speckeeper
+  version: 1.0.0
+
+artifact_slots:
+  spec-source:
+    description: "Specification files"
+    direction: read
+  design-models:
+    description: "Design models"
+    direction: read
+  implementation-source:
+    description: "Source code"
+    direction: read
+  output-docs:
+    description: "Generated documentation"
+    direction: write
+  workspace-cache:
+    description: "Shared workspace cache"
+    direction: readwrite
+
+command_sets:
+  speckeeper:
+    commands:
+      lint:
+        summary: Lint specs
+        effects:
+          reads: [spec-source, design-models]
+          writes: []
+        exits:
+          '0':
+            description: OK
+      build:
+        summary: Build docs
+        effects:
+          reads: [spec-source]
+          writes: [output-docs]
+        exits:
+          '0':
+            description: OK
+      check:
+        summary: Check implementation
+        effects:
+          reads: [spec-source, design-models, implementation-source]
+          writes: []
+        exits:
+          '0':
+            description: OK

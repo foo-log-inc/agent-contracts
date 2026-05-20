@@ -49,14 +49,16 @@ export const taskAgentBindingRule: LintRule = {
       const targetAgent = dsl.agents[task.target_agent];
       if (!targetAgent) continue;
 
-      for (const ref of task.input_artifacts) {
-        if (!targetAgent.can_read_artifacts.includes(ref)) {
-          diagnostics.push({
-            ruleId: "task-agent-binding",
-            severity: "error",
-            path: `tasks.${taskId}.input_artifacts`,
-            message: `Task "${taskId}" input_artifact "${ref}" not in target agent "${task.target_agent}" can_read_artifacts`,
-          });
+      if (targetAgent.can_read_artifacts.length > 0) {
+        for (const ref of task.input_artifacts) {
+          if (!targetAgent.can_read_artifacts.includes(ref)) {
+            diagnostics.push({
+              ruleId: "task-agent-binding",
+              severity: "error",
+              path: `tasks.${taskId}.input_artifacts`,
+              message: `Task "${taskId}" input_artifact "${ref}" not in target agent "${task.target_agent}" can_read_artifacts`,
+            });
+          }
         }
       }
 
@@ -95,7 +97,7 @@ export const taskAgentBindingRule: LintRule = {
             });
           }
         }
-        if (step.produces_artifact) {
+        if (step.produces_artifact && targetAgent.can_write_artifacts.length > 0) {
           if (!targetAgent.can_write_artifacts.includes(step.produces_artifact)) {
             diagnostics.push({
               ruleId: "task-agent-binding",
@@ -105,7 +107,7 @@ export const taskAgentBindingRule: LintRule = {
             });
           }
         }
-        if (step.reads_artifact) {
+        if (step.reads_artifact && targetAgent.can_read_artifacts.length > 0) {
           if (!targetAgent.can_read_artifacts.includes(step.reads_artifact)) {
             diagnostics.push({
               ruleId: "task-agent-binding",

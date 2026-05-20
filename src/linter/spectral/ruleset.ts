@@ -257,7 +257,7 @@ const ruleset: RulesetDefinition = {
 
     "artifact-owner-exists": {
       description: "(deprecated) Every artifact must have an owner",
-      severity: "warn",
+      severity: "off",
       given: "$.artifacts.*",
       then: {
         field: "owner",

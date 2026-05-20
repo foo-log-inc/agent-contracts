@@ -33,7 +33,12 @@ export const artifactOwnershipRule: LintRule = {
 
         if (step.reads_artifact) {
           const artifact = dsl.artifacts[step.reads_artifact];
-          if (artifact && (artifact.consumers.length > 0 || artifact.producers.length > 0 || artifact.editors.length > 0)) {
+          const hasDeprecatedOwnership =
+            !!artifact?.owner ||
+            (artifact?.producers.length ?? 0) > 0 ||
+            (artifact?.editors.length ?? 0) > 0 ||
+            (artifact?.consumers.length ?? 0) > 0;
+          if (artifact && hasDeprecatedOwnership) {
             const canRead =
               artifact.consumers.includes(agentId) ||
               artifact.producers.includes(agentId) ||

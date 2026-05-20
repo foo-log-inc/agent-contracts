@@ -11,26 +11,18 @@ agents:
     role_name: Architect
     purpose: Design system architecture and delegate tasks to implementer and tester
     dispatch_only: true
-    can_read_artifacts:
-      - spec-doc
-      - codebase
-      - test-suite
-    can_write_artifacts:
-      - spec-doc
     can_invoke_agents:
       - implementer
       - tester
+    can_perform_validations:
+      - spec-review
+      - spec-semantic-review
     can_return_handoffs:
       - task-delegation
 
   implementer:
     role_name: Implementer
     purpose: Implement features based on specifications
-    can_read_artifacts:
-      - spec-doc
-      - codebase
-    can_write_artifacts:
-      - codebase
     can_execute_tools:
       - code-editor
     can_return_handoffs:
@@ -44,14 +36,10 @@ agents:
   tester:
     role_name: Tester
     purpose: Write and run tests to verify implementation correctness
-    can_read_artifacts:
-      - spec-doc
-      - codebase
-      - test-suite
-    can_write_artifacts:
-      - test-suite
     can_execute_tools:
       - test-runner
+    can_perform_validations:
+      - test-fidelity-check
     can_return_handoffs:
       - test-result
     responsibilities:
@@ -68,6 +56,10 @@ tasks:
       - spec-doc
     invocation_handoff: task-delegation
     result_handoff: task-delegation
+    validations:
+      - spec-review
+      - spec-semantic-review
+      - spec-traceability-check
 
   implement-feature:
     description: Implement a feature based on the specification
@@ -80,6 +72,9 @@ tasks:
       - codebase
     invocation_handoff: task-delegation
     result_handoff: implementation-result
+    validations:
+      - lint-check
+      - codebase-provenance-check
     execution_steps:
       - id: read-spec
         action: Read the specification document
@@ -105,6 +100,9 @@ tasks:
       - test-suite
     invocation_handoff: task-delegation
     result_handoff: test-result
+    validations:
+      - test-run
+      - test-fidelity-check
     execution_steps:
       - id: review-code
         action: Review the implementation code
@@ -122,14 +120,6 @@ artifacts:
   spec-doc:
     type: document
     description: Feature specification document
-    owner: architect
-    producers:
-      - architect
-    editors:
-      - architect
-    consumers:
-      - implementer
-      - tester
     states:
       - draft
       - approved
@@ -139,14 +129,6 @@ artifacts:
   codebase:
     type: code
     description: Application source code
-    owner: implementer
-    producers:
-      - implementer
-    editors:
-      - implementer
-    consumers:
-      - architect
-      - tester
     states:
       - in-progress
       - complete
@@ -156,14 +138,6 @@ artifacts:
   test-suite:
     type: code
     description: Test code and test results
-    owner: tester
-    producers:
-      - tester
-    editors:
-      - tester
-    consumers:
-      - architect
-      - implementer
     states:
       - draft
       - passing

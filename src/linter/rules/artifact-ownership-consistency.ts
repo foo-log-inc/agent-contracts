@@ -10,6 +10,8 @@ export const artifactOwnershipConsistencyRule: LintRule = {
     const diagnostics: LintDiagnostic[] = [];
 
     for (const [agentId, agent] of Object.entries(dsl.agents)) {
+      if (agent.own_artifacts.length === 0) continue;
+
       for (const artId of agent.own_artifacts) {
         if (!agent.can_read_artifacts.includes(artId)) {
           diagnostics.push({

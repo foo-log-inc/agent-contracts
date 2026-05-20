@@ -27,6 +27,8 @@ import {
   WorkflowSchema,
   WorkflowStepSchema,
   resolveAllOf,
+  ContextTypeSchema,
+  ITERABLE_CONTEXT_TYPES,
 } from "../../src/schema/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -259,6 +261,23 @@ describe("schema default values", () => {
     expect(t.input_artifacts).toEqual([]);
     expect(t.output_artifacts).toEqual([]);
     expect(t.side_effects).toEqual([]);
+  });
+
+  it("accepts extends and command fields on ToolSchema", () => {
+    const t = ToolSchema.parse({
+      extends: "speckeeper-base",
+      command: "lint",
+    });
+    expect(t.extends).toBe("speckeeper-base");
+    expect(t.command).toBe("lint");
+  });
+
+  it("accepts ToolSchema without kind", () => {
+    const t = ToolSchema.parse({
+      extends: "speckeeper-base",
+      command: "lint",
+    });
+    expect(t.kind).toBeUndefined();
   });
 
   it("defaults WorkflowSchema entry_conditions to [] when omitted", () => {
@@ -1187,5 +1206,16 @@ describe("resolveAllOf", () => {
     const props = result["properties"] as Record<string, unknown>;
     expect(props["a"]).toEqual({ type: "string" });
     expect(props["b"]).toEqual({ type: "number" });
+  });
+});
+
+describe("ContextTypeSchema", () => {
+  it("accepts navigation_index as a valid context type", () => {
+    expect(ContextTypeSchema.parse("navigation_index")).toBe("navigation_index");
+  });
+
+  it("excludes navigation_index from iterable context types", () => {
+    expect(ITERABLE_CONTEXT_TYPES).not.toContain("navigation_index");
+    expect(ITERABLE_CONTEXT_TYPES).not.toContain("system");
   });
 });
