@@ -23,6 +23,10 @@ import {
   extensionScopeMismatchRule,
   extensionUndeclaredUsageRule,
 } from "./rules/extension-consumption.js";
+import { bindingCompletenessRule } from "./rules/binding-completeness.js";
+import { bindingDirectionMatchRule } from "./rules/binding-direction-match.js";
+import { slotDeclarationExistsRule } from "./rules/slot-declaration-exists.js";
+import { configPathConsistencyRule } from "./rules/config-path-consistency.js";
 
 const builtinRules: LintRule[] = [
   validationCoverageRule,
@@ -44,6 +48,10 @@ const builtinRules: LintRule[] = [
   extensionDeclaredButUnusedRule,
   extensionScopeMismatchRule,
   extensionUndeclaredUsageRule,
+  bindingCompletenessRule,
+  bindingDirectionMatchRule,
+  slotDeclarationExistsRule,
+  configPathConsistencyRule,
 ];
 
 export function lint(
