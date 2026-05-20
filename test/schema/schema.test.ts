@@ -261,6 +261,23 @@ describe("schema default values", () => {
     expect(t.side_effects).toEqual([]);
   });
 
+  it("accepts extends and command fields on ToolSchema", () => {
+    const t = ToolSchema.parse({
+      extends: "speckeeper-base",
+      command: "lint",
+    });
+    expect(t.extends).toBe("speckeeper-base");
+    expect(t.command).toBe("lint");
+  });
+
+  it("accepts ToolSchema without kind", () => {
+    const t = ToolSchema.parse({
+      extends: "speckeeper-base",
+      command: "lint",
+    });
+    expect(t.kind).toBeUndefined();
+  });
+
   it("defaults WorkflowSchema entry_conditions to [] when omitted", () => {
     const w = WorkflowSchema.parse({
       steps: [

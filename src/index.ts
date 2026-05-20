@@ -55,6 +55,14 @@ export {
 } from "./config/index.js";
 export { score, type ScoreResult, type DimensionResult } from "./scorer/index.js";
 export {
+  buildNavigationIndex,
+  type ProjectNavigationIndex,
+  type CompiledArtifactNode,
+  type ArtifactOperation,
+  type ArtifactRoute,
+  type ArtifactRouteStep,
+} from "./navigation-index/index.js";
+export {
   runAudit,
   runAllAudits,
   buildAuditContext,

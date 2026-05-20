@@ -143,3 +143,21 @@ export type GenerateExitCode = 0 | 1;
 export type GenerateExitResult =
   { exitCode: 0; stdout: unknown }
   | { exitCode: 1; stderr: unknown };
+
+export interface NavigationIndexArgs {
+  dir?: string;
+}
+
+export interface NavigationIndexOptions {
+  config?: string;
+  team?: string;
+  format?: "json" | "yaml";
+  artifact?: string;
+  quiet?: boolean;
+}
+
+export type NavigationIndexExitCode = 0 | 1;
+
+export type NavigationIndexExitResult =
+  { exitCode: 0; stdout: unknown }
+  | { exitCode: 1; stderr: unknown };

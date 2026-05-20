@@ -31,6 +31,8 @@ import { formatDiagnostics, type OutputFormat } from "./format.js";
 import { getTeamEntries, isMultiTeamConfig } from "./multi-team.js";
 import type { ResolvedConfig, ResolvedTeamConfig } from "../config/types.js";
 import { runGenerateInterfaceCli } from "./commands/generate-interface.js";
+import { buildNavigationIndex } from "../navigation-index/index.js";
+import type { ProjectNavigationIndex } from "../navigation-index/index.js";
 
 const DIR_DEFAULT = "agent-contracts.yaml";
 
@@ -896,6 +898,116 @@ const handleGenerate: CommandHandlers["generate"] = async (type, opts) => {
   }
 };
 
+// ─── navigation-index ───────────────────────────────────────────
+
+function filterIndexByArtifact(
+  index: ProjectNavigationIndex,
+  artifactId: string,
+): ProjectNavigationIndex {
+  const node = index.artifacts[artifactId];
+  if (!node) {
+    throw new Error(`Artifact not found: ${artifactId}`);
+  }
+  return {
+    ...index,
+    artifacts: { [artifactId]: node },
+  };
+}
+
+function writeNavigationIndex(index: ProjectNavigationIndex, format: string): void {
+  if (format === "json") {
+    process.stdout.write(JSON.stringify(index, null, 2) + "\n");
+  } else {
+    process.stdout.write(stringify(index));
+  }
+}
+
+async function buildNavigationIndexForDsl(
+  dslPath: string,
+  vars: Record<string, string> | undefined,
+  artifactFilter: string | undefined,
+): Promise<ProjectNavigationIndex> {
+  const resolved = await resolve(dslPath);
+  const data = vars ? substituteVars(resolved.data, vars) : resolved.data;
+  const schemaResult = validateSchema(data);
+  if (!schemaResult.success) {
+    const issues = schemaResult.diagnostics.map((d) => `  ${d.path}: ${d.message}`).join("\n");
+    process.stderr.write(`Schema validation failed:\n${issues}\n`);
+    throw new Error("schema validation failed");
+  }
+  let index = buildNavigationIndex(schemaResult.data!);
+  if (artifactFilter) {
+    index = filterIndexByArtifact(index, artifactFilter);
+  }
+  return index;
+}
+
+const handleNavigationIndex: CommandHandlers["navigationIndex"] = async (dir, opts) => {
+  const fmt = opts.format ?? "json";
+  if (fmt !== "json" && fmt !== "yaml") {
+    process.stderr.write(`Invalid --format: expected json or yaml, got ${fmt}\n`);
+    process.exit(1);
+  }
+
+  try {
+    const config = await loadConfig(opts.config);
+
+    if (config !== null && isMultiTeamConfig(config)) {
+      const teamEntries = getTeamEntries(config, opts.team);
+      let hasErrors = false;
+
+      if (fmt === "json") {
+        const out: Record<string, ProjectNavigationIndex> = {};
+        for (const [teamId, teamConfig] of teamEntries) {
+          try {
+            out[teamId] = await buildNavigationIndexForDsl(
+              teamConfig.dsl,
+              teamConfig.vars,
+              opts.artifact,
+            );
+          } catch (err) {
+            if (err instanceof Error && err.message === "schema validation failed") {
+              hasErrors = true;
+              continue;
+            }
+            throw err;
+          }
+        }
+        if (hasErrors) process.exit(1);
+        process.stdout.write(JSON.stringify(out, null, 2) + "\n");
+      } else {
+        for (const [teamId, teamConfig] of teamEntries) {
+          if (!opts.quiet) process.stdout.write(`\n--- Team: ${teamId} ---\n`);
+          try {
+            const index = await buildNavigationIndexForDsl(
+              teamConfig.dsl,
+              teamConfig.vars,
+              opts.artifact,
+            );
+            process.stdout.write(stringify(index));
+          } catch (err) {
+            if (err instanceof Error && err.message === "schema validation failed") {
+              hasErrors = true;
+              continue;
+            }
+            throw err;
+          }
+        }
+        if (hasErrors) process.exit(1);
+      }
+      return;
+    }
+
+    const dslPath = resolveDslPath(dir ?? DIR_DEFAULT, DIR_DEFAULT, config);
+    const index = await buildNavigationIndexForDsl(dslPath, config?.vars, opts.artifact);
+    writeNavigationIndex(index, fmt);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`Error: ${msg}\n`);
+    process.exit(1);
+  }
+};
+
 // ─── Export ─────────────────────────────────────────────────────
 
 export const handlers: CommandHandlers = {
@@ -907,4 +1019,5 @@ export const handlers: CommandHandlers = {
   score: handleScore,
   audit: handleAudit,
   generate: handleGenerate,
+  navigationIndex: handleNavigationIndex,
 };

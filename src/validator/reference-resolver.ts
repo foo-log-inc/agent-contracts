@@ -110,6 +110,15 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
   }
 
   for (const [id, tool] of Object.entries(dsl.tools)) {
+    if (tool.extends) {
+      checkExists(
+        tool.extends,
+        toolIds,
+        "tools",
+        `tools.${id}.extends`,
+        "tool-extends-not-found",
+      );
+    }
     if (tool.invokable_by.length > 0) {
       for (const ref of tool.invokable_by) {
         checkExists(ref, agentIds, "agents", `tools.${id}.invokable_by`);

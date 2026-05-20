@@ -181,6 +181,29 @@ describe("agent-contracts check", () => {
   });
 });
 
+describe("agent-contracts navigation-index", () => {
+  it("outputs JSON navigation index", async () => {
+    const { stdout, exitCode } = await run([
+      "navigation-index", minimalYaml, "--format", "json",
+    ]);
+    expect(exitCode).toBe(0);
+    const data = JSON.parse(stdout);
+    expect(data.version).toBe("1.0.0");
+    expect(data.system.id).toBe("minimal-system");
+    expect(data.artifacts.codebase).toBeDefined();
+    expect(data.artifacts.codebase.id).toBe("codebase");
+  });
+
+  it("filters by --artifact", async () => {
+    const { stdout, exitCode } = await run([
+      "navigation-index", minimalYaml, "--format", "json", "--artifact", "codebase",
+    ]);
+    expect(exitCode).toBe(0);
+    const data = JSON.parse(stdout);
+    expect(Object.keys(data.artifacts)).toEqual(["codebase"]);
+  });
+});
+
 describe("error handling", () => {
   it("shows help on unknown command", async () => {
     const { stdout } = await run(["help"]);

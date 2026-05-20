@@ -1,7 +1,9 @@
 import { dirname, resolve as resolvePath } from "node:path";
 import { loadDsl } from "../loader/index.js";
+import type { Tool } from "../schema/tool.js";
 import { resolveBase, BaseResolveError } from "./base-resolver.js";
 import { mergeDsl } from "./merger.js";
+import { resolveToolExtends } from "./tool-extends.js";
 
 export interface ResolveResult {
   data: Record<string, unknown>;
@@ -56,6 +58,11 @@ export async function resolve(
     projectResult.filePath,
     new Set(),
   );
+
+  const tools = data["tools"];
+  if (tools !== undefined && tools !== null && typeof tools === "object" && !Array.isArray(tools)) {
+    data["tools"] = resolveToolExtends(tools as Record<string, Tool>);
+  }
 
   return {
     data,

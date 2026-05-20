@@ -816,3 +816,86 @@ commandSets:
           recommendedBeforeUse:
             - Ensure agent-contracts.config.yaml exists with render targets and/or binding definitions.
             - Run validate first to confirm DSL is valid.
+
+      # ── navigation-index ──────────────────────────────
+      navigation-index:
+        summary: Build artifact-centric navigation index from resolved DSL.
+        description: >-
+          Compiles a structured navigation index that maps each artifact
+          to its operations (producer, validator, consumer tools), agent
+          permissions (owner, editor, reader), inter-artifact relations,
+          and recommended action routes. The index is a queryable model
+          for runtime planners, guardrails, and governance tools.
+        usage:
+          - agent-contracts navigation-index
+          - agent-contracts navigation-index --format json
+          - agent-contracts navigation-index --artifact api-contracts
+          - agent-contracts navigation-index -c agent-contracts.config.yaml
+
+        arguments:
+          - name: dir
+            index: 0
+            required: false
+            description: Path to agent-contracts.yaml.
+            schema:
+              type: string
+              default: agent-contracts.yaml
+            file:
+              mode: read
+              exists: true
+              mediaType: application/yaml
+              encoding: utf-8
+
+        options:
+          - name: config
+            aliases: [c]
+            description: Path to agent-contracts.config.yaml.
+            valueName: path
+            schema:
+              type: string
+            file:
+              mode: read
+              exists: false
+              mediaType: application/yaml
+              encoding: utf-8
+
+          - name: team
+            description: Limit to one team (multi-team config only).
+            valueName: id
+            schema:
+              type: string
+
+          - name: format
+            description: Output format.
+            valueName: format
+            schema:
+              type: string
+              enum: [json, yaml]
+              default: json
+
+          - name: artifact
+            description: Filter output to a single artifact by ID.
+            valueName: id
+            schema:
+              type: string
+
+          - name: quiet
+            description: Suppress informational output.
+            schema:
+              type: boolean
+              default: false
+
+        exits:
+          '0':
+            description: Navigation index built successfully.
+            stdout:
+              format: '{options.format}'
+              schemaNote: >-
+                Output format depends on --format option. JSON produces a
+                ProjectNavigationIndex object; yaml produces its YAML
+                representation.
+
+          '1':
+            description: Build failed — schema validation error, config error, or resolution failure.
+            stderr:
+              format: text

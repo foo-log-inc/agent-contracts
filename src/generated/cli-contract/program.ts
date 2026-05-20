@@ -11,6 +11,7 @@ export interface CommandHandlers {
   score: (dir: string | undefined, options: { config?: string; team?: string; format?: string; threshold?: string }, parentOpts: Record<string, unknown>) => Promise<void>;
   audit: (type: string | undefined, options: { config?: string; team?: string; format?: string; scope?: string; dryRun?: boolean; adapter?: string; model?: string; failOn?: string; output?: string; reportFormat?: string }, parentOpts: Record<string, unknown>) => Promise<void>;
   generate: (type: string | undefined, options: { config?: string; team?: string; check?: boolean; binding?: string; output?: string; format?: string; dryRun?: boolean; quiet?: boolean }, parentOpts: Record<string, unknown>) => Promise<void>;
+  navigationIndex: (dir: string | undefined, options: { config?: string; team?: string; format?: string; artifact?: string; quiet?: boolean }, parentOpts: Record<string, unknown>) => Promise<void>;
 }
 
 export function createProgram(
@@ -178,6 +179,25 @@ export function createProgram(
         return;
       }
       await handlers.generate(type, opts, globalOpts);
+    });
+
+  program
+    .command("navigation-index")
+    .description("Build artifact-centric navigation index from resolved DSL.")
+    .argument("[dir]", "Path to agent-contracts.yaml.")
+    .option("-c, --config <path>", "Path to agent-contracts.config.yaml.")
+    .option("--team <id>", "Limit to one team (multi-team config only).")
+    .option("--format <format>", "Output format.", "json")
+    .option("--artifact <id>", "Filter output to a single artifact by ID.")
+    .option("--quiet", "Suppress informational output.", false)
+    .action(async (dir, opts, cmd) => {
+      const globalOpts = cmd.optsWithGlobals();
+      if (globalOpts.introspect) {
+        const policy = deriveCommandPolicy("navigation-index", opts);
+        console.log(JSON.stringify(policy, null, 2));
+        return;
+      }
+      await handlers.navigationIndex(dir, opts, globalOpts);
     });
 
   return program;

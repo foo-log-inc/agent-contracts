@@ -459,6 +459,52 @@ export const commandDefinitions = {
       }
     ]
   },
+  "navigation-index": {
+    "options": [
+      {
+        "name": "config",
+        "schema": {
+          "type": "string"
+        },
+        "file": {
+          "mode": "read",
+          "exists": false,
+          "mediaType": "application/yaml",
+          "encoding": "utf-8"
+        }
+      },
+      {
+        "name": "team",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "format",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "json",
+            "yaml"
+          ],
+          "default": "json"
+        }
+      },
+      {
+        "name": "artifact",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "quiet",
+        "schema": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    ]
+  },
 } as const;
 
 export function deriveCommandPolicy(

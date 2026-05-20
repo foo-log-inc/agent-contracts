@@ -312,7 +312,7 @@ function emitValidationStep(
   indent: string,
 ): void {
   const val = dsl.validations[step.validation];
-  if (!val) return;
+  if (!val || !val.executor) return;
 
   const executorAlias = participantAlias(participants, val.executor);
   const artifactAlias = participantAlias(participants, val.target_artifact);
