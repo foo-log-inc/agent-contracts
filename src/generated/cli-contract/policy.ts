@@ -143,13 +143,7 @@ export const commandDefinitions = {
     "effects": {
       "risk_level": "medium",
       "writes": [
-        {
-          "target": "configured render output paths",
-          "description": "rendered template files from DSL input",
-          "overwrite": true,
-          "idempotent": true,
-          "idempotent_note": "Output is deterministic from DSL input and templates. Repeated runs produce identical files."
-        }
+        "generated-templates"
       ]
     },
     "options": [
@@ -276,6 +270,13 @@ export const commandDefinitions = {
   "audit": {
     "effects": {
       "risk_level": "medium",
+      "reads": [
+        "dsl-definitions",
+        "config"
+      ],
+      "writes": [
+        "audit-report"
+      ],
       "network": {
         "description": "LLM API calls to configured adapter (e.g. OpenAI, Gemini, Cursor). Incurs token cost and sends DSL content to the LLM provider.",
         "idempotent": false,
@@ -379,13 +380,9 @@ export const commandDefinitions = {
     "effects": {
       "risk_level": "low",
       "writes": [
-        {
-          "target": "configured render, guardrail, and interface output paths",
-          "description": "template files, guardrail binding files, and/or team interface files generated from DSL input",
-          "overwrite": true,
-          "idempotent": true,
-          "idempotent_note": "Output is deterministic from DSL input, templates, policies, and bindings. Repeated runs produce identical files."
-        }
+        "generated-templates",
+        "generated-guardrails",
+        "generated-interface"
       ]
     },
     "options": [

@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.30.0",
+  "version": "0.30.1",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -78,7 +78,7 @@
     "@google/genai": "^2.0.1",
     "@openai/agents": "^0.11.1",
     "@types/node": "^25.6.0",
-    "agent-contracts-runtime": "^0.13.0",
+    "agent-contracts-runtime": "^0.30.0",
     "eslint": "^10.2.0",
     "globals": "^17.5.0",
     "prettier": "^3.8.2",
@@ -87,6 +87,9 @@
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.1",
     "vitest": "^4.1.4"
+  },
+  "peerDependencies": {
+    "agent-contracts-runtime": "^0.30.0"
   },
   "peerDependenciesMeta": {
     "agent-contracts-runtime": {

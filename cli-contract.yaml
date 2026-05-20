@@ -3,7 +3,7 @@ cli_contracts: 0.1.0
 
 info:
   title: agent-contracts CLI
-  version: 0.30.0
+  version: 0.30.1
   description: >-
     Declarative YAML DSL toolkit for defining, validating, and rendering
     multi-agent development workflows. Provides static validation,
@@ -14,6 +14,26 @@ info:
   contact:
     name: foo-ogawa
     url: https://github.com/foo-ogawa/agent-contracts
+
+artifact_slots:
+  dsl-definitions:
+    description: Agent contracts DSL YAML files (agent-contracts.yaml and extends targets)
+    direction: read
+  config:
+    description: agent-contracts.config.yaml configuration file
+    direction: read
+  generated-templates:
+    description: Rendered output files from Handlebars templates
+    direction: write
+  generated-guardrails:
+    description: Generated guardrail binding files (cursor-rules, AGENTS.md, etc.)
+    direction: write
+  generated-interface:
+    description: Generated team interface YAML/JSON files
+    direction: write
+  audit-report:
+    description: LLM audit result output files
+    direction: write
 
 command_sets:
   agent-contracts:
@@ -297,13 +317,7 @@ command_sets:
         effects:
           risk_level: medium
           writes:
-            - target: "configured render output paths"
-              description: "rendered template files from DSL input"
-              overwrite: true
-              idempotent: true
-              idempotent_note: >-
-                Output is deterministic from DSL input and templates.
-                Repeated runs produce identical files.
+            - generated-templates
 
         options:
           - name: config
@@ -535,6 +549,11 @@ command_sets:
 
         effects:
           risk_level: medium
+          reads:
+            - dsl-definitions
+            - config
+          writes:
+            - audit-report
           network:
             description: >-
               LLM API calls to configured adapter (e.g. OpenAI,
@@ -713,16 +732,9 @@ command_sets:
         effects:
           risk_level: low
           writes:
-            - target: "configured render, guardrail, and interface output paths"
-              description: >-
-                template files, guardrail binding files, and/or team
-                interface files generated from DSL input
-              overwrite: true
-              idempotent: true
-              idempotent_note: >-
-                Output is deterministic from DSL input, templates,
-                policies, and bindings. Repeated runs produce
-                identical files.
+            - generated-templates
+            - generated-guardrails
+            - generated-interface
 
         arguments:
           - name: type
