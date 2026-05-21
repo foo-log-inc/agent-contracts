@@ -161,3 +161,20 @@ export type NavigationIndexExitCode = 0 | 1;
 export type NavigationIndexExitResult =
   { exitCode: 0; stdout: unknown }
   | { exitCode: 1; stderr: unknown };
+
+export interface ArtifactCoverageArgs {
+  dir?: string;
+}
+
+export interface ArtifactCoverageOptions {
+  config?: string;
+  team?: string;
+  format?: "text" | "json";
+  minCoverage?: number;
+}
+
+export type ArtifactCoverageExitCode = 0 | 1;
+
+export type ArtifactCoverageExitResult =
+  { exitCode: 0; stdout: unknown }
+  | { exitCode: 1; stderr: unknown };

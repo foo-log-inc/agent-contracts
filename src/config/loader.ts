@@ -137,6 +137,7 @@ export async function loadConfig(
       paths: undefined,
       teams: resolveTeamConfigs(config.teams, configDir),
       audit: config.audit ?? undefined,
+      artifactCoverage: config.artifact_coverage ?? undefined,
     };
   }
 
@@ -149,6 +150,7 @@ export async function loadConfig(
     activeGuardrailPolicy: config.active_guardrail_policy,
     paths: config.paths,
     audit: config.audit ?? undefined,
+    artifactCoverage: config.artifact_coverage ?? undefined,
   };
 }
 

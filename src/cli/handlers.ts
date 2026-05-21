@@ -33,6 +33,9 @@ import type { ResolvedConfig, ResolvedTeamConfig } from "../config/types.js";
 import { runGenerateInterfaceCli } from "./commands/generate-interface.js";
 import { buildNavigationIndex } from "../navigation-index/index.js";
 import type { ProjectNavigationIndex } from "../navigation-index/index.js";
+import { enumerateProjectFiles } from "../artifact-coverage/enumerator.js";
+import { buildCoverageReport, formatCoverageText } from "../artifact-coverage/reporter.js";
+import type { ArtifactCoverageReport } from "../artifact-coverage/types.js";
 
 const DIR_DEFAULT = "agent-contracts.yaml";
 
@@ -1008,6 +1011,97 @@ const handleNavigationIndex: CommandHandlers["navigationIndex"] = async (dir, op
   }
 };
 
+// ─── artifact-coverage ───────────────────────────────────────────
+
+const handleArtifactCoverage: CommandHandlers["artifactCoverage"] = async (dir, opts) => {
+  const fmt = opts.format ?? "text";
+  if (fmt !== "text" && fmt !== "json") {
+    process.stderr.write(`Invalid --format: expected text or json, got ${fmt}\n`);
+    process.exit(1);
+  }
+
+  try {
+    const config = await loadConfig(opts.config);
+    const excludePatterns = config?.artifactCoverage?.exclude_patterns ?? [];
+
+    if (config !== null && isMultiTeamConfig(config)) {
+      const teamEntries = getTeamEntries(config, opts.team);
+      const results: Record<string, ArtifactCoverageReport> = {};
+
+      for (const [teamId, teamConfig] of teamEntries) {
+        const index = await buildNavigationIndexForDsl(teamConfig.dsl, teamConfig.vars, undefined);
+        const artifactFiles = extractArtifactFiles(index);
+        const projectRoot = dirname(teamConfig.dsl);
+        const files = enumerateProjectFiles(projectRoot, excludePatterns);
+        results[teamId] = buildCoverageReport(files, artifactFiles);
+      }
+
+      if (fmt === "json") {
+        process.stdout.write(JSON.stringify(results, null, 2) + "\n");
+      } else {
+        for (const [teamId, report] of Object.entries(results)) {
+          process.stdout.write(`\n--- Team: ${teamId} ---\n`);
+          process.stdout.write(formatCoverageText(report));
+        }
+      }
+
+      if (opts.minCoverage !== undefined) {
+        const threshold = parseFloat(opts.minCoverage);
+        const allAbove = Object.values(results).every(
+          (r) => r.summary.coverage_percent >= threshold,
+        );
+        if (!allAbove) {
+          process.stderr.write(`Coverage below threshold (${threshold}%)\n`);
+          process.exit(1);
+        }
+      }
+      return;
+    }
+
+    const dslPath = resolveDslPath(dir ?? DIR_DEFAULT, DIR_DEFAULT, config);
+    const index = await buildNavigationIndexForDsl(dslPath, config?.vars, undefined);
+    const artifactFiles = extractArtifactFiles(index);
+    const projectRoot = config?.configDir ?? dirname(dslPath);
+    const files = enumerateProjectFiles(projectRoot, excludePatterns);
+    const report = buildCoverageReport(files, artifactFiles);
+
+    if (fmt === "json") {
+      process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+    } else {
+      process.stdout.write(formatCoverageText(report));
+    }
+
+    if (opts.minCoverage !== undefined) {
+      const threshold = parseFloat(opts.minCoverage);
+      if (report.summary.coverage_percent < threshold) {
+        process.stderr.write(
+          `Coverage ${report.summary.coverage_percent}% is below threshold (${threshold}%)\n`,
+        );
+        process.exit(1);
+      }
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`Error: ${msg}\n`);
+    process.exit(1);
+  }
+};
+
+function extractArtifactFiles(
+  index: ProjectNavigationIndex,
+): Record<string, { path_patterns: string[]; exclude_patterns: string[] }> {
+  const result: Record<string, { path_patterns: string[]; exclude_patterns: string[] }> = {};
+  for (const [id, node] of Object.entries(index.artifacts)) {
+    if (node.files.path_patterns.length > 0) {
+      result[id] = {
+        path_patterns: node.files.path_patterns,
+        exclude_patterns: node.files.exclude_patterns,
+      };
+    }
+  }
+  return result;
+}
+
 // ─── Export ─────────────────────────────────────────────────────
 
 export const handlers: CommandHandlers = {
@@ -1020,4 +1114,5 @@ export const handlers: CommandHandlers = {
   audit: handleAudit,
   generate: handleGenerate,
   navigationIndex: handleNavigationIndex,
+  artifactCoverage: handleArtifactCoverage,
 };

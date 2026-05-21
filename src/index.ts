@@ -88,3 +88,14 @@ export {
   type ResolveChecksResult,
   type PathResolveResult,
 } from "./guardrail-generator/index.js";
+export {
+  enumerateProjectFiles,
+  matchFileToArtifacts,
+  buildCoverageReport,
+  formatCoverageText,
+  type ArtifactCoverageReport,
+  type ArtifactCoverageSummary,
+  type ArtifactFileInfo,
+  type OverlappingFile,
+  type PerArtifactEntry,
+} from "./artifact-coverage/index.js";

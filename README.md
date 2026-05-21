@@ -340,6 +340,7 @@ Design regressions become testable.
 * **Software bindings** (DI) for tool-specific guardrail implementation (Cursor, Git, GitHub)
 * **Guardrail generation** from DSL + policy + bindings via `generate guardrails`
 * **Navigation index** — compile-time artifact-centric model mapping artifacts to operations, agent permissions, relations, and action routes
+* **Artifact coverage** — measure what percentage of project files are covered by artifact `path_patterns` definitions, with CI gating via `--min-coverage`
 * **Tool `extends`** — tool inheritance for sharing `cli_contract`, `artifact_bindings`, and other metadata across related tool definitions
 * **Interface generation** from DSL via `generate interface` for cross-team contracts
 * **Flexible file splitting** via `$ref` (replacement), `$refs` (import + deep-merge), and JSON Pointer `$ref` (in-document)
@@ -1130,6 +1131,7 @@ npx agent-contracts
 | `agent-contracts audit <type>`    | Run LLM-based semantic audit (render/dsl/prompt/all)   |
 | `agent-contracts check`           | Run resolve → validate → lint → render --check         |
 | `agent-contracts navigation-index` | Build artifact-centric navigation index |
+| `agent-contracts artifact-coverage` | Measure file coverage by artifact definitions |
 | `agent-contracts render`          | _(deprecated)_ Alias for `generate templates`          |
 
 The `[path]` argument defaults to `agent-contracts.yaml` in the current directory.
@@ -1209,6 +1211,25 @@ audit:
   model: gpt-4.1
 ```
 
+#### `artifact-coverage` options
+
+| Option | Description |
+|--------|-------------|
+| `--format <text\|json>` | Output format (default: `text`) |
+| `--min-coverage <number>` | Minimum coverage %; exit 1 if below (for CI gates) |
+| `-c, --config <path>` | Path to `agent-contracts.config.yaml` |
+| `--team <id>` | Limit to one team (multi-team config only) |
+
+Configure additional exclude patterns in `agent-contracts.config.yaml`:
+
+```yaml
+artifact_coverage:
+  exclude_patterns:
+    - "*.lock"
+    - "**/*.snap"
+    - ".cursor/**"
+```
+
 The score command evaluates 7 dimensions:
 
 | Dimension | What it measures | Weight |
@@ -1245,6 +1266,10 @@ agent-contracts audit dsl -c agent-contracts.config.yaml --dry-run
 agent-contracts navigation-index
 agent-contracts navigation-index --format yaml
 agent-contracts navigation-index --artifact api-contracts
+agent-contracts artifact-coverage
+agent-contracts artifact-coverage --format json
+agent-contracts artifact-coverage --min-coverage 80
+agent-contracts artifact-coverage -c agent-contracts.config.yaml
 ````
 
 ---
