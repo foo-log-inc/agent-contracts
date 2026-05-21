@@ -56,6 +56,14 @@ export const AuditConfigSchema = z
 
 export type AuditConfig = z.infer<typeof AuditConfigSchema>;
 
+export const ArtifactCoverageConfigSchema = z
+  .object({
+    exclude_patterns: z.array(z.string()).default([]),
+  })
+  .optional();
+
+export type ArtifactCoverageConfig = z.infer<typeof ArtifactCoverageConfigSchema>;
+
 export const AgentContractsConfigSchema = z
   .object({
     dsl: z.string().optional(),
@@ -66,6 +74,7 @@ export const AgentContractsConfigSchema = z
     paths: z.record(z.string(), z.string()).optional(),
     teams: z.record(z.string(), TeamConfigSchema).optional(),
     audit: AuditConfigSchema,
+    artifact_coverage: ArtifactCoverageConfigSchema,
   })
   .superRefine((data, ctx) => {
     if (data.dsl !== undefined && data.teams !== undefined) {
@@ -128,4 +137,5 @@ export interface ResolvedConfig {
   paths?: Record<string, string>;
   teams?: Record<string, ResolvedTeamConfig>;
   audit?: AuditConfig;
+  artifactCoverage?: { exclude_patterns: string[] };
 }

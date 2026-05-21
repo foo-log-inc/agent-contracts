@@ -3,7 +3,7 @@ cli_contracts: 0.1.0
 
 info:
   title: agent-contracts CLI
-  version: 0.30.1
+  version: 0.30.2
   description: >-
     Declarative YAML DSL toolkit for defining, validating, and rendering
     multi-agent development workflows. Provides static validation,
@@ -909,5 +909,84 @@ command_sets:
 
           '1':
             description: Build failed — schema validation error, config error, or resolution failure.
+            stderr:
+              format: text
+
+      # ── artifact-coverage ────────────────────────────────
+      artifact-coverage:
+        summary: Measure file coverage by artifact path_patterns definitions.
+        description: >-
+          Cross-references git ls-files output against compiled artifact
+          path_patterns / exclude_patterns to measure what percentage of
+          a project's tracked files are covered by artifact definitions.
+          Reports uncovered files, overlapping files, and per-artifact
+          match counts. Supports CI gating via --min-coverage.
+        usage:
+          - agent-contracts artifact-coverage
+          - agent-contracts artifact-coverage -c agent-contracts.config.yaml
+          - agent-contracts artifact-coverage --format json
+          - agent-contracts artifact-coverage --min-coverage 80
+
+        arguments:
+          - name: dir
+            index: 0
+            required: false
+            description: Path to agent-contracts.yaml.
+            schema:
+              type: string
+              default: agent-contracts.yaml
+            file:
+              mode: read
+              exists: true
+              media_type: application/yaml
+              encoding: utf-8
+
+        options:
+          - name: config
+            aliases: [c]
+            description: Path to agent-contracts.config.yaml.
+            value_name: path
+            schema:
+              type: string
+            file:
+              mode: read
+              exists: false
+              media_type: application/yaml
+              encoding: utf-8
+
+          - name: team
+            description: Limit to one team (multi-team config only).
+            value_name: id
+            schema:
+              type: string
+
+          - name: format
+            description: Output format.
+            value_name: format
+            schema:
+              type: string
+              enum: [text, json]
+              default: text
+
+          - name: min-coverage
+            description: Minimum coverage percentage; exit 1 if below (for CI gates).
+            value_name: number
+            schema:
+              type: number
+
+        exits:
+          '0':
+            description: Coverage report generated (and above threshold if --min-coverage specified).
+            stdout:
+              format: '{options.format}'
+              schema_note: >-
+                Output format depends on --format option. Text shows
+                human-readable coverage report; json produces structured
+                ArtifactCoverageReport object.
+
+          '1':
+            description: >-
+              Coverage below threshold, schema validation failed,
+              or unexpected error.
             stderr:
               format: text

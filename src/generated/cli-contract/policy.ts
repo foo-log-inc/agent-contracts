@@ -502,6 +502,45 @@ export const commandDefinitions = {
       }
     ]
   },
+  "artifact-coverage": {
+    "options": [
+      {
+        "name": "config",
+        "schema": {
+          "type": "string"
+        },
+        "file": {
+          "mode": "read",
+          "exists": false,
+          "media_type": "application/yaml",
+          "encoding": "utf-8"
+        }
+      },
+      {
+        "name": "team",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "format",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "text",
+            "json"
+          ],
+          "default": "text"
+        }
+      },
+      {
+        "name": "min-coverage",
+        "schema": {
+          "type": "number"
+        }
+      }
+    ]
+  },
 } as const;
 
 export function deriveCommandPolicy(
