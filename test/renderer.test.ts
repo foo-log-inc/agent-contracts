@@ -316,6 +316,90 @@ describe("Handlebars helpers", () => {
     expect(content).toBe("MANY");
   });
 
+  it("jsonBlock helper renders pretty JSON", async () => {
+    const tplPath = join(TEMP_DIR, "tpl", "json.hbs");
+    await writeFile(tplPath, "{{{jsonBlock agent}}}");
+    const outPattern = join(TEMP_DIR, "out", "{agent.id}.md");
+
+    const targets: ResolvedRenderTarget[] = [
+      { template: tplPath, context: "agent", output: outPattern },
+    ];
+    await renderFromConfig(createMinimalDsl(), targets);
+    const content = await readFile(join(TEMP_DIR, "out", "dev.md"), "utf8");
+    expect(content).toContain('"role_name": "Developer"');
+  });
+
+  it("yamlFrontmatter helper wraps YAML with delimiters", async () => {
+    const tplPath = join(TEMP_DIR, "tpl", "fm.hbs");
+    await writeFile(
+      tplPath,
+      "{{{yamlFrontmatter (handoffEnvelope handoff_type)}}}",
+    );
+    const outPattern = join(TEMP_DIR, "out", "{handoff_type.id}.md");
+
+    const dsl: Dsl = {
+      ...createMinimalDsl(),
+      handoff_types: {
+        "task-request": {
+          version: 1,
+          example: { task_id: "specify-feature" },
+          schema: { type: "object", properties: {} },
+        },
+      },
+    };
+    const targets: ResolvedRenderTarget[] = [
+      { template: tplPath, context: "handoff_type", output: outPattern },
+    ];
+    await renderFromConfig(dsl, targets);
+    const content = await readFile(
+      join(TEMP_DIR, "out", "task-request.md"),
+      "utf8",
+    );
+    expect(content).toMatch(/^---\n/);
+    expect(content).toContain('type: "task-request"');
+    expect(content).toMatch(/---\n$/);
+  });
+
+  it("handoffPayload and handoffEnvelope helpers render payload examples", async () => {
+    const tplPath = join(TEMP_DIR, "tpl", "handoff.hbs");
+    await writeFile(
+      tplPath,
+      [
+        "PAYLOAD:",
+        "{{{yamlBlock (handoffPayload handoff_type)}}}",
+        "ENVELOPE:",
+        "{{{jsonBlock (handoffEnvelope handoff_type)}}}",
+      ].join("\n"),
+    );
+    const outPattern = join(TEMP_DIR, "out", "{handoff_type.id}.md");
+
+    const dsl: Dsl = {
+      ...createMinimalDsl(),
+      handoff_types: {
+        "task-request": {
+          version: 1,
+          schema: {
+            type: "object",
+            required: ["task_id"],
+            properties: { task_id: { type: "string" } },
+          },
+          example: { task_id: "specify-feature" },
+        },
+      },
+    };
+    const targets: ResolvedRenderTarget[] = [
+      { template: tplPath, context: "handoff_type", output: outPattern },
+    ];
+    await renderFromConfig(dsl, targets);
+    const content = await readFile(
+      join(TEMP_DIR, "out", "task-request.md"),
+      "utf8",
+    );
+    expect(content).toContain('task_id: "specify-feature"');
+    expect(content).toContain('"type": "task-request"');
+    expect(content).toContain('"payload"');
+  });
+
   it("groupBy helper groups array elements by key", async () => {
     const tplPath = join(TEMP_DIR, "tpl", "group.hbs");
     const tplContent = [

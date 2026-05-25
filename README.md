@@ -1476,6 +1476,10 @@ Templates can use these built-in helpers:
 | `notEmpty` | `{{#if (notEmpty obj)}}` | True when object has at least one key |
 | `inc` | `{{inc @index}}` | Increment number by 1 (for 1-based indexing) |
 | `yamlBlock` | `{{{yamlBlock obj}}}` | Render value as YAML-formatted text |
+| `jsonBlock` | `{{{jsonBlock obj}}}` | Render value as pretty-printed JSON |
+| `yamlFrontmatter` | `{{{yamlFrontmatter obj}}}` | Render value as YAML frontmatter (`---` delimiters) |
+| `handoffPayload` | `(handoffPayload handoffType)` | Resolve handoff payload (`example` or schema skeleton) |
+| `handoffEnvelope` | `(handoffEnvelope handoffType id=@key)` | Build `{ type, version, payload }` envelope object |
 | `lookupPayloadFields` | `{{#each (lookupPayloadFields schema)}}` | Extract schema field info (name, type, required, enum); resolves `allOf` internally |
 | `join` | `{{join arr ", "}}` | Join array elements with separator |
 | `contains` | `{{#if (contains arr "x")}}` | True when array includes value |
