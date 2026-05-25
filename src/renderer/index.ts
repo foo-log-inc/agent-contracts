@@ -41,3 +41,13 @@ export {
   resolveEffectiveGuardrails,
   resolveEntityValidations,
 } from "./context.js";
+export {
+  toYamlString,
+  toJsonString,
+  toYamlFrontmatter,
+} from "./serialization.js";
+export {
+  resolveHandoffPayload,
+  buildHandoffEnvelope,
+  type HandoffTypeLike,
+} from "./handoff-payload.js";

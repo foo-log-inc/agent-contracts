@@ -20,6 +20,10 @@
     inc                  - {{inc @index}} — 1-based index (0 → 1, 1 → 2, ...)
     eq                   - {{#if (eq a b)}} — strict equality
     yamlBlock            - {{{yamlBlock obj}}} — render object as YAML text
+    jsonBlock            - {{{jsonBlock obj}}} — render object as pretty JSON
+    yamlFrontmatter      - {{{yamlFrontmatter obj}}} — YAML frontmatter with --- delimiters
+    handoffPayload       - (handoffPayload handoffType) — example or schema skeleton payload
+    handoffEnvelope      - (handoffEnvelope handoffType id=@key) — { type, version, payload }
     lookupPayloadFields  - {{#each (lookupPayloadFields schema)}} — extract field info
     join                 - {{join arr ", "}} — join array elements with separator
     contains             - {{#if (contains arr "x")}} — true when array includes value

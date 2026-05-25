@@ -395,6 +395,10 @@ dsl-designer:
         | `notEmpty` | `{{#if (notEmpty obj)}}` | Check if object is non-empty |
         | `inc` | `{{inc @index}}` | 1-based index |
         | `yamlBlock` | `{{{yamlBlock obj}}}` | Render as YAML |
+        | `jsonBlock` | `{{{jsonBlock obj}}}` | Render as pretty JSON |
+        | `yamlFrontmatter` | `{{{yamlFrontmatter obj}}}` | Render as YAML frontmatter |
+        | `handoffPayload` | `(handoffPayload handoffType)` | Resolve handoff payload object |
+        | `handoffEnvelope` | `(handoffEnvelope handoffType id=@key)` | Build handoff envelope object |
         | `lookupPayloadFields` | `{{#each (lookupPayloadFields schema)}}` | Extract schema fields (resolves allOf) |
         | `join` | `{{join arr ", "}}` | Join array |
         | `contains` | `{{#if (contains arr "x")}}` | Array inclusion check |
