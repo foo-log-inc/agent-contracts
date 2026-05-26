@@ -10,6 +10,10 @@ export { artifactOwnershipConsistencyRule } from "./rules/artifact-ownership-con
 export { deprecatedOwnershipFieldsRule } from "./rules/deprecated-ownership-fields.js";
 export { toolCommandsRule } from "./rules/tool-commands.js";
 export { guardrailPolicyCoverageRule } from "./rules/guardrail-policy-coverage.js";
+export {
+  guardrailPolicyActionStateUndefinedRule,
+  systemStatesUnusedRule,
+} from "./rules/guardrail-policy-action-state.js";
 export { yamlReservedKeySafetyRule } from "./rules/yaml-reserved-key-safety.js";
 export { artifactRequiredValidationWiringRule } from "./rules/artifact-required-validation-wiring.js";
 export { taskOutputValidationCompletenessRule } from "./rules/task-output-validation-completeness.js";

@@ -19,6 +19,7 @@ export const SystemSchema = z
     default_workflow_order: z.array(z.string()),
     sections: z.array(SectionSchema).optional(),
     context_loading: ContextLoadingSchema,
+    states: z.array(z.string()).default([]),
   })
   .passthrough();
 export type System = z.infer<typeof SystemSchema>;

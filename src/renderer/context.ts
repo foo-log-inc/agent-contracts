@@ -10,6 +10,7 @@ import type {
   Policy,
   Guardrail,
   GuardrailPolicy,
+  Action,
   System,
   SoftwareBinding,
 } from "../schema/index.js";
@@ -35,7 +36,7 @@ export interface GuardrailEnforcementEntry {
   guardrail_id: string;
   description: string;
   severity: string;
-  action: string;
+  action: Action;
   scoped_agents: string[];
   scoped_tasks: string[];
   scoped_workflows: string[];
@@ -62,7 +63,7 @@ export interface EntityGuardrailEntry {
   tags: string[];
   source: "entity" | "scope" | "both";
   severity?: string;
-  action?: string;
+  action?: Action;
 }
 
 export interface EntityValidationEntry {
@@ -288,7 +289,7 @@ export function resolveEffectiveGuardrails(
 
   const allIds = new Set([...entitySide, ...scopeSide]);
 
-  const activePolicyRules = new Map<string, { severity: string; action: string }>();
+  const activePolicyRules = new Map<string, { severity: string; action: Action }>();
   for (const policy of Object.values(dsl.guardrail_policies)) {
     for (const rule of policy.rules) {
       if (!activePolicyRules.has(rule.guardrail)) {

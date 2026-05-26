@@ -116,6 +116,19 @@ describe("schema normal cases", () => {
     expect(() => SystemSchema.parse(minimalValidSystem)).not.toThrow();
   });
 
+  it("parses system.states array", () => {
+    const s = SystemSchema.parse({
+      ...minimalValidSystem,
+      states: ["idle", "work", "maintenance"],
+    });
+    expect(s.states).toEqual(["idle", "work", "maintenance"]);
+  });
+
+  it("defaults system.states to [] when omitted", () => {
+    const s = SystemSchema.parse(minimalValidSystem);
+    expect(s.states).toEqual([]);
+  });
+
   it("parses AgentSchema", () => {
     const a = AgentSchema.parse(minimalValidAgent);
     expect(a.can_read_artifacts).toEqual([]);

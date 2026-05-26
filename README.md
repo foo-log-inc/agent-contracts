@@ -278,6 +278,8 @@ A **Guardrail Policy** defines enforcement strategy for guardrails:
 
 * rules — array of enforcement rules mapping guardrails to actions
 * Each rule specifies: severity (`critical`/`mandatory`/`warning`/`info`), action (`block`/`warn`/`shadow`/`info`), override permissions
+* `action` supports a conditional form for state-dependent enforcement: `{ default: "block", when: { maintenance: "shadow" } }`
+* Available states are declared system-wide via `system.states`
 
 ### Handoff Type
 
@@ -337,6 +339,7 @@ Design regressions become testable.
 * **Inheritance with merge operators via `extends`**
 * **Guardrail definitions** for cross-cutting process constraints
 * **Guardrail policies** with configurable enforcement (block/warn/shadow/info)
+* **State-dependent guardrail action** — `action` accepts a conditional form `{ default, when }` keyed by `system.states` for workspace-mode-aware enforcement
 * **Software bindings** (DI) for tool-specific guardrail implementation (Cursor, Git, GitHub)
 * **Guardrail generation** from DSL + policy + bindings via `generate guardrails`
 * **Navigation index** — compile-time artifact-centric model mapping artifacts to operations, agent permissions, relations, and action routes
@@ -374,6 +377,7 @@ system:
     - audit
     - release
     - reflect
+  states: []                       # optional — named workspace states for conditional guardrail action
 
 agents: {}
 tasks: {}
@@ -1536,6 +1540,12 @@ guardrail_policies:
       - guardrail: no-force-push
         severity: critical
         action: block
+      - guardrail: branch-lock
+        severity: critical
+        action:
+          default: block
+          when:
+            maintenance: shadow
       - guardrail: english-only-code
         severity: warning
         action: warn
