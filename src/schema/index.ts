@@ -44,11 +44,17 @@ export {
 } from "./dsl.js";
 export { HandoffTypeSchema, type HandoffType } from "./handoff-type.js";
 export {
+  ActionEnum,
+  ActionSchema,
+  ConditionalActionSchema,
   GuardrailPolicyRuleEscalationSchema,
   GuardrailPolicyRuleSchema,
   GuardrailPolicySchema,
   GuardrailScopeSchema,
   GuardrailSchema,
+  type Action,
+  type ActionValue,
+  type ConditionalAction,
   type Guardrail,
   type GuardrailPolicy,
   type GuardrailPolicyRule,

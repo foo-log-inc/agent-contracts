@@ -46,6 +46,7 @@ cursor outputs  git outputs   observability outputs
 | **DSL scope = entity references only** | No command strings or regex patterns in the DSL; those belong in bindings |
 | **Template duality** | Support both inline templates (short scripts) and external file references |
 | **Observability engine records only** | The observability engine never evaluates guardrails; it receives execution result events |
+| **State-dependent action** | `severity` is inherent to the guardrail and never changes; `action` can vary by workspace state declared in `system.states` |
 
 ### 1.3 Relationship to Existing Entities
 
@@ -202,10 +203,17 @@ const EscalationSchema = z.object({
   condition: z.string().optional(),
 }).passthrough();
 
+const ActionEnum = z.enum(["block", "warn", "shadow", "info"]);
+const ConditionalActionSchema = z.object({
+  default: ActionEnum,
+  when: z.record(z.string(), ActionEnum),
+});
+const ActionSchema = z.union([ActionEnum, ConditionalActionSchema]);
+
 const GuardrailPolicyRuleSchema = z.object({
   guardrail: z.string(),
   severity: z.enum(["critical", "mandatory", "warning", "info"]),
-  action: z.enum(["block", "warn", "shadow", "info"]),
+  action: ActionSchema,
   allow_override: z.boolean().default(false),
   override_requires: z.array(z.string()).optional(),
   escalation: EscalationSchema.optional(),
@@ -232,7 +240,7 @@ const GuardrailPolicySchema = z.object({
 |-------|----------|-------------|
 | `guardrail` | yes | ID reference to a `guardrails` entry |
 | `severity` | yes | `critical` / `mandatory` / `warning` / `info` |
-| `action` | yes | `block` (fail) / `warn` (display warning) / `shadow` (record only) / `info` (display info) |
+| `action` | yes | Enforcement action. Accepts a simple string (`"block"`, `"warn"`, `"shadow"`, `"info"`) or an object `{ default, when }` for state-dependent behavior. When a string, the action always applies. When an object, `default` applies normally and `when` maps state names (from `system.states`) to override actions. |
 | `allow_override` | no | Whether the action can be overridden (default: `false`) |
 | `override_requires` | no | What is required to override (e.g., `["rationale"]`) |
 | `escalation` | no | Escalation target and trigger condition |
@@ -286,6 +294,28 @@ guardrail_policies:
         allow_override: true
 ```
 
+#### 2.2.1 Conditional Action
+
+Policy rules support state-dependent action via the conditional form:
+
+```yaml
+- guardrail: branch-lock
+  severity: critical
+  action:
+    default: block
+    when:
+      maintenance: shadow
+```
+
+**Semantics:**
+
+- `action: "block"` (string) — always applies this action. Backward compatible.
+- `action: { default, when }` (object) — applies `default` normally; when the workspace is in a named state (from `system.states`), applies the override from `when`.
+- `severity` is NOT state-dependent. The importance of a guardrail does not change by workspace mode.
+- At runtime, exactly one action is resolved: the `when` entry matching the current state, or `default` if no match.
+
+**State resolution** is the responsibility of the guardrail runtime (binding scripts), not agent-contracts. The runtime reads the current workspace state (e.g., from a state file managed by the orchestrator) and resolves the effective action.
+
 ### 2.3 Updated DslSchema
 
 ```typescript
@@ -316,6 +346,22 @@ export const DslSchema = z
     extensions_strict: z.boolean().default(false),
   })
   .passthrough();
+```
+
+#### SystemSchema — `system.states`
+
+The `system` section uses `SystemSchema`. The `states` field declares named workspace states referenced by conditional policy actions (`action.when`).
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `states` | no | Array of named workspace states (e.g., `["idle", "work", "maintenance"]`). States referenced in `action.when` must be declared here. Defaults to `[]`. |
+
+```yaml
+system:
+  id: my-project
+  name: My Project
+  default_workflow_order: [implement]
+  states: [idle, work, maintenance]
 ```
 
 ---
@@ -825,6 +871,8 @@ binding.guardrail_impl.{key} → guardrails
 | `binding-template-missing` | error | A binding output specifies neither `template` nor `inline_template` |
 | `binding-path-unresolved` | error | A binding target uses `{name}` but config has no matching `paths` entry |
 | `validation-executor-no-context` | warning | A validation executor (agent/tool) exists in the DSL but the validation is not listed in the executor's prompt context |
+| `guardrail-policy-action-state-undefined` | error | A state key in `action.when` is not listed in `system.states` |
+| `system-states-unused` | info | A state in `system.states` is not referenced by any `action.when` in any policy |
 
 ### 7.2 Existing Rule Interactions
 

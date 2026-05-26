@@ -177,6 +177,72 @@ describe("GuardrailPolicySchema", () => {
     expect(r.success).toBe(false);
   });
 
+  it("parses string action (backward compat)", () => {
+    const r = GuardrailPolicyRuleSchema.parse({
+      guardrail: "g",
+      severity: "critical",
+      action: "block",
+    });
+    expect(r.action).toBe("block");
+  });
+
+  it("parses conditional action object", () => {
+    const r = GuardrailPolicyRuleSchema.parse({
+      guardrail: "g",
+      severity: "critical",
+      action: { default: "block", when: { maintenance: "shadow" } },
+    });
+    expect(r.action).toEqual({
+      default: "block",
+      when: { maintenance: "shadow" },
+    });
+  });
+
+  it("rejects invalid default in conditional action", () => {
+    const r = GuardrailPolicyRuleSchema.safeParse({
+      guardrail: "g",
+      severity: "critical",
+      action: { default: "invalid" },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects invalid when values in conditional action", () => {
+    const r = GuardrailPolicyRuleSchema.safeParse({
+      guardrail: "g",
+      severity: "critical",
+      action: { default: "block", when: { maintenance: "invalid" } },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("accepts empty when in conditional action", () => {
+    const r = GuardrailPolicyRuleSchema.parse({
+      guardrail: "g",
+      severity: "critical",
+      action: { default: "block", when: {} },
+    });
+    expect(r.action).toEqual({ default: "block", when: {} });
+  });
+
+  it("rejects conditional action missing when field", () => {
+    const r = GuardrailPolicyRuleSchema.safeParse({
+      guardrail: "g",
+      severity: "critical",
+      action: { default: "block" },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects conditional action missing default field", () => {
+    const r = GuardrailPolicyRuleSchema.safeParse({
+      guardrail: "g",
+      severity: "critical",
+      action: { when: { maintenance: "shadow" } },
+    });
+    expect(r.success).toBe(false);
+  });
+
   it("rejects missing guardrail in rule", () => {
     const r = GuardrailPolicyRuleSchema.safeParse({
       severity: "critical",

@@ -141,10 +141,8 @@
 {{#if relatedGuardrails.length}}
 ## Guardrails
 
-| ID | Description | Severity | Action |
-|----|-------------|----------|--------|
 {{#each relatedGuardrails}}
-| {{this.guardrail_id}} | {{this.description}} | {{this.severity}} | {{this.action}} |
+- **{{this.guardrail_id}}** [{{this.severity}}]: {{this.description}} — {{#if this.action.default}}{{this.action.default}} ({{#each this.action.when}}{{@key}}: {{this}}{{#unless @last}}, {{/unless}}{{/each}}){{else}}{{this.action}}{{/if}}
 {{/each}}
 {{/if}}
 

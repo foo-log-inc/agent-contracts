@@ -161,6 +161,24 @@ describe("resolveEffectiveGuardrails", () => {
     expect(result[0].tags).toEqual(["safety"]);
   });
 
+  it("passes through conditional policy action", () => {
+    const conditionalAction = {
+      default: "block",
+      when: { maintenance: "shadow" },
+    };
+    const dsl = makeDsl({
+      agents: { a1: { role_name: "R", purpose: "P", guardrails: ["g1"] } },
+      guardrails: { g1: { description: "d", scope: {} } },
+      guardrail_policies: {
+        default: {
+          rules: [{ guardrail: "g1", severity: "critical", action: conditionalAction }],
+        },
+      },
+    });
+    const result = resolveEffectiveGuardrails(dsl, "agents", "a1");
+    expect(result[0].action).toEqual(conditionalAction);
+  });
+
   it("skips entity references to non-existent guardrails", () => {
     const dsl = makeDsl({
       agents: { a1: { role_name: "R", purpose: "P", guardrails: ["nonexistent"] } },

@@ -32,11 +32,23 @@ export type GuardrailPolicyRuleEscalation = z.infer<
   typeof GuardrailPolicyRuleEscalationSchema
 >;
 
+export const ActionEnum = z.enum(["block", "warn", "shadow", "info"]);
+export type ActionValue = z.infer<typeof ActionEnum>;
+
+export const ConditionalActionSchema = z.object({
+  default: ActionEnum,
+  when: z.record(z.string(), ActionEnum),
+});
+export type ConditionalAction = z.infer<typeof ConditionalActionSchema>;
+
+export const ActionSchema = z.union([ActionEnum, ConditionalActionSchema]);
+export type Action = z.infer<typeof ActionSchema>;
+
 export const GuardrailPolicyRuleSchema = z
   .object({
     guardrail: z.string(),
     severity: z.enum(["critical", "mandatory", "warning", "info"]),
-    action: z.enum(["block", "warn", "shadow", "info"]),
+    action: ActionSchema,
     allow_override: z.boolean().default(false),
     override_requires: z.array(z.string()).optional(),
     escalation: GuardrailPolicyRuleEscalationSchema.optional(),

@@ -62,12 +62,20 @@
               "type": "string"
             }
           }
+        },
+        "states": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
         "id",
         "name",
-        "default_workflow_order"
+        "default_workflow_order",
+        "states"
       ],
       "additionalProperties": {}
     },
@@ -1462,12 +1470,50 @@
                   ]
                 },
                 "action": {
-                  "type": "string",
-                  "enum": [
-                    "block",
-                    "warn",
-                    "shadow",
-                    "info"
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "block",
+                        "warn",
+                        "shadow",
+                        "info"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "default": {
+                          "type": "string",
+                          "enum": [
+                            "block",
+                            "warn",
+                            "shadow",
+                            "info"
+                          ]
+                        },
+                        "when": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string",
+                            "enum": [
+                              "block",
+                              "warn",
+                              "shadow",
+                              "info"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "default",
+                        "when"
+                      ],
+                      "additionalProperties": false
+                    }
                   ]
                 },
                 "allow_override": {

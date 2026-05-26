@@ -7,6 +7,10 @@ import { mergeIntegrityRule } from "./rules/merge-integrity.js";
 import { artifactOwnershipRule } from "./rules/artifact-ownership.js";
 import { toolCommandsRule } from "./rules/tool-commands.js";
 import { guardrailPolicyCoverageRule } from "./rules/guardrail-policy-coverage.js";
+import {
+  guardrailPolicyActionStateUndefinedRule,
+  systemStatesUnusedRule,
+} from "./rules/guardrail-policy-action-state.js";
 import { yamlReservedKeySafetyRule } from "./rules/yaml-reserved-key-safety.js";
 import { artifactRequiredValidationWiringRule } from "./rules/artifact-required-validation-wiring.js";
 import { taskOutputValidationCompletenessRule } from "./rules/task-output-validation-completeness.js";
@@ -37,6 +41,8 @@ const builtinRules: LintRule[] = [
   artifactOwnershipRule,
   toolCommandsRule,
   guardrailPolicyCoverageRule,
+  guardrailPolicyActionStateUndefinedRule,
+  systemStatesUnusedRule,
   yamlReservedKeySafetyRule,
   artifactRequiredValidationWiringRule,
   taskOutputValidationCompletenessRule,
