@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.30.3",
+  "version": "0.30.4",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -49,15 +49,15 @@
     "typescript",
     "ai-development"
   ],
-  "author": "foo-ogawa",
+  "author": "foo-log-inc",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/foo-ogawa/agent-contracts.git"
+    "url": "git+https://github.com/foo-log-inc/agent-contracts.git"
   },
-  "homepage": "https://github.com/foo-ogawa/agent-contracts#readme",
+  "homepage": "https://github.com/foo-log-inc/agent-contracts#readme",
   "bugs": {
-    "url": "https://github.com/foo-ogawa/agent-contracts/issues"
+    "url": "https://github.com/foo-log-inc/agent-contracts/issues"
   },
   "dependencies": {
     "@stoplight/spectral-core": "^1.22.0",
