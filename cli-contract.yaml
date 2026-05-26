@@ -12,8 +12,8 @@ info:
   license:
     name: MIT
   contact:
-    name: foo-ogawa
-    url: https://github.com/foo-ogawa/agent-contracts
+    name: foo-log-inc
+    url: https://github.com/foo-log-inc/agent-contracts
 
 artifact_slots:
   dsl-definitions:

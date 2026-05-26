@@ -711,7 +711,7 @@ artifacts:
 
 ## artifact-contracts integration
 
-agent-contracts integrates with [artifact-contracts](https://github.com/foo-ogawa/artifact-contracts) and [cli-contracts](https://github.com/foo-ogawa/cli-contracts) to provide a unified artifact governance model.
+agent-contracts integrates with [artifact-contracts](https://github.com/foo-log-inc/artifact-contracts) and [cli-contracts](https://github.com/foo-log-inc/cli-contracts) to provide a unified artifact governance model.
 
 ### Design principle
 
@@ -1106,7 +1106,7 @@ VarsSubstitutionError: Undefined variable "repo_url" in value "Repository: ${var
 
 For the full CLI reference with all commands, options, arguments, exit codes, and AI agent policies, see the [CLI Reference](docs/cli-reference.md).
 
-The CLI contract specification is defined in [`cli-contract.yaml`](cli-contract.yaml) using [CLI Contracts](https://github.com/foo-ogawa/cli-contracts). Commands that have side effects declare structured `effects` metadata, and the `--introspect` global option outputs the derived policy as JSON without executing the command.
+The CLI contract specification is defined in [`cli-contract.yaml`](cli-contract.yaml) using [CLI Contracts](https://github.com/foo-log-inc/cli-contracts). Commands that have side effects declare structured `effects` metadata, and the `--introspect` global option outputs the derived policy as JSON without executing the command.
 
 ### Installation
 
@@ -1149,7 +1149,7 @@ agent-contracts audit --introspect
 agent-contracts validate --introspect
 ````
 
-The output follows the [CLI Contracts](https://github.com/foo-ogawa/cli-contracts) `IntrospectionResult` shape:
+The output follows the [CLI Contracts](https://github.com/foo-log-inc/cli-contracts) `IntrospectionResult` shape:
 
 ````json
 {
