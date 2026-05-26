@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.31.0",
+  "version": "0.32.0",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -74,7 +74,6 @@
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.138",
-    "@cursor/sdk": "^1.0.12",
     "@eslint/js": "^10.0.1",
     "@google/genai": "^2.0.1",
     "@openai/agents": "^0.11.1",
