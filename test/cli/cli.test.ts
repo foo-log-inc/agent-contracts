@@ -1,18 +1,19 @@
 import { resolve, join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { rmSync, existsSync } from "node:fs";
-import { describe, it, expect, afterAll } from "vitest";
+import { tmpdir } from "node:os";
+import { rmSync, existsSync, writeFileSync } from "node:fs";
+import { describe, it, expect, afterAll, beforeAll } from "vitest";
 
 const exec = promisify(execFile);
 const fixturesDir = resolve(import.meta.dirname, "../fixtures");
 const cliPath = resolve(import.meta.dirname, "../../dist/cli.js");
-const outputDir = join(import.meta.dirname, "../__cli_output__");
+const outputDir = join(tmpdir(), "agc-cli-output");
+const bindingsOutputDir = join(tmpdir(), "agc-cli-output-bindings");
 
 const minimalYaml = join(fixturesDir, "minimal/agent-contracts.yaml");
-const minimalConfig = join(fixturesDir, "minimal/agent-contracts.config.yaml");
-const bindingsConfig = join(fixturesDir, "with-bindings/agent-contracts.config.yaml");
-const bindingsOutputDir = join(import.meta.dirname, "../__cli_output_bindings__");
+const renderConfig = join(tmpdir(), "agc-cli-render.config.yaml");
+const bindingsRenderConfig = join(tmpdir(), "agc-cli-bindings-render.config.yaml");
 
 async function run(
   args: string[],
@@ -34,9 +35,33 @@ async function run(
   }
 }
 
+beforeAll(() => {
+  writeFileSync(renderConfig, [
+    `dsl: ${join(fixturesDir, "minimal/agent-contracts.yaml")}`,
+    "renders:",
+    `  - template: ${join(fixturesDir, "templates/agent-prompt.md.hbs")}`,
+    "    context: agent",
+    `    output: ${join(outputDir, "{agent.id}.md")}`,
+    `  - template: ${join(fixturesDir, "templates/overview.md.hbs")}`,
+    "    context: system",
+    `    output: ${join(outputDir, "overview.md")}`,
+  ].join("\n"));
+  writeFileSync(bindingsRenderConfig, [
+    `dsl: ${join(fixturesDir, "with-bindings/agent-contracts.yaml")}`,
+    "bindings:",
+    `  - ${join(fixturesDir, "with-bindings/binding.yaml")}`,
+    "renders:",
+    `  - template: ${join(fixturesDir, "with-bindings/overview-with-bindings.md.hbs")}`,
+    "    context: system",
+    `    output: ${join(bindingsOutputDir, "overview.md")}`,
+  ].join("\n"));
+});
+
 afterAll(() => {
   if (existsSync(outputDir)) rmSync(outputDir, { recursive: true, force: true });
   if (existsSync(bindingsOutputDir)) rmSync(bindingsOutputDir, { recursive: true, force: true });
+  rmSync(renderConfig, { force: true });
+  rmSync(bindingsRenderConfig, { force: true });
 });
 
 describe("agent-contracts resolve", () => {
@@ -126,7 +151,7 @@ describe("agent-contracts lint", () => {
 describe("agent-contracts render", () => {
   it("generates rendered files", async () => {
     const { exitCode, stdout } = await run([
-      "render", "--config", minimalConfig,
+      "render", "--config", renderConfig,
     ]);
     expect(exitCode).toBe(0);
     expect(stdout).toContain("Rendered");
@@ -134,18 +159,17 @@ describe("agent-contracts render", () => {
   });
 
   it("--check exits 0 when files are up to date", async () => {
-    await run(["render", "--config", minimalConfig]);
+    await run(["render", "--config", renderConfig]);
     const { exitCode, stdout } = await run([
-      "render", "--config", minimalConfig, "--check",
+      "render", "--config", renderConfig, "--check",
     ]);
     expect(exitCode).toBe(0);
     expect(stdout).toContain("No drift");
   });
 
   it("--check exits 1 when files are missing", async () => {
-    const emptyConfigPath = join(import.meta.dirname, "../__empty_config__.yaml");
-    const { writeFileSync } = await import("node:fs");
-    writeFileSync(emptyConfigPath, `dsl: ${minimalYaml}\nrenders:\n  - template: ${join(fixturesDir, "templates/agent-prompt.md.hbs")}\n    context: agent\n    output: ${join(import.meta.dirname, "../__nonexistent__/{agent.id}.md")}\n`);
+    const emptyConfigPath = join(tmpdir(), "agc-empty-config.yaml");
+    writeFileSync(emptyConfigPath, `dsl: ${minimalYaml}\nrenders:\n  - template: ${join(fixturesDir, "templates/agent-prompt.md.hbs")}\n    context: agent\n    output: ${join(tmpdir(), "agc-nonexistent/{agent.id}.md")}\n`);
     try {
       const { exitCode, stderr } = await run([
         "render", "--config", emptyConfigPath, "--check",
@@ -167,15 +191,15 @@ describe("agent-contracts render", () => {
 
 describe("agent-contracts check", () => {
   it("runs full pipeline and exits 0 on valid fixture", async () => {
-    await run(["render", "--config", minimalConfig]);
-    const { exitCode, stdout } = await run(["check", "--config", minimalConfig]);
+    await run(["render", "--config", renderConfig]);
+    const { exitCode, stdout } = await run(["check", "--config", renderConfig]);
     expect(exitCode).toBe(0);
     expect(stdout).toContain("passed");
   });
 
   it("passes with bindings (no false drift)", async () => {
-    await run(["render", "--config", bindingsConfig]);
-    const { exitCode, stdout } = await run(["check", "--config", bindingsConfig]);
+    await run(["render", "--config", bindingsRenderConfig]);
+    const { exitCode, stdout } = await run(["check", "--config", bindingsRenderConfig]);
     expect(exitCode).toBe(0);
     expect(stdout).toContain("passed");
   });

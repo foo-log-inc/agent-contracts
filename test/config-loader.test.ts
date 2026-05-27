@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { loadConfig, ConfigLoadError } from "../src/config/index.js";
 
-const TEMP_DIR = join(import.meta.dirname, "__tmp_config__");
+const TEMP_DIR = join(tmpdir(), "agc-tmp-config");
 
 beforeEach(async () => {
   await mkdir(TEMP_DIR, { recursive: true });

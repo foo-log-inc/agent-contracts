@@ -1,5 +1,6 @@
 import { readFileSync, existsSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve, join } from "node:path";
+import { tmpdir } from "node:os";
 import { parse as parseYaml } from "yaml";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { DslSchema, type Dsl } from "../../src/schema/index.js";
@@ -13,7 +14,7 @@ import type { ResolvedRenderTarget } from "../../src/config/types.js";
 
 const fixturesDir = resolve(import.meta.dirname, "../fixtures");
 const templateDir = join(fixturesDir, "templates");
-const outputDir = join(import.meta.dirname, "../__output__");
+const outputDir = join(tmpdir(), "agc-renderer-output");
 
 let fullDsl: Dsl;
 
@@ -356,7 +357,7 @@ describe("checkDriftFromConfig", () => {
   });
 
   it("returns drift for navigation-index when file is missing", async () => {
-    const emptyDir = join(import.meta.dirname, "../__empty_nav_output__");
+    const emptyDir = join(tmpdir(), "agc-empty-nav-output");
     const targets: ResolvedRenderTarget[] = [
       navigationIndexTarget(
         join(templateDir, "navigation-index.hbs"),
@@ -369,7 +370,7 @@ describe("checkDriftFromConfig", () => {
   });
 
   it("returns drift when files are missing", async () => {
-    const emptyDir = join(import.meta.dirname, "../__empty_output__");
+    const emptyDir = join(tmpdir(), "agc-empty-output");
     const targets: ResolvedRenderTarget[] = [
       agentTarget(
         join(templateDir, "agent-prompt.md.hbs"),
@@ -391,7 +392,7 @@ function toolTarget(tpl: string, out: string, opts?: Partial<ResolvedRenderTarge
 }
 
 describe("skip_empty", () => {
-  const skipEmptyDir = join(import.meta.dirname, "../__skip_empty_output__");
+  const skipEmptyDir = join(tmpdir(), "agc-skip-empty-output");
 
   afterAll(() => {
     if (existsSync(skipEmptyDir)) {

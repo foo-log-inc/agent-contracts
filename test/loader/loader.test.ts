@@ -1,4 +1,5 @@
 import { resolve, join } from "node:path";
+import { tmpdir } from "node:os";
 import { describe, it, expect } from "vitest";
 import { loadDsl, DslLoadError } from "../../src/loader/index.js";
 
@@ -66,9 +67,8 @@ describe("loadDsl", () => {
     });
 
     it("errors on $ref to non-existent file", async () => {
-      const tmpDir = join(fixturesDir, "multifile");
       const { writeFile, unlink } = await import("node:fs/promises");
-      const tmpPath = join(tmpDir, "_broken-ref.yaml");
+      const tmpPath = join(tmpdir(), "_broken-ref.yaml");
       await writeFile(
         tmpPath,
         'version: 1\nsystem:\n  id: x\n  name: X\n  default_workflow_order: []\nagents: { $ref: "./nonexistent.yaml" }\n',
@@ -260,7 +260,7 @@ describe("loadDsl", () => {
 
     it("errors on non-existent JSON Pointer path", async () => {
       const { writeFileSync, unlinkSync } = await import("node:fs");
-      const tempPath = join(fixturesDir, "json-pointer-ref/temp-bad-ref.yaml");
+      const tempPath = join(tmpdir(), "temp-bad-ref.yaml");
       writeFileSync(tempPath, `version: 1\nsystem:\n  id: t\n  name: T\n  default_workflow_order: []\nhandoff_types:\n  h:\n    version: 1\n    schema:\n      $ref: "#/components/schemas/nonexistent"\n`);
       try {
         await expect(loadDsl(tempPath)).rejects.toThrow("not found");
@@ -291,8 +291,8 @@ describe("loadDsl", () => {
 
     it("resolves internal $ref within an externally-loaded file", async () => {
       const { writeFileSync, unlinkSync } = await import("node:fs");
-      const tempDsl = join(fixturesDir, "file-fragment-ref/temp-internal-ref.yaml");
-      const tempComp = join(fixturesDir, "file-fragment-ref/temp-components.yaml");
+      const tempDsl = join(tmpdir(), "temp-internal-ref.yaml");
+      const tempComp = join(tmpdir(), "temp-components.yaml");
       writeFileSync(tempComp, [
         "schemas:",
         "  base:",
@@ -338,7 +338,7 @@ describe("loadDsl", () => {
 
     it("errors on file $ref with fragment pointing to non-existent path", async () => {
       const { writeFileSync, unlinkSync } = await import("node:fs");
-      const tempDsl = join(fixturesDir, "file-fragment-ref/temp-bad-fragment.yaml");
+      const tempDsl = join(tmpdir(), "temp-bad-fragment.yaml");
       writeFileSync(tempDsl, [
         "version: 1",
         "system:",

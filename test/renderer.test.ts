@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { writeFile, mkdir, rm, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import type { Dsl } from "../src/schema/index.js";
 import type { ResolvedRenderTarget } from "../src/config/types.js";
 import { renderFromConfig, checkDriftFromConfig } from "../src/renderer/renderer.js";
 
-const TEMP_DIR = join(import.meta.dirname, "__tmp_renderer__");
+const TEMP_DIR = join(tmpdir(), "agc-tmp-renderer");
 
 function createMinimalDsl(): Dsl {
   return {
