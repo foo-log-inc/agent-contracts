@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { writeFileSync, mkdirSync, rmSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, join } from "node:path";
+import { tmpdir } from "node:os";
 import { AgentContractsConfigSchema } from "../../src/config/types.js";
 import { loadConfig } from "../../src/config/loader.js";
 
@@ -101,7 +102,7 @@ describe("AgentContractsConfigSchema multi-team", () => {
 
 // Test loader with file fixtures
 describe("loadConfig multi-team", () => {
-  const fixtureDir = resolve(import.meta.dirname, "__fixtures__/multi-team");
+  const fixtureDir = join(tmpdir(), "agc-multi-team-fixtures");
 
   beforeAll(() => {
     mkdirSync(resolve(fixtureDir, "teams/backend/bindings"), { recursive: true });
