@@ -1,0 +1,12 @@
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      args:
+        NODE_VERSION: ${NODE_VERSION:-22}
+    volumes:
+      - ./src:/app/src:ro
+      - ./test:/app/test:ro
+      - ./__tests__:/app/__tests__:ro
+    network_mode: none
