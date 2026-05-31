@@ -34,7 +34,8 @@
     "generate:cli": "cli-contracts generate typescript",
     "generate:docs": "cli-contracts docs",
     "version": "node -e \"const fs=require('fs');const f='cli-contract.yaml';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(/^  version: .*/m,'  version: '+process.env.npm_package_version))\" && git add cli-contract.yaml",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run clean && npm run build",
+    "test:ci": "vitest run"
   },
   "keywords": [
     "agent",
