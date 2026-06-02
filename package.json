@@ -1,12 +1,12 @@
 {
   "name": "agent-contracts",
-  "version": "0.32.5",
+  "version": "0.33.0",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "agent-contracts": "./dist/cli.js"
+    "agent-contracts": "dist/agent-contracts.bundle.mjs"
   },
   "exports": {
     ".": {
@@ -15,7 +15,11 @@
     }
   },
   "files": [
-    "dist",
+    "dist/agent-contracts.bundle.mjs",
+    "dist/agent-contracts.bundle.mjs.map",
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts",
     "dsl_base",
     "cli-contract.yaml",
     "docs/cli-reference.md",
@@ -34,8 +38,10 @@
     "generate:cli": "cli-contracts generate typescript",
     "generate:docs": "cli-contracts docs",
     "version": "node -e \"const fs=require('fs');const f='cli-contract.yaml';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(/^  version: .*/m,'  version: '+process.env.npm_package_version))\" && git add cli-contract.yaml",
-    "prepublishOnly": "npm run clean && npm run build",
-    "test:ci": "vitest run"
+    "prepublishOnly": "npm run clean && npm run build && npm run bundle:min",
+    "test:ci": "vitest run",
+    "bundle": "node esbuild.bundle.mjs",
+    "bundle:min": "node esbuild.bundle.mjs --minify"
   },
   "keywords": [
     "agent",
@@ -60,42 +66,33 @@
   "bugs": {
     "url": "https://github.com/foo-log-inc/agent-contracts/issues"
   },
-  "dependencies": {
-    "@stoplight/spectral-core": "^1.22.0",
-    "@stoplight/spectral-functions": "^1.9.0",
-    "@stoplight/spectral-rulesets": "^1.22.1",
-    "ajv": "^8.18.0",
-    "cli-contracts": "^0.31.0",
-    "commander": "^14.0.3",
-    "handlebars": "^4.7.9",
-    "minimatch": "^10.2.5",
-    "yaml": "^2.8.3",
-    "zod": "^4.3.6",
-    "zod-to-json-schema": "^3.25.2"
-  },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.138",
     "@eslint/js": "^10.0.1",
     "@google/genai": "^2.0.1",
     "@openai/agents": "^0.11.1",
+    "@stoplight/spectral-core": "^1.22.0",
+    "@stoplight/spectral-functions": "^1.9.0",
+    "@stoplight/spectral-rulesets": "^1.22.1",
     "@types/node": "^25.6.0",
     "agent-contracts-runtime": "^0.31.4",
+    "ajv": "^8.18.0",
+    "cli-contracts": "^0.32.0",
+    "commander": "^14.0.3",
+    "esbuild": "^0.28.0",
     "eslint": "^10.2.0",
     "globals": "^17.5.0",
+    "handlebars": "^4.7.9",
+    "minimatch": "^10.2.5",
     "prettier": "^3.8.2",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.1",
-    "vitest": "^4.1.4"
-  },
-  "peerDependencies": {
-    "agent-contracts-runtime": "^0.31.0 || ^0.32.0"
-  },
-  "peerDependenciesMeta": {
-    "agent-contracts-runtime": {
-      "optional": true
-    }
+    "vitest": "^4.1.4",
+    "yaml": "^2.8.3",
+    "zod": "^4.3.6",
+    "zod-to-json-schema": "^3.25.2"
   },
   "engines": {
     "node": ">=20.0.0"

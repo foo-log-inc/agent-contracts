@@ -5,3 +5,4 @@ export * from "./schemas.js";
 export { createProgram } from "./program.js";
 export type { CommandHandlers } from "./program.js";
 export { commandDefinitions, deriveCommandPolicy } from "./policy.js";
+export { CONTRACT_YAML, CONTRACT_JSON_STR } from "./contract.js";
