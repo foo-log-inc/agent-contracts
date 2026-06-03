@@ -109,6 +109,7 @@ export interface AuditOptions {
   dryRun?: boolean;
   adapter?: string;
   model?: string;
+  logFile?: string;
   failOn?: "info" | "warning" | "error" | "critical";
   output?: string;
   reportFormat?: "text" | "json" | "markdown";

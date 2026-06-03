@@ -340,6 +340,12 @@ export const commandDefinitions = {
         }
       },
       {
+        "name": "log-file",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
         "name": "fail-on",
         "schema": {
           "type": "string",

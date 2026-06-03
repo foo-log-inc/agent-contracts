@@ -10,7 +10,7 @@ export interface CommandHandlers {
   render: (options: { config?: string; team?: string; check?: boolean; quiet?: boolean }, parentOpts: Record<string, unknown>) => Promise<void>;
   check: (options: { config?: string; team?: string; format?: string; quiet?: boolean; strict?: boolean }, parentOpts: Record<string, unknown>) => Promise<void>;
   score: (dir: string | undefined, options: { config?: string; team?: string; format?: string; threshold?: string }, parentOpts: Record<string, unknown>) => Promise<void>;
-  audit: (type: string | undefined, options: { config?: string; team?: string; format?: string; scope?: string; dryRun?: boolean; adapter?: string; model?: string; failOn?: string; output?: string; reportFormat?: string; showPrompt?: boolean }, parentOpts: Record<string, unknown>) => Promise<void | string>;
+  audit: (type: string | undefined, options: { config?: string; team?: string; format?: string; scope?: string; dryRun?: boolean; adapter?: string; model?: string; logFile?: string; failOn?: string; output?: string; reportFormat?: string; showPrompt?: boolean }, parentOpts: Record<string, unknown>) => Promise<void | string>;
   generate: (type: string | undefined, options: { config?: string; team?: string; check?: boolean; binding?: string; output?: string; format?: string; dryRun?: boolean; quiet?: boolean }, parentOpts: Record<string, unknown>) => Promise<void>;
   navigationIndex: (dir: string | undefined, options: { config?: string; team?: string; format?: string; artifact?: string; quiet?: boolean }, parentOpts: Record<string, unknown>) => Promise<void>;
   artifactCoverage: (dir: string | undefined, options: { config?: string; team?: string; format?: string; minCoverage?: string }, parentOpts: Record<string, unknown>) => Promise<void>;
@@ -148,6 +148,7 @@ export function createProgram(
     .option("--dry-run", "Output the audit prompt without calling LLM.", false)
     .option("--adapter <name>", "SDK adapter to use for LLM calls (overrides config audit.adapter).")
     .option("--model <name>", "LLM model override (overrides config audit.model).")
+    .option("-l, --log-file <value>", "Write agent progress log to this file path.")
     .option("--fail-on <level>", "Minimum finding severity that causes exit 10 (info|warning|error|critical).", "critical")
     .option("-o, --output <file>", "Write result to a file instead of stdout.")
     .option("--report-format <fmt>", "Alias for --format. When both are specified, --report-format takes precedence.", "text")

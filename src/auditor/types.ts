@@ -10,6 +10,7 @@ export interface AuditOptions {
   adapter?: string;
   model?: string;
   team?: string;
+  logFile?: string;
 }
 
 export interface AuditConfig {
