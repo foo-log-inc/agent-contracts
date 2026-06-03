@@ -541,6 +541,14 @@
             "items": {
               "type": "string"
             }
+          },
+          "model_class": {
+            "type": "string",
+            "enum": [
+              "fast",
+              "standard",
+              "thinking"
+            ]
           }
         },
         "required": [

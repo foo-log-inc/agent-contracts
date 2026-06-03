@@ -148,6 +148,24 @@ describe("schema normal cases", () => {
     expect(t.validations).toEqual(["v1", "v2"]);
   });
 
+  it("parses TaskSchema with model_class", () => {
+    for (const mc of ["fast", "standard", "thinking"] as const) {
+      const t = TaskSchema.parse({ ...minimalValidTask, model_class: mc });
+      expect(t.model_class).toBe(mc);
+    }
+  });
+
+  it("allows TaskSchema without model_class", () => {
+    const t = TaskSchema.parse(minimalValidTask);
+    expect(t.model_class).toBeUndefined();
+  });
+
+  it("rejects invalid model_class value", () => {
+    expect(() =>
+      TaskSchema.parse({ ...minimalValidTask, model_class: "ultra" }),
+    ).toThrow();
+  });
+
   it("parses ArtifactSchema", () => {
     const a = ArtifactSchema.parse(minimalValidArtifact);
     expect(a.required_validations).toEqual([]);

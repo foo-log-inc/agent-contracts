@@ -213,6 +213,23 @@ describe("buildPerAgentContext", () => {
     expect(ctx.delegatableTasks[0].id).toBe("delegated-work");
   });
 
+  it("propagates model_class to delegatableTasks", () => {
+    const dsl = createMinimalDsl();
+    dsl.tasks["implement-feature"].model_class = "thinking";
+    const ctx = buildPerAgentContext(dsl, { ...dsl.agents["reviewer"], id: "reviewer" });
+    const dt = ctx.delegatableTasks.find((t) => t.id === "implement-feature");
+    expect(dt).toBeDefined();
+    expect(dt!.model_class).toBe("thinking");
+  });
+
+  it("omits model_class from delegatableTasks when not set", () => {
+    const dsl = createMinimalDsl();
+    const ctx = buildPerAgentContext(dsl, { ...dsl.agents["reviewer"], id: "reviewer" });
+    const dt = ctx.delegatableTasks.find((t) => t.id === "implement-feature");
+    expect(dt).toBeDefined();
+    expect(dt!.model_class).toBeUndefined();
+  });
+
   it("has empty relatedValidations when agent runs no validations", () => {
     const dsl = createMinimalDsl();
     const ctx = buildPerAgentContext(dsl, { ...dsl.agents["dev"], id: "dev" });

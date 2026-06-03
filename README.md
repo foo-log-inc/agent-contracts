@@ -194,6 +194,7 @@ A **Task** defines a delegatable unit of work:
 * input artifacts
 * invocation/result handoffs
 * task-specific execution expectations
+* `model_class` — optional LLM capability requirement (`fast`, `standard`, `thinking`)
 
 ### Artifact
 
@@ -619,6 +620,7 @@ tasks:
     allowed_from_agents:
       - main-architect
     workflow: implement
+    model_class: standard            # optional: fast | standard | thinking
     input_artifacts:
       - spec-md
       - plan-md
