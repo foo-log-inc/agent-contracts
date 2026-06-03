@@ -3,7 +3,7 @@ cli_contracts: 0.1.0
 
 info:
   title: agent-contracts CLI
-  version: 0.33.0
+  version: 0.34.0
   description: >-
     Declarative YAML DSL toolkit for defining, validating, and rendering
     multi-agent development workflows. Provides static validation,
@@ -630,6 +630,12 @@ command_sets:
           - name: model
             description: LLM model override (overrides config audit.model).
             value_name: name
+            schema:
+              type: string
+
+          - name: log-file
+            aliases: [l]
+            description: Write agent progress log to this file path.
             schema:
               type: string
 

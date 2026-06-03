@@ -10,6 +10,7 @@
  * have zero additional overhead.
  */
 
+import { resolve } from "node:path";
 import type { Dsl } from "../schema/index.js";
 import type { ResolvedConfig } from "../config/types.js";
 import type { AuditType, AuditConfig, AuditOptions } from "./types.js";
@@ -120,9 +121,12 @@ export async function runAudit(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let runTask: (...args: any[]) => Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let createProgressSink: (options: any) => { write: (chunk: string) => void; close: () => void };
   try {
     const runtime = await import(RUNTIME_PKG);
     runTask = runtime.runTask;
+    createProgressSink = runtime.createProgressSink;
   } catch {
     throw new Error(
       "agent-contracts-runtime is not installed. " +
@@ -134,33 +138,42 @@ export async function runAudit(
   const adapterName = auditConfig.adapter ?? "mock";
   const adapter = await createAdapter(RUNTIME_PKG, adapterName, auditConfig);
 
-  const result = await runTask(adapter, taskId, {
-    user_request: userRequest,
-  }, {
-    maxFollowUps: 2,
-    maxRetries: 0,
-    agentRegistry,
-    taskRegistry,
-    handoffSchemas,
-  });
+  const progressSink = options.logFile
+    ? createProgressSink({ stderr: true, file: resolve(options.logFile), naming: "single" })
+    : createProgressSink({ stderr: true });
 
-  const outcome = result.outcome;
-  return {
-    taskId,
-    auditType: options.auditType,
-    data: outcome.status === "success" ? (outcome.data as DslAuditResult) : null,
-    raw: (outcome.raw as string) ?? "",
-    prompt: userRequest,
-    dryRun: false,
-    status: outcome.status as AuditRunResult["status"],
-    errorMessage:
-      outcome.status === "error" ? outcome.message :
-      outcome.status === "escalation" ? outcome.reason :
-      outcome.status === "validation_error" ? outcome.errors?.message :
-      undefined,
-    followUpsUsed: result.follow_ups_used,
-    retriesUsed: result.retries_used,
-  };
+  try {
+    const result = await runTask(adapter, taskId, {
+      user_request: userRequest,
+    }, {
+      maxFollowUps: 2,
+      maxRetries: 0,
+      progressOutput: progressSink,
+      agentRegistry,
+      taskRegistry,
+      handoffSchemas,
+    });
+
+    const outcome = result.outcome;
+    return {
+      taskId,
+      auditType: options.auditType,
+      data: outcome.status === "success" ? (outcome.data as DslAuditResult) : null,
+      raw: (outcome.raw as string) ?? "",
+      prompt: userRequest,
+      dryRun: false,
+      status: outcome.status as AuditRunResult["status"],
+      errorMessage:
+        outcome.status === "error" ? outcome.message :
+        outcome.status === "escalation" ? outcome.reason :
+        outcome.status === "validation_error" ? outcome.errors?.message :
+        undefined,
+      followUpsUsed: result.follow_ups_used,
+      retriesUsed: result.retries_used,
+    };
+  } finally {
+    progressSink.close();
+  }
 }
 
 export async function runAllAudits(

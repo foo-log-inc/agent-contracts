@@ -616,7 +616,7 @@ async function runAuditForDsl(
   vars: Record<string, string> | undefined,
   configObj: Awaited<ReturnType<typeof loadConfig>> & object,
   auditType: string,
-  auditOpts: { format: AuditOutputFormat; scope?: string; dryRun: boolean; adapter?: string; model?: string },
+  auditOpts: { format: AuditOutputFormat; scope?: string; dryRun: boolean; adapter?: string; model?: string; logFile?: string },
   failOn?: string,
 ): Promise<{ exitCode: number; output: string }> {
   const resolved = await resolve(dslPath);
@@ -637,6 +637,7 @@ async function runAuditForDsl(
       format: auditOpts.format,
       scope: auditOpts.scope,
       dryRun: auditOpts.dryRun,
+      logFile: auditOpts.logFile,
     });
     let output: string;
     if (auditOpts.dryRun) {
@@ -652,6 +653,7 @@ async function runAuditForDsl(
     format: auditOpts.format,
     scope: auditOpts.scope,
     dryRun: auditOpts.dryRun,
+    logFile: auditOpts.logFile,
   });
   let output: string;
   if (auditOpts.dryRun) {
@@ -693,7 +695,7 @@ const handleAudit: CommandHandlers["audit"] = async (type, opts) => {
           teamConfig.vars,
           config,
           auditType,
-          { format, scope: opts.scope, dryRun: !!opts.dryRun, adapter: opts.adapter, model: opts.model },
+          { format, scope: opts.scope, dryRun: !!opts.dryRun, adapter: opts.adapter, model: opts.model, logFile: opts.logFile },
           opts.failOn,
         );
         process.stdout.write(result.output);
@@ -709,7 +711,7 @@ const handleAudit: CommandHandlers["audit"] = async (type, opts) => {
       config.vars,
       config,
       auditType,
-      { format, scope: opts.scope, dryRun: !!opts.dryRun, adapter: opts.adapter, model: opts.model },
+      { format, scope: opts.scope, dryRun: !!opts.dryRun, adapter: opts.adapter, model: opts.model, logFile: opts.logFile },
       opts.failOn,
     );
     process.stdout.write(result.output);

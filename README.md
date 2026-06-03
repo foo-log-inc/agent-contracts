@@ -1206,6 +1206,7 @@ The output follows the [CLI Contracts](https://github.com/foo-log-inc/cli-contra
 | `--dry-run` | Output the audit prompt without calling the LLM |
 | `--adapter <name>` | SDK adapter: `claude`, `openai`, `gemini`, `cursor` (overrides config) |
 | `--model <name>` | LLM model override (overrides config) |
+| `-l, --log-file <path>` | Write structured agent progress log to a file |
 | `-c, --config <path>` | Path to `agent-contracts.config.yaml` |
 | `--team <id>` | Limit to one team (multi-team config only) |
 
@@ -1879,6 +1880,8 @@ agent-contracts audit dsl -c config.yaml --dry-run
 ````
 
 Use `--dry-run` to inspect the prompt sent to the LLM without making an API call. Running multiple adapters provides cross-validation — findings reported by 3+ adapters are high-confidence issues.
+
+All LLM commands support `--log-file <path>` (`-l`) to write structured progress logs to a file for debugging and monitoring.
 
 | Exit Code | Meaning |
 |-----------|---------|
