@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { EscalationCriterionSchema, RuleSchema, SectionSchema } from "./agent.js";
 
+export const ModelClassSchema = z.enum(["fast", "standard", "thinking"]);
+export type ModelClass = z.infer<typeof ModelClassSchema>;
+
 export const ExecutionStepSchema = z
   .object({
     id: z.string(),
@@ -40,6 +43,7 @@ export const TaskSchema = z
     sections: z.array(SectionSchema).optional(),
     validations: z.array(z.string()).default([]),
     guardrails: z.array(z.string()).optional(),
+    model_class: ModelClassSchema.optional(),
   })
   .passthrough();
 export type Task = z.infer<typeof TaskSchema>;

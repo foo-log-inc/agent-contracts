@@ -170,6 +170,7 @@ export interface DelegatableTaskView {
   invocation_payload_keys: string[];
   result_handoff: string;
   result_payload_keys: string[];
+  model_class?: string;
 }
 
 export interface PerAgentContext {
@@ -767,6 +768,7 @@ function buildDelegatableTasks(
         result_payload_keys: resultHandoff
           ? extractSchemaFieldNames(resultHandoff.schema)
           : [],
+        ...(t.model_class ? { model_class: t.model_class } : {}),
       };
     });
 }

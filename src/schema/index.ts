@@ -103,8 +103,10 @@ export {
 } from "./team-interface.js";
 export {
   ExecutionStepSchema,
+  ModelClassSchema,
   TaskSchema,
   type ExecutionStep,
+  type ModelClass,
   type Task,
 } from "./task.js";
 export { CommandSchema, ToolSchema, type Command, type Tool } from "./tool.js";
