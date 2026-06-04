@@ -6,7 +6,7 @@ export interface AuditOptions {
   auditType: AuditType;
   format: OutputFormat;
   scope?: string;
-  dryRun: boolean;
+  showPrompt?: boolean;
   adapter?: string;
   model?: string;
   team?: string;

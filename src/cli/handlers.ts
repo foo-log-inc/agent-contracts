@@ -616,7 +616,7 @@ async function runAuditForDsl(
   vars: Record<string, string> | undefined,
   configObj: Awaited<ReturnType<typeof loadConfig>> & object,
   auditType: string,
-  auditOpts: { format: AuditOutputFormat; scope?: string; dryRun: boolean; adapter?: string; model?: string; logFile?: string },
+  auditOpts: { format: AuditOutputFormat; scope?: string; showPrompt: boolean; adapter?: string; model?: string; logFile?: string },
   failOn?: string,
 ): Promise<{ exitCode: number; output: string }> {
   const resolved = await resolve(dslPath);
@@ -636,11 +636,11 @@ async function runAuditForDsl(
     const results = await runAllAudits(schemaResult.data!, configObj, auditConfig, {
       format: auditOpts.format,
       scope: auditOpts.scope,
-      dryRun: auditOpts.dryRun,
+      showPrompt: auditOpts.showPrompt,
       logFile: auditOpts.logFile,
     });
     let output: string;
-    if (auditOpts.dryRun) {
+    if (auditOpts.showPrompt) {
       output = results.map((r) => `\n--- Audit prompt: ${r.auditType} ---\n${r.prompt}\n`).join("");
     } else {
       output = formatAuditResults(results, auditOpts.format) + "\n";
@@ -652,11 +652,11 @@ async function runAuditForDsl(
     auditType: auditType as AuditType,
     format: auditOpts.format,
     scope: auditOpts.scope,
-    dryRun: auditOpts.dryRun,
+    showPrompt: auditOpts.showPrompt,
     logFile: auditOpts.logFile,
   });
   let output: string;
-  if (auditOpts.dryRun) {
+  if (auditOpts.showPrompt) {
     output = result.prompt + "\n";
   } else {
     output = formatAuditResult(result, auditOpts.format) + "\n";
@@ -695,7 +695,7 @@ const handleAudit: CommandHandlers["audit"] = async (type, opts) => {
           teamConfig.vars,
           config,
           auditType,
-          { format, scope: opts.scope, dryRun: !!opts.dryRun, adapter: opts.adapter, model: opts.model, logFile: opts.logFile },
+          { format, scope: opts.scope, showPrompt: !!opts.showPrompt, adapter: opts.adapter, model: opts.model, logFile: opts.logFile },
           opts.failOn,
         );
         process.stdout.write(result.output);
@@ -711,7 +711,7 @@ const handleAudit: CommandHandlers["audit"] = async (type, opts) => {
       config.vars,
       config,
       auditType,
-      { format, scope: opts.scope, dryRun: !!opts.dryRun, adapter: opts.adapter, model: opts.model, logFile: opts.logFile },
+      { format, scope: opts.scope, showPrompt: !!opts.showPrompt, adapter: opts.adapter, model: opts.model, logFile: opts.logFile },
       opts.failOn,
     );
     process.stdout.write(result.output);

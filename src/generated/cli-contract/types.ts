@@ -106,7 +106,7 @@ export interface AuditOptions {
   team?: string;
   format?: "text" | "json" | "markdown";
   scope?: string;
-  dryRun?: boolean;
+  showPrompt?: boolean;
   adapter?: string;
   model?: string;
   logFile?: string;

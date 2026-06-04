@@ -22,43 +22,43 @@ async function loadDsl() {
 }
 
 describe("runAudit", () => {
-  it("returns prompt in dry-run mode for render type", async () => {
+  it("returns prompt in show-prompt mode for render type", async () => {
     const dsl = await loadDsl();
     const result = await runAudit(dsl, stubConfig, {}, {
       auditType: "render",
       format: "text",
-      dryRun: true,
+      showPrompt: true,
     });
 
-    expect(result.dryRun).toBe(true);
+    expect(result.showPrompt).toBe(true);
     expect(result.status).toBe("success");
     expect(result.taskId).toBe("audit-dsl-completeness");
     expect(result.prompt).toContain("## DSL Overview");
     expect(result.data).toBeNull();
   });
 
-  it("returns prompt in dry-run mode for dsl type", async () => {
+  it("returns prompt in show-prompt mode for dsl type", async () => {
     const dsl = await loadDsl();
     const result = await runAudit(dsl, stubConfig, {}, {
       auditType: "dsl",
       format: "text",
-      dryRun: true,
+      showPrompt: true,
     });
 
-    expect(result.dryRun).toBe(true);
+    expect(result.showPrompt).toBe(true);
     expect(result.taskId).toBe("audit-semantic-design");
     expect(result.prompt).toContain("## Agent Definitions");
   });
 
-  it("returns prompt in dry-run mode for prompt type", async () => {
+  it("returns prompt in show-prompt mode for prompt type", async () => {
     const dsl = await loadDsl();
     const result = await runAudit(dsl, stubConfig, {}, {
       auditType: "prompt",
       format: "text",
-      dryRun: true,
+      showPrompt: true,
     });
 
-    expect(result.dryRun).toBe(true);
+    expect(result.showPrompt).toBe(true);
     expect(result.taskId).toBe("audit-generated-prompts");
     expect(result.prompt).toContain("## Agent DSL Definitions");
   });
@@ -66,9 +66,9 @@ describe("runAudit", () => {
   it("maps audit types to correct task IDs", async () => {
     const dsl = await loadDsl();
 
-    const r1 = await runAudit(dsl, stubConfig, {}, { auditType: "render", format: "text", dryRun: true });
-    const r2 = await runAudit(dsl, stubConfig, {}, { auditType: "dsl", format: "text", dryRun: true });
-    const r3 = await runAudit(dsl, stubConfig, {}, { auditType: "prompt", format: "text", dryRun: true });
+    const r1 = await runAudit(dsl, stubConfig, {}, { auditType: "render", format: "text", showPrompt: true });
+    const r2 = await runAudit(dsl, stubConfig, {}, { auditType: "dsl", format: "text", showPrompt: true });
+    const r3 = await runAudit(dsl, stubConfig, {}, { auditType: "prompt", format: "text", showPrompt: true });
 
     expect(r1.taskId).toBe("audit-dsl-completeness");
     expect(r2.taskId).toBe("audit-semantic-design");
