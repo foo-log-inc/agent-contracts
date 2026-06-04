@@ -276,6 +276,48 @@ describe("boundary values", () => {
   });
 });
 
+describe("memory capability", () => {
+  it("parses agent with memory block", () => {
+    const result = AgentSchema.safeParse({
+      role_name: "test",
+      purpose: "test",
+      memory: {
+        resumable: true,
+        ref_required: false,
+        emits_memory_ref: true,
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.memory).toEqual({
+        resumable: true,
+        ref_required: false,
+        emits_memory_ref: true,
+      });
+    }
+  });
+
+  it("allows agent without memory block", () => {
+    const result = AgentSchema.safeParse({
+      role_name: "test",
+      purpose: "test",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.memory).toBeUndefined();
+    }
+  });
+
+  it("allows partial memory block", () => {
+    const result = AgentSchema.safeParse({
+      role_name: "test",
+      purpose: "test",
+      memory: { resumable: true },
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
 describe("schema default values", () => {
   it("defaults all AgentSchema permission arrays to [] when omitted", () => {
     const a = AgentSchema.parse(minimalValidAgent);

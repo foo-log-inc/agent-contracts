@@ -1,6 +1,8 @@
 export {
   AgentSchema,
   type Agent,
+  MemoryCapabilitySchema,
+  type MemoryCapability,
   EscalationCriterionSchema,
   type EscalationCriterion,
   PrerequisiteSchema,

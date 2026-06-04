@@ -20,3 +20,4 @@ export { taskOutputValidationCompletenessRule } from "./rules/task-output-valida
 export { entityGuardrailUndefinedRule, entityNoGuardrailsRule, guardrailOrphanedRule } from "./rules/entity-guardrail-binding.js";
 export { validationExecutorNoContextRule } from "./rules/validation-executor-no-context.js";
 export { extensionDeclaredButUnusedRule, extensionScopeMismatchRule, extensionUndeclaredUsageRule } from "./rules/extension-consumption.js";
+export { memoryConsistencyRule } from "./rules/memory-consistency.js";

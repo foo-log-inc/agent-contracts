@@ -32,6 +32,7 @@ import { bindingCompletenessRule } from "./rules/binding-completeness.js";
 import { bindingDirectionMatchRule } from "./rules/binding-direction-match.js";
 import { slotDeclarationExistsRule } from "./rules/slot-declaration-exists.js";
 import { configPathConsistencyRule } from "./rules/config-path-consistency.js";
+import { memoryConsistencyRule } from "./rules/memory-consistency.js";
 
 const builtinRules: LintRule[] = [
   validationCoverageRule,
@@ -60,6 +61,7 @@ const builtinRules: LintRule[] = [
   bindingDirectionMatchRule,
   slotDeclarationExistsRule,
   configPathConsistencyRule,
+  memoryConsistencyRule,
 ];
 
 export function lint(
