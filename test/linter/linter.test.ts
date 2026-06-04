@@ -12,6 +12,7 @@ import { artifactRequiredValidationWiringRule } from "../../src/linter/rules/art
 import { taskOutputValidationCompletenessRule } from "../../src/linter/rules/task-output-validation-completeness.js";
 import { semanticValidationPhaseCoverageRule } from "../../src/linter/rules/semantic-validation-phase-coverage.js";
 import { deprecatedOwnershipFieldsRule } from "../../src/linter/rules/deprecated-ownership-fields.js";
+import { memoryConsistencyRule } from "../../src/linter/rules/memory-consistency.js";
 
 const fixturesDir = resolve(import.meta.dirname, "../fixtures");
 
@@ -742,6 +743,62 @@ describe("deprecatedOwnershipFieldsRule", () => {
       },
     });
     const diags = deprecatedOwnershipFieldsRule.run(dsl);
+    expect(diags).toHaveLength(0);
+  });
+});
+
+describe("memoryConsistencyRule", () => {
+  it("warns when resumable is true but emits_memory_ref is not declared", () => {
+    const dsl = makeDsl({
+      agents: {
+        "test-agent": {
+          role_name: "Test",
+          purpose: "Test",
+          memory: { resumable: true },
+        },
+      },
+    });
+    const diags = memoryConsistencyRule.run(dsl);
+    expect(diags).toHaveLength(1);
+    expect(diags[0].ruleId).toBe("memory-consistency");
+    expect(diags[0].severity).toBe("warning");
+    expect(diags[0].path).toBe("agents.test-agent.memory");
+    expect(diags[0].message).toContain("emits_memory_ref");
+  });
+
+  it("errors when ref_required is true but resumable is not true", () => {
+    const dsl = makeDsl({
+      agents: {
+        "test-agent": {
+          role_name: "Test",
+          purpose: "Test",
+          memory: { ref_required: true },
+        },
+      },
+    });
+    const diags = memoryConsistencyRule.run(dsl);
+    expect(diags).toHaveLength(1);
+    expect(diags[0].ruleId).toBe("memory-consistency");
+    expect(diags[0].severity).toBe("error");
+    expect(diags[0].path).toBe("agents.test-agent.memory");
+    expect(diags[0].message).toContain("ref_required");
+  });
+
+  it("passes when memory config is consistent", () => {
+    const dsl = makeDsl({
+      agents: {
+        "test-agent": {
+          role_name: "Test",
+          purpose: "Test",
+          memory: {
+            resumable: true,
+            ref_required: true,
+            emits_memory_ref: true,
+          },
+        },
+      },
+    });
+    const diags = memoryConsistencyRule.run(dsl);
     expect(diags).toHaveLength(0);
   });
 });

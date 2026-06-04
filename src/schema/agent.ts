@@ -45,6 +45,13 @@ export const PrerequisiteSchema = z
   .passthrough();
 export type Prerequisite = z.infer<typeof PrerequisiteSchema>;
 
+export const MemoryCapabilitySchema = z.object({
+  resumable: z.boolean().optional(),
+  ref_required: z.boolean().optional(),
+  emits_memory_ref: z.boolean().optional(),
+});
+export type MemoryCapability = z.infer<typeof MemoryCapabilitySchema>;
+
 export const AgentSchema = z
   .object({
     role_name: z.string(),
@@ -66,6 +73,7 @@ export const AgentSchema = z
     sections: z.array(SectionSchema).optional(),
     prerequisites: z.array(PrerequisiteSchema).optional(),
     guardrails: z.array(z.string()).optional(),
+    memory: MemoryCapabilitySchema.optional(),
   })
   .passthrough();
 export type Agent = z.infer<typeof AgentSchema>;

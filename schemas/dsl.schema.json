@@ -294,6 +294,21 @@
             "items": {
               "type": "string"
             }
+          },
+          "memory": {
+            "type": "object",
+            "properties": {
+              "resumable": {
+                "type": "boolean"
+              },
+              "ref_required": {
+                "type": "boolean"
+              },
+              "emits_memory_ref": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
           }
         },
         "required": [
