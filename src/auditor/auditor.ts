@@ -85,7 +85,7 @@ export interface AuditRunResult {
   data: DslAuditResult | null;
   raw: string;
   prompt: string;
-  dryRun: boolean;
+  showPrompt: boolean;
   status: "success" | "validation_error" | "escalation" | "error";
   errorMessage?: string;
   followUpsUsed: number;
@@ -101,14 +101,14 @@ export async function runAudit(
   const taskId = AUDIT_TYPE_TO_TASK[options.auditType];
   const userRequest = await buildAuditContext(options.auditType, dsl, config);
 
-  if (options.dryRun) {
+  if (options.showPrompt) {
     return {
       taskId,
       auditType: options.auditType,
       data: null,
       raw: "",
       prompt: userRequest,
-      dryRun: true,
+      showPrompt: true,
       status: "success",
       followUpsUsed: 0,
       retriesUsed: 0,
@@ -130,7 +130,7 @@ export async function runAudit(
   } catch {
     throw new Error(
       "agent-contracts-runtime is not installed. " +
-      "Install it to use the audit command, or use --dry-run to inspect the prompt.\n" +
+      "Install it to use the audit command, or use --show-prompt to inspect the prompt.\n" +
       "  npm install agent-contracts-runtime",
     );
   }
@@ -161,7 +161,7 @@ export async function runAudit(
       data: outcome.status === "success" ? (outcome.data as DslAuditResult) : null,
       raw: (outcome.raw as string) ?? "",
       prompt: userRequest,
-      dryRun: false,
+      showPrompt: false,
       status: outcome.status as AuditRunResult["status"],
       errorMessage:
         outcome.status === "error" ? outcome.message :

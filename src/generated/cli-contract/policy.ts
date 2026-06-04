@@ -321,7 +321,7 @@ export const commandDefinitions = {
         }
       },
       {
-        "name": "dry-run",
+        "name": "show-prompt",
         "schema": {
           "type": "boolean",
           "default": false

@@ -543,7 +543,7 @@ command_sets:
           - agent-contracts audit prompt -c agent-contracts.config.yaml
           - agent-contracts audit extensions -c agent-contracts.config.yaml
           - agent-contracts audit all -c agent-contracts.config.yaml
-          - agent-contracts audit dsl --dry-run -c agent-contracts.config.yaml
+          - agent-contracts audit dsl --show-prompt -c agent-contracts.config.yaml
           - agent-contracts audit render --format json -c agent-contracts.config.yaml
           - agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 
@@ -613,8 +613,8 @@ command_sets:
             schema:
               type: string
 
-          - name: dry-run
-            description: Output the audit prompt without calling LLM.
+          - name: show-prompt
+            description: Output the constructed prompt without calling the LLM API.
             schema:
               type: boolean
               default: false
@@ -706,11 +706,21 @@ command_sets:
               format: text
 
         x-agent:
-          retryable_exit_codes: [12]
+          riskLevel: medium
+          requiresConfirmation: false
+          idempotent: false
+          sideEffects:
+            - network
+          sideEffectNote: >-
+            Network calls to LLM provider when adapter is not mock.
+            Filesystem write only when --output is specified.
+          safeDryRunOption: show-prompt
+          expectedDurationMs: 120000
+          retryableExitCodes: [1, 12]
           recommended_before_use:
             - Ensure agent-contracts.config.yaml exists with render targets.
             - Run validate first to confirm DSL is valid.
-            - Install agent-contracts-runtime if not using --dry-run.
+            - Install agent-contracts-runtime if not using --show-prompt.
 
       # ── generate ──────────────────────────────────────
       generate:
