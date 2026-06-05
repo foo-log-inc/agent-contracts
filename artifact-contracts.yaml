@@ -1,0 +1,189 @@
+artifact_contracts: "2026A"
+
+system:
+  id: agent-contracts
+  name: Agent Contracts DSL Toolkit
+
+artifacts:
+  cli-contract-definition:
+    type: config
+    description: "CLI contract DSL definition (cli-contracts format)"
+    authority: canonical
+    change_control: approval-required
+    path_patterns: ["cli-contract.yaml"]
+
+  generated-cli:
+    type: generated-code
+    description: "Auto-generated CLI scaffolding from cli-contracts"
+    authority: generated
+    path_patterns: ["src/generated/cli-contract/**/*.ts"]
+
+  generated-dsl-base:
+    type: generated-code
+    description: "Auto-generated TypeScript from agent-contracts-runtime (DSL registries)"
+    authority: generated
+    path_patterns: ["src/generated/dsl-base/**/*.ts"]
+
+  dsl-source:
+    type: config
+    description: "Agent-contracts DSL definitions (self-describing)"
+    authority: canonical
+    change_control: approval-required
+    path_patterns: ["dsl_base/**/*.yaml"]
+
+  schema-module:
+    type: source
+    description: "Zod schema definitions for DSL validation"
+    authority: canonical
+    path_patterns: ["src/schema/**/*.ts"]
+
+  loader-module:
+    type: source
+    description: "DSL loader — YAML parsing, $ref resolution, extends merge"
+    authority: canonical
+    path_patterns: ["src/loader/**/*.ts"]
+
+  resolver-module:
+    type: source
+    description: "Resolvers — tool extends, artifact binding, bound DSL"
+    authority: canonical
+    path_patterns: ["src/resolver/**/*.ts"]
+
+  validator-module:
+    type: source
+    description: "Schema validation and reference resolution"
+    authority: canonical
+    path_patterns: ["src/validator/**/*.ts"]
+
+  linter-module:
+    type: source
+    description: "Semantic lint rules"
+    authority: canonical
+    path_patterns: ["src/linter/**/*.ts"]
+
+  renderer-module:
+    type: source
+    description: "Handlebars template rendering engine"
+    authority: canonical
+    path_patterns: ["src/renderer/**/*.ts"]
+
+  navigation-index-module:
+    type: source
+    description: "Navigation index builder — artifact-centric dependency graph"
+    authority: canonical
+    path_patterns: ["src/navigation-index/**/*.ts"]
+
+  scorer-module:
+    type: source
+    description: "DSL completeness scorer (7 dimensions)"
+    authority: canonical
+    path_patterns: ["src/scorer/**/*.ts"]
+
+  auditor-module:
+    type: source
+    description: "LLM-powered semantic audit orchestration"
+    authority: canonical
+    path_patterns: ["src/auditor/**/*.ts"]
+
+  guardrail-generator-module:
+    type: source
+    description: "Guardrail runtime artifact generator"
+    authority: canonical
+    path_patterns: ["src/guardrail-generator/**/*.ts"]
+
+  interface-generator-module:
+    type: source
+    description: "TypeScript interface generator from DSL"
+    authority: canonical
+    path_patterns: ["src/interface-generator/**/*.ts"]
+
+  artifact-coverage-module:
+    type: source
+    description: "Artifact coverage analysis"
+    authority: canonical
+    path_patterns: ["src/artifact-coverage/**/*.ts"]
+
+  cli-module:
+    type: source
+    description: "CLI command handlers and entry points"
+    authority: canonical
+    path_patterns: ["src/cli/**/*.ts"]
+
+  config-module:
+    type: source
+    description: "Config loader and types"
+    authority: canonical
+    path_patterns: ["src/config/**/*.ts"]
+
+  core-entry:
+    type: source
+    description: "Package entry points and type re-exports"
+    authority: canonical
+    path_patterns:
+      - "src/index.ts"
+      - "src/types.ts"
+
+  test-suite:
+    type: source
+    description: "Unit and integration tests"
+    authority: canonical
+    path_patterns: ["test/**/*.ts"]
+
+  dsl-json-schema:
+    type: generated-config
+    description: "JSON Schema for DSL validation (generated from Zod)"
+    authority: generated
+    path_patterns: ["schemas/dsl.schema.json"]
+
+  documentation:
+    type: doc
+    description: "Hand-written and reference documentation"
+    authority: canonical
+    path_patterns: ["docs/**/*.md"]
+    exclude_patterns: ["docs/spec/**"]
+
+  spec-documents:
+    type: doc
+    description: "Design specifications and feature specs"
+    authority: canonical
+    change_control: approval-required
+    path_patterns: ["docs/spec/**/*.md"]
+
+  build-config:
+    type: config
+    description: "Build tooling configuration"
+    authority: control
+    path_patterns:
+      - "esbuild.bundle.mjs"
+      - "tsup.config.ts"
+      - "vitest.config.ts"
+      - "tsconfig.json"
+
+  ci-workflows:
+    type: config
+    description: "GitHub Actions CI/CD workflows"
+    authority: control
+    path_patterns: [".github/workflows/**/*.yml"]
+
+trace:
+  links:
+    - id: cli-contract-to-generated
+      from: cli-contract-definition
+      to: generated-cli
+      resolver: codegen
+      description: "cli-contracts generate produces TypeScript scaffolding"
+    - id: dsl-source-to-generated-dsl
+      from: dsl-source
+      to: generated-dsl-base
+      resolver: codegen
+      description: "agent-runtime generate produces TypeScript registries from DSL"
+    - id: schema-to-json-schema
+      from: schema-module
+      to: dsl-json-schema
+      resolver: codegen
+      description: "Zod schemas are compiled to JSON Schema"
+    - id: source-to-tests
+      from: schema-module
+      to: test-suite
+      resolver: naming
+      description: "Source modules have corresponding test files"

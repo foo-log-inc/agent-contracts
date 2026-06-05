@@ -6,7 +6,7 @@ import { access } from "node:fs/promises";
 import { stringify, parse as parseYaml } from "yaml";
 import type { CommandHandlers } from "../generated/cli-contract/program.js";
 import { loadConfig, resolveDslPath, loadBindings, ConfigLoadError } from "../config/index.js";
-import { resolve, substituteVars } from "../resolver/index.js";
+import { resolve, substituteVars, resolveBound } from "../resolver/index.js";
 import { expandDefaults } from "../resolver/expand-defaults.js";
 import { validateSchema, checkReferences, validateHandoffSchemas } from "../validator/index.js";
 import { lint, spectralLint } from "../linter/index.js";
@@ -931,9 +931,15 @@ async function buildNavigationIndexForDsl(
   dslPath: string,
   vars: Record<string, string> | undefined,
   artifactFilter: string | undefined,
+  artifactBinding?: { source: string; mappings?: Record<string, string> },
+  paths?: Record<string, string>,
 ): Promise<ProjectNavigationIndex> {
   const resolved = await resolve(dslPath);
-  const data = vars ? substituteVars(resolved.data, vars) : resolved.data;
+  let data = vars ? substituteVars(resolved.data, vars) : resolved.data;
+  if (artifactBinding) {
+    const boundResult = await resolveBound(data, { artifactBinding, paths });
+    data = boundResult.data;
+  }
   const schemaResult = validateSchema(data);
   if (!schemaResult.success) {
     const issues = schemaResult.diagnostics.map((d) => `  ${d.path}: ${d.message}`).join("\n");
@@ -969,6 +975,8 @@ const handleNavigationIndex: CommandHandlers["navigationIndex"] = async (dir, op
               teamConfig.dsl,
               teamConfig.vars,
               opts.artifact,
+              teamConfig.artifactBinding,
+              teamConfig.paths,
             );
           } catch (err) {
             if (err instanceof Error && err.message === "schema validation failed") {
@@ -988,6 +996,8 @@ const handleNavigationIndex: CommandHandlers["navigationIndex"] = async (dir, op
               teamConfig.dsl,
               teamConfig.vars,
               opts.artifact,
+              teamConfig.artifactBinding,
+              teamConfig.paths,
             );
             process.stdout.write(stringify(index));
           } catch (err) {
@@ -1004,7 +1014,9 @@ const handleNavigationIndex: CommandHandlers["navigationIndex"] = async (dir, op
     }
 
     const dslPath = resolveDslPath(dir ?? DIR_DEFAULT, DIR_DEFAULT, config);
-    const index = await buildNavigationIndexForDsl(dslPath, config?.vars, opts.artifact);
+    const index = await buildNavigationIndexForDsl(
+      dslPath, config?.vars, opts.artifact, config?.artifactBinding, config?.paths,
+    );
     writeNavigationIndex(index, fmt);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -1031,7 +1043,10 @@ const handleArtifactCoverage: CommandHandlers["artifactCoverage"] = async (dir, 
       const results: Record<string, ArtifactCoverageReport> = {};
 
       for (const [teamId, teamConfig] of teamEntries) {
-        const index = await buildNavigationIndexForDsl(teamConfig.dsl, teamConfig.vars, undefined);
+        const index = await buildNavigationIndexForDsl(
+          teamConfig.dsl, teamConfig.vars, undefined,
+          teamConfig.artifactBinding, teamConfig.paths,
+        );
         const artifactFiles = extractArtifactFiles(index);
         const projectRoot = dirname(teamConfig.dsl);
         const files = enumerateProjectFiles(projectRoot, excludePatterns);
@@ -1061,7 +1076,9 @@ const handleArtifactCoverage: CommandHandlers["artifactCoverage"] = async (dir, 
     }
 
     const dslPath = resolveDslPath(dir ?? DIR_DEFAULT, DIR_DEFAULT, config);
-    const index = await buildNavigationIndexForDsl(dslPath, config?.vars, undefined);
+    const index = await buildNavigationIndexForDsl(
+      dslPath, config?.vars, undefined, config?.artifactBinding, config?.paths,
+    );
     const artifactFiles = extractArtifactFiles(index);
     const projectRoot = config?.configDir ?? dirname(dslPath);
     const files = enumerateProjectFiles(projectRoot, excludePatterns);
