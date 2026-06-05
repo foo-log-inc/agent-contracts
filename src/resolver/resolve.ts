@@ -3,6 +3,7 @@ import { loadDsl } from "../loader/index.js";
 import type { Tool } from "../schema/tool.js";
 import { resolveBase, BaseResolveError } from "./base-resolver.js";
 import { mergeDsl } from "./merger.js";
+import { resolveClone } from "./clone.js";
 import { resolveToolExtends } from "./tool-extends.js";
 
 export interface ResolveResult {
@@ -58,6 +59,8 @@ export async function resolve(
     projectResult.filePath,
     new Set(),
   );
+
+  resolveClone(data);
 
   const tools = data["tools"];
   if (tools !== undefined && tools !== null && typeof tools === "object" && !Array.isArray(tools)) {

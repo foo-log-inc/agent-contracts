@@ -3,9 +3,11 @@ import { resolve, dirname } from "node:path";
 import { parse as parseYaml } from "yaml";
 import {
   AgentContractsConfigSchema,
+  type ResolvedArtifactBinding,
   type ResolvedConfig,
   type ResolvedTeamConfig,
   type TeamConfig,
+  type ArtifactBindingConfig,
 } from "./types.js";
 
 const DEFAULT_CONFIG_NAME = "agent-contracts.config.yaml";
@@ -27,6 +29,24 @@ async function fileExists(filePath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function resolveArtifactBindingConfig(
+  binding: ArtifactBindingConfig | undefined,
+  configDir: string,
+): ResolvedArtifactBinding | undefined {
+  if (binding === undefined) {
+    return undefined;
+  }
+
+  if (typeof binding === "string") {
+    return { source: resolve(configDir, binding) };
+  }
+
+  return {
+    source: resolve(configDir, binding.source),
+    mappings: binding.mappings,
+  };
 }
 
 function resolveTeamConfigs(
@@ -63,6 +83,10 @@ function resolveTeamConfigs(
       interfaceOutput: team.interface_output
         ? resolve(configDir, team.interface_output)
         : undefined,
+      artifactBinding: resolveArtifactBindingConfig(
+        team.artifact_binding ?? defaults?.artifact_binding,
+        configDir,
+      ),
     };
   }
 
@@ -151,6 +175,7 @@ export async function loadConfig(
     paths: config.paths,
     audit: config.audit ?? undefined,
     artifactCoverage: config.artifact_coverage ?? undefined,
+    artifactBinding: resolveArtifactBindingConfig(config.artifact_binding, configDir),
   };
 }
 
