@@ -10,6 +10,17 @@ export {
   type SectionMode,
 } from "./merger.js";
 export { resolve, type ResolveResult } from "./resolve.js";
+export { resolveClone, CloneError } from "./clone.js";
 export { resolveToolExtends, ToolExtendsError } from "./tool-extends.js";
 export { substituteVars, VarsSubstitutionError } from "./substitute-vars.js";
 export { expandDefaults } from "./expand-defaults.js";
+export {
+  resolveArtifactBinding,
+  type ArtifactBindingDiagnostic,
+  type ArtifactBindingResult,
+} from "./artifact-binding.js";
+export {
+  resolveBound,
+  type BoundResolveOptions,
+  type BoundResolveResult,
+} from "./bound-resolve.js";

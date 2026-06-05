@@ -298,6 +298,8 @@ export function buildNavigationIndex(dsl: Dsl): ProjectNavigationIndex {
   const agentsByArtifact = new Map<string, CompiledArtifactNode["agents"]>();
 
   for (const [artifactId, artifactDef] of Object.entries(dsl.artifacts)) {
+    // Artifacts are read from the caller-supplied DSL. When artifact_binding is
+    // configured, pass Bound DSL from resolveBound() so merged path_patterns apply.
     const properties = defaultProperties(artifactDef);
     const agents = buildAgentMapping(dsl, artifactId);
     agentsByArtifact.set(artifactId, agents);

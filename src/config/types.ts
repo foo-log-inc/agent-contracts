@@ -34,6 +34,16 @@ export const RenderTargetSchema = z
 
 export type RenderTarget = z.infer<typeof RenderTargetSchema>;
 
+export const ArtifactBindingConfigSchema = z.union([
+  z.string(),
+  z.object({
+    source: z.string(),
+    mappings: z.record(z.string(), z.string()).optional(),
+  }),
+]);
+
+export type ArtifactBindingConfig = z.infer<typeof ArtifactBindingConfigSchema>;
+
 export const TeamConfigSchema = z.object({
   dsl: z.string().optional(),
   bindings: z.array(z.string()).default([]),
@@ -41,6 +51,7 @@ export const TeamConfigSchema = z.object({
   paths: z.record(z.string(), z.string()).optional(),
   active_guardrail_policy: z.string().optional(),
   interface_output: z.string().optional(),
+  artifact_binding: ArtifactBindingConfigSchema.optional(),
 });
 
 export type TeamConfig = z.infer<typeof TeamConfigSchema>;
@@ -75,6 +86,7 @@ export const AgentContractsConfigSchema = z
     teams: z.record(z.string(), TeamConfigSchema).optional(),
     audit: AuditConfigSchema,
     artifact_coverage: ArtifactCoverageConfigSchema,
+    artifact_binding: ArtifactBindingConfigSchema.optional(),
   })
   .superRefine((data, ctx) => {
     if (data.dsl !== undefined && data.teams !== undefined) {
@@ -118,6 +130,11 @@ export interface ResolvedRenderTarget {
   skip_empty?: boolean;
 }
 
+export interface ResolvedArtifactBinding {
+  source: string;
+  mappings?: Record<string, string>;
+}
+
 export interface ResolvedTeamConfig {
   dsl: string;
   vars?: Record<string, string>;
@@ -125,6 +142,7 @@ export interface ResolvedTeamConfig {
   activeGuardrailPolicy?: string;
   paths?: Record<string, string>;
   interfaceOutput?: string;
+  artifactBinding?: ResolvedArtifactBinding;
 }
 
 export interface ResolvedConfig {
@@ -138,4 +156,5 @@ export interface ResolvedConfig {
   teams?: Record<string, ResolvedTeamConfig>;
   audit?: AuditConfig;
   artifactCoverage?: { exclude_patterns: string[] };
+  artifactBinding?: ResolvedArtifactBinding;
 }
