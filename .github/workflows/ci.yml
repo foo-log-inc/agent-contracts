@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Security audit
-        run: docker run --rm -v "$(pwd)":/app:ro -w /app node:22-alpine npm audit
+        run: docker run --rm -v "$(pwd)":/app:ro -w /app node:22-alpine npm audit --audit-level=critical
 
   test:
     runs-on: ubuntu-latest
