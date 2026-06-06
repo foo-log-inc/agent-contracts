@@ -25,3 +25,16 @@ jobs:
         run: docker compose -f docker-compose.test.yml build --build-arg NODE_VERSION=${{ matrix.node-version }}
       - name: Run tests
         run: docker compose -f docker-compose.test.yml run --rm test
+
+  bundle-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --legacy-peer-deps
+      - run: node esbuild.bundle.mjs
+      - run: npx vitest run --config vitest.bundle.config.ts
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
