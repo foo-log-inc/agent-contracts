@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.34.10",
+  "version": "0.34.11",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -90,26 +90,6 @@
     "yaml": "^2.8.3",
     "zod": "^4.3.6",
     "zod-to-json-schema": "^3.25.2"
-  },
-  "peerDependencies": {
-    "@anthropic-ai/claude-agent-sdk": ">=0.3.0",
-    "@google/adk": ">=1.2.0",
-    "@openai/agents": ">=0.11.0",
-    "agent-contracts-runtime": ">=0.36.2"
-  },
-  "peerDependenciesMeta": {
-    "agent-contracts-runtime": {
-      "optional": true
-    },
-    "@anthropic-ai/claude-agent-sdk": {
-      "optional": true
-    },
-    "@openai/agents": {
-      "optional": true
-    },
-    "@google/adk": {
-      "optional": true
-    }
   },
   "engines": {
     "node": ">=20.0.0"
