@@ -4,6 +4,7 @@ dsl-auditor:
     Audit completeness of agent-contracts DSL definitions against generated
     agent prompts, detect gaps, and present improvement recommendations.
   mode: read-write
+  can_invoke_agents: []
   can_execute_tools:
     - agent-contracts-cli
   can_perform_validations:

@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.34.7",
+  "version": "0.34.8",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -67,13 +67,15 @@
     "url": "https://github.com/foo-log-inc/agent-contracts/issues"
   },
   "devDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.167",
     "@eslint/js": "^10.0.1",
     "@google/adk": "^1.2.0",
+    "@openai/agents": "^0.11.6",
     "@stoplight/spectral-core": "^1.22.0",
     "@stoplight/spectral-functions": "^1.9.0",
     "@stoplight/spectral-rulesets": "^1.22.1",
     "@types/node": "^25.6.0",
-    "agent-contracts-runtime": "^0.36.1",
+    "agent-contracts-runtime": "^0.36.2",
     "ajv": "^8.18.0",
     "cli-contracts": "^0.32.0",
     "commander": "^14.0.3",
@@ -91,6 +93,26 @@
     "yaml": "^2.8.3",
     "zod": "^4.3.6",
     "zod-to-json-schema": "^3.25.2"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/claude-agent-sdk": ">=0.2.0",
+    "@google/adk": ">=1.2.0",
+    "@openai/agents": ">=0.10.0",
+    "agent-contracts-runtime": ">=0.36.2"
+  },
+  "peerDependenciesMeta": {
+    "agent-contracts-runtime": {
+      "optional": true
+    },
+    "@anthropic-ai/claude-agent-sdk": {
+      "optional": true
+    },
+    "@openai/agents": {
+      "optional": true
+    },
+    "@google/adk": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=20.0.0"
