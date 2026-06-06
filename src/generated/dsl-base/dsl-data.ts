@@ -19,6 +19,7 @@ export const resolvedDsl: Record<string, unknown> = {
       "role_name": "DSL Auditor",
       "purpose": "Audit completeness of agent-contracts DSL definitions against generated agent prompts, detect gaps, and present improvement recommendations.",
       "mode": "read-write",
+      "can_invoke_agents": [],
       "can_execute_tools": [
         "agent-contracts-cli"
       ],
@@ -104,6 +105,7 @@ export const resolvedDsl: Record<string, unknown> = {
       "role_name": "DSL Designer",
       "purpose": "Design, create, and update agent-contracts DSL definitions and bindings. Verify quality using validate, lint, render, and score commands. Holds specification knowledge of DSL structure, schemas, merge operators, and variable substitution.",
       "mode": "read-write",
+      "can_invoke_agents": [],
       "can_execute_tools": [
         "agent-contracts-cli"
       ],
