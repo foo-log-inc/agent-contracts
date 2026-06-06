@@ -16,6 +16,14 @@ export default defineConfig({
     "@stoplight/spectral-functions",
     "@stoplight/spectral-rulesets",
   ],
+  external: [
+    "agent-contracts-runtime",
+    "@cursor/sdk",
+    "@anthropic-ai/claude-agent-sdk",
+    "@anthropic-ai/sdk",
+    "@openai/agents",
+    "@google/adk",
+  ],
   banner: {
     js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
   },
