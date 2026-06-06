@@ -24,14 +24,14 @@ import {
 import type { DslAuditResult } from "../generated/dsl-base/handoffs.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function createAdapter(runtimePkg: string, name: string, config: AuditConfig): Promise<any> {
+async function createAdapter(name: string, config: AuditConfig): Promise<any> {
   switch (name) {
     case "mock": {
-      const mod = await import(`${runtimePkg}/adapters/mock`);
+      const mod = await import("agent-contracts-runtime/adapters/mock");
       return new mod.MockAdapter();
     }
     case "cursor": {
-      const mod = await import(`${runtimePkg}/adapters/cursor-sdk`);
+      const mod = await import("agent-contracts-runtime/adapters/cursor-sdk");
       const apiKey = process.env.CURSOR_API_KEY;
       if (!apiKey) {
         throw new Error(
@@ -42,7 +42,7 @@ async function createAdapter(runtimePkg: string, name: string, config: AuditConf
       return mod.CursorSdkAdapter.create({ apiKey, model: config.model });
     }
     case "claude": {
-      const mod = await import(`${runtimePkg}/adapters/claude-agent-sdk`);
+      const mod = await import("agent-contracts-runtime/adapters/claude-agent-sdk");
       return new mod.ClaudeAgentSdkAdapter({
         model: config.model,
         tools: ["Read", "Glob", "Grep"],
@@ -50,14 +50,14 @@ async function createAdapter(runtimePkg: string, name: string, config: AuditConf
       });
     }
     case "openai": {
-      const mod = await import(`${runtimePkg}/adapters/openai-agents-sdk`);
+      const mod = await import("agent-contracts-runtime/adapters/openai-agents-sdk");
       return new mod.OpenAIAgentsSdkAdapter({
         model: config.model,
         maxTurns: 1,
       });
     }
     case "gemini": {
-      const mod = await import(`${runtimePkg}/adapters/gemini-sdk`);
+      const mod = await import("agent-contracts-runtime/adapters/gemini-sdk");
       return new mod.GeminiSdkAdapter({
         apiKey: process.env.GEMINI_API_KEY,
         model: config.model ?? "gemini-2.5-flash",
@@ -115,16 +115,12 @@ export async function runAudit(
     };
   }
 
-  // Dynamic import — agent-contracts-runtime is optional.
-  // Module names are constructed to prevent TypeScript from resolving them at compile time.
-  const RUNTIME_PKG = ["agent-contracts", "runtime"].join("-");
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let runTask: (...args: any[]) => Promise<any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let createProgressSink: (options: any) => { write: (chunk: string) => void; close: () => void };
   try {
-    const runtime = await import(RUNTIME_PKG);
+    const runtime = await import("agent-contracts-runtime");
     runTask = runtime.runTask;
     createProgressSink = runtime.createProgressSink;
   } catch {
@@ -136,7 +132,7 @@ export async function runAudit(
   }
 
   const adapterName = auditConfig.adapter ?? "mock";
-  const adapter = await createAdapter(RUNTIME_PKG, adapterName, auditConfig);
+  const adapter = await createAdapter(adapterName, auditConfig);
 
   const progressSink = options.logFile
     ? createProgressSink({ stderr: true, file: resolve(options.logFile), naming: "single" })
