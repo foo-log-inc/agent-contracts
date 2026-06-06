@@ -30,17 +30,6 @@ async function createAdapter(name: string, config: AuditConfig): Promise<any> {
       const mod = await import("agent-contracts-runtime/adapters/mock");
       return new mod.MockAdapter();
     }
-    case "cursor": {
-      const mod = await import("agent-contracts-runtime/adapters/cursor-sdk");
-      const apiKey = process.env.CURSOR_API_KEY;
-      if (!apiKey) {
-        throw new Error(
-          "CURSOR_API_KEY environment variable is required for the cursor adapter.\n" +
-          "Get your key from: https://cursor.com/dashboard/integrations",
-        );
-      }
-      return mod.CursorSdkAdapter.create({ apiKey, model: config.model });
-    }
     case "claude": {
       const mod = await import("agent-contracts-runtime/adapters/claude-agent-sdk");
       return new mod.ClaudeAgentSdkAdapter({
@@ -57,17 +46,16 @@ async function createAdapter(name: string, config: AuditConfig): Promise<any> {
       });
     }
     case "gemini": {
-      const mod = await import("agent-contracts-runtime/adapters/gemini-sdk");
-      return new mod.GeminiSdkAdapter({
+      const mod = await import("agent-contracts-runtime/adapters/adk-sdk");
+      return new mod.AdkSdkAdapter({
         apiKey: process.env.GEMINI_API_KEY,
         model: config.model ?? "gemini-2.5-flash",
-        temperature: config.temperature,
       });
     }
     default:
       throw new Error(
         `Unsupported audit adapter: "${name}". ` +
-        "Available: mock, cursor, claude, openai, gemini.",
+        "Available: mock, claude, openai, gemini.",
       );
   }
 }

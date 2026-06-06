@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.34.4",
+  "version": "0.34.5",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -75,7 +75,7 @@
     "@stoplight/spectral-functions": "^1.9.0",
     "@stoplight/spectral-rulesets": "^1.22.1",
     "@types/node": "^25.6.0",
-    "agent-contracts-runtime": "^0.35.2",
+    "agent-contracts-runtime": "^0.36.0",
     "ajv": "^8.18.0",
     "cli-contracts": "^0.32.0",
     "commander": "^14.0.3",
