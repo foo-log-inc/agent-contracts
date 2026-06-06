@@ -52,7 +52,7 @@ export const AuditResultSchema = z.object({
   location: z.string().optional(),
   message: z.string(),
   recommendation: z.string().optional(),
-  confidence: z.number().optional(),
+  confidence: z.number().min(0).max(1).optional(),
   evidence: z.array(z.object({
   kind: z.enum(["file", "command", "schema", "diff", "stdout", "stderr", "text"]),
   target: z.string().optional(),
@@ -86,14 +86,22 @@ export type AuditResult = z.infer<typeof AuditResultSchema>;
 
 export const DslAuditResultSchema = z.object({
   audit_type: z.enum(["completeness", "semantic", "prompt", "extensions"]),
-  total_dimensions: z.number(),
-  pass_count: z.number(),
-  miss_count: z.number(),
-  partial_count: z.number().optional(),
-  agents_reviewed: z.number().optional(),
-  prompts_reviewed: z.number().optional(),
+  total_dimensions: z.number().int(),
+  pass_count: z.number().int(),
+  miss_count: z.number().int(),
+  partial_count: z.number().int().optional(),
+  agents_reviewed: z.number().int().optional(),
+  prompts_reviewed: z.number().int().optional(),
+  completion_criteria_coverage: z.object({
+  all_dimensions_inspected: z.boolean().optional(),
+  gaps_classified: z.boolean().optional(),
   gate_analysis_complete: z.boolean().optional(),
   guardrail_enforcement_verified: z.boolean().optional(),
+  scope_overlap_analyzed: z.boolean().optional(),
+  x_property_misuse_checked: z.boolean().optional(),
+  hallucinated_permissions_checked: z.boolean().optional(),
+  extension_consumption_checked: z.boolean().optional(),
+}),
   critical_gaps: z.array(z.object({
   dimension: z.string().optional(),
   agent: z.string().optional(),

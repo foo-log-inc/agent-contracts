@@ -1,12 +1,13 @@
 {
-  "generatedAt": "2026-05-13T08:31:57.187Z",
-  "dslHash": "3e64429a7b74ac1a161318cdd6f6fbe200ff1627c58cde6cb7f735388d348560",
-  "generationInputHash": "3e64429a7b74ac1a161318cdd6f6fbe200ff1627c58cde6cb7f735388d348560",
+  "generated_at": "2026-06-06T02:32:00.090Z",
+  "dsl_hash": "b1eebfb616af1912ec6d376b39721525eea3e27b5f60eb38863b2efedbd1bfd2",
+  "generation_input_hash": "b1eebfb616af1912ec6d376b39721525eea3e27b5f60eb38863b2efedbd1bfd2",
   "files": [
     "../src/generated/dsl-base/agents.ts",
     "../src/generated/dsl-base/tasks.ts",
     "../src/generated/dsl-base/workflows.ts",
     "../src/generated/dsl-base/handoffs.ts",
-    "../src/generated/dsl-base/index.ts"
+    "../src/generated/dsl-base/index.ts",
+    "../src/generated/dsl-base/dsl-data.ts"
   ]
 }

@@ -38,21 +38,12 @@ export const dslAuditor: AgentContract = {
   purpose: "Audit completeness of agent-contracts DSL definitions against generated agent prompts, detect gaps, and present improvement recommendations.",
   mode: "read-write",
   dispatch_only: false,
-  can_read_artifacts: [
-  "dsl-source",
-  "dsl-generated-output",
-  "dsl-audit-report",
-  "dsl-score-report"
-],
-  can_write_artifacts: [
-  "dsl-audit-report"
-],
+  can_read_artifacts: [],
+  can_write_artifacts: [],
   can_execute_tools: [
   "agent-contracts-cli"
 ],
-  can_invoke_agents: [
-  "dsl-auditor"
-],
+  can_invoke_agents: [],
   can_return_handoffs: [
   "dsl-audit-result"
 ],
@@ -74,7 +65,7 @@ export const dslAuditor: AgentContract = {
   rules: [
   {
     "id": "R-AUDIT-001",
-    "description": "Audit must cover all 19 dimensions: purpose, mode, can_read_artifacts, can_write_artifacts, can_invoke_agents, tools, can_perform_validations, responsibilities, constraints, rules, escalation_criteria, x-authority, supported_tasks, delegatable_tasks, handoff_schemas, guardrails, anti_patterns, x-audit-checklist, x-sections.",
+    "description": "Audit must cover all 19 dimensions: purpose, mode, can_read_artifacts (deprecated), can_write_artifacts (deprecated), can_invoke_agents, tools, can_perform_validations, responsibilities, constraints, rules, escalation_criteria, x-authority, supported_tasks, delegatable_tasks, handoff_schemas, guardrails, anti_patterns, x-audit-checklist, x-sections.",
     "severity": "mandatory"
   },
   {
@@ -101,23 +92,12 @@ export const dslDesigner: AgentContract = {
   purpose: "Design, create, and update agent-contracts DSL definitions and bindings. Verify quality using validate, lint, render, and score commands. Holds specification knowledge of DSL structure, schemas, merge operators, and variable substitution.",
   mode: "read-write",
   dispatch_only: false,
-  can_read_artifacts: [
-  "dsl-source",
-  "dsl-generated-output",
-  "dsl-score-report",
-  "dsl-audit-report"
-],
-  can_write_artifacts: [
-  "dsl-source",
-  "dsl-generated-output",
-  "dsl-score-report"
-],
+  can_read_artifacts: [],
+  can_write_artifacts: [],
   can_execute_tools: [
   "agent-contracts-cli"
 ],
-  can_invoke_agents: [
-  "dsl-designer"
-],
+  can_invoke_agents: [],
   can_return_handoffs: [
   "dsl-task-result"
 ],
@@ -143,7 +123,7 @@ export const dslDesigner: AgentContract = {
   },
   {
     "id": "R-DSL-002",
-    "description": "When adding a new agent, explicitly define all permission fields: can_read_artifacts, can_write_artifacts, can_invoke_agents, can_execute_tools, can_perform_validations.",
+    "description": "When adding a new agent, explicitly define all permission fields: can_invoke_agents, can_execute_tools, can_perform_validations.",
     "severity": "mandatory"
   },
   {
