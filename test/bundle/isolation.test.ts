@@ -20,6 +20,11 @@ describe("bundle-isolation", () => {
 
     if (existsSync(join(ROOT, "agent-contracts.config.yaml"))) {
       cpSync(join(ROOT, "agent-contracts.config.yaml"), join(tempDir, "agent-contracts.config.yaml"));
+    } else {
+      writeFileSync(
+        join(tempDir, "agent-contracts.config.yaml"),
+        "dsl: dsl_base/agent-contracts.yaml\naudit:\n  adapter: openai\n",
+      );
     }
     if (existsSync(join(ROOT, "dsl_base"))) {
       cpSync(join(ROOT, "dsl_base"), join(tempDir, "dsl_base"), { recursive: true });
