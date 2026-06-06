@@ -3,9 +3,8 @@
  * Single-file bundle builder for agent-contracts CLI.
  *
  * Produces dist/agent-contracts.bundle.mjs — a self-contained CLI that only
- * requires Node.js 20+ and (optionally) the LLM SDK packages that are kept
- * external: @anthropic-ai/claude-agent-sdk, @cursor/sdk, @openai/agents,
- * @google/genai.
+ * requires Node.js 20+ and agent-contracts-runtime (which handles LLM SDK
+ * adapter loading internally via its own dynamic imports).
  *
  * Usage:
  *   node esbuild.bundle.mjs            # normal bundle
@@ -18,52 +17,22 @@ import { readFileSync } from "node:fs";
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 const minify = process.argv.includes("--minify");
 
-// LLM SDK packages — kept external so the bundle user installs only what they need.
+// LLM SDK packages and runtime — kept external so the bundle user installs only what they need.
 const externalSdks = [
+  "agent-contracts-runtime",
   "@anthropic-ai/claude-agent-sdk",
   "@anthropic-ai/sdk",
-  "@cursor/sdk",
   "@openai/agents",
+  "@google/adk",
   "@google/genai",
 ];
 
 /**
- * Plugin: resolve the obfuscated dynamic imports in auditor.ts.
- *
- * The source uses `const RUNTIME_PKG = ["agent-contracts","runtime"].join("-")`
- * followed by `await import(RUNTIME_PKG)` and template-literal adapter imports
- * to prevent TypeScript from resolving them at compile time.  For bundling we
- * need esbuild to see literal specifiers so it can follow the imports.
+ * Plugin: no-op (formerly resolved RUNTIME_PKG obfuscation, no longer needed).
  */
 const resolveRuntimeDynamicImports = {
   name: "resolve-runtime-dynamic-imports",
-  setup(build) {
-    build.onLoad({ filter: /auditor[\\/]auditor\.ts$/ }, async (args) => {
-      let contents = readFileSync(args.path, "utf8");
-
-      // 1. Remove the obfuscated variable declaration
-      contents = contents.replace(
-        /const RUNTIME_PKG = \["agent-contracts",\s*"runtime"\]\.join\("-"\);/,
-        "",
-      );
-
-      // 2. Replace `await import(RUNTIME_PKG)` → literal string
-      contents = contents.replace(
-        /await import\(RUNTIME_PKG\)/g,
-        'await import("agent-contracts-runtime")',
-      );
-
-      // 3. Replace template-literal adapter imports:
-      //    await import(`${runtimePkg}/adapters/mock`)
-      //    → await import("agent-contracts-runtime/adapters/mock")
-      contents = contents.replace(
-        /await import\(`\$\{runtimePkg\}\/adapters\/([^`]+)`\)/g,
-        'await import("agent-contracts-runtime/adapters/$1")',
-      );
-
-      return { contents, loader: "ts" };
-    });
-  },
+  setup(_build) {},
 };
 
 /**

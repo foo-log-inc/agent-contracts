@@ -67,10 +67,8 @@
     "url": "https://github.com/foo-log-inc/agent-contracts/issues"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.138",
     "@eslint/js": "^10.0.1",
-    "@google/genai": "^2.0.1",
-    "@openai/agents": "^0.11.1",
+    "@google/adk": "^1.2.0",
     "@stoplight/spectral-core": "^1.22.0",
     "@stoplight/spectral-functions": "^1.9.0",
     "@stoplight/spectral-rulesets": "^1.22.1",
