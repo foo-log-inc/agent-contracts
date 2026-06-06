@@ -18,7 +18,6 @@ export default defineConfig({
   ],
   external: [
     "agent-contracts-runtime",
-    "@cursor/sdk",
     "@anthropic-ai/claude-agent-sdk",
     "@anthropic-ai/sdk",
     "@openai/agents",

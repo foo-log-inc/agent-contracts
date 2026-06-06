@@ -50,7 +50,7 @@ export const dslUpdate: WorkflowContract = {
     {
       type: "gate",
       gate_kind: "dsl-task-result",
-      description: "Block if validation_result or lint_result did not pass in update-dsl-definitions.",
+      description: "Block if validation_result or lint_result did not pass in update-dsl-definitions.  Enforces dsl-validate-before-render guardrail — prevents render from executing against invalid DSL.",
     },
     {
       type: "delegate",
@@ -122,6 +122,14 @@ export const dslAudit: WorkflowContract = {
 ],
     },
     {
+      type: "gate",
+      gate_kind: "dsl-audit-result",
+      description: "Semantic-design gate — block if critical design issues detected (gate placement defects, handoff schema gaps).",
+      depends_on: [
+  "audit-semantic-design"
+],
+    },
+    {
       type: "delegate",
       task: "audit-generated-prompts",
       from_agent: "dsl-auditor",
@@ -130,6 +138,14 @@ export const dslAudit: WorkflowContract = {
       max_retries: 0,
       depends_on: [
   "gate:dsl-audit-result"
+],
+    },
+    {
+      type: "gate",
+      gate_kind: "dsl-audit-result",
+      description: "Hallucinated-permissions gate — block immediately if audit-generated-prompts detected permissions not declared in DSL (enforces dsl-no-hallucinated-permissions guardrail).",
+      depends_on: [
+  "audit-generated-prompts"
 ],
     },
     {
@@ -145,8 +161,8 @@ export const dslAudit: WorkflowContract = {
     },
     {
       type: "gate",
-      gate_kind: "dsl-audit-terminal",
-      description: "Terminal gate — block if audit-generated-prompts detected hallucinated permissions (enforces dsl-no-hallucinated-permissions guardrail at workflow level via stop_and_report escalation).",
+      gate_kind: "dsl-audit-result",
+      description: "Terminal gate — aggregates all audit results and blocks if any critical-level findings remain unresolved.",
       depends_on: [
   "audit-semantic-design",
   "audit-generated-prompts",

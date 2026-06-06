@@ -7,6 +7,8 @@
 import type { AgentId } from "./agents";
 import type { HandoffTypeId } from "./handoffs";
 
+export type ModelClass = "fast" | "standard" | "thinking";
+
 export interface TaskContract {
   readonly id: string;
   readonly description: string;
@@ -19,15 +21,14 @@ export interface TaskContract {
   readonly responsibilities: readonly string[];
   readonly completion_criteria: readonly string[];
   readonly optional: boolean;
+  readonly model_class?: ModelClass;
 }
 
 export const updateDslDefinitions: TaskContract = {
   id: "update-dsl-definitions",
   description: "Create new or update existing agent-contracts DSL definitions",
   target_agent: "dsl-designer",
-  allowed_from_agents: [
-  "dsl-designer"
-],
+  allowed_from_agents: [],
   workflow: "dsl-update",
   invocation_handoff: "dsl-task-request",
   result_handoff: "dsl-task-result",
@@ -51,9 +52,7 @@ export const updateDslBinding: TaskContract = {
   id: "update-dsl-binding",
   description: "Create new or update existing software bindings",
   target_agent: "dsl-designer",
-  allowed_from_agents: [
-  "dsl-designer"
-],
+  allowed_from_agents: [],
   workflow: "dsl-update",
   invocation_handoff: "dsl-task-request",
   result_handoff: "dsl-task-result",
@@ -77,9 +76,7 @@ export const renderDslOutputs: TaskContract = {
   id: "render-dsl-outputs",
   description: "Render prompts and documents from DSL and check for drift",
   target_agent: "dsl-designer",
-  allowed_from_agents: [
-  "dsl-designer"
-],
+  allowed_from_agents: [],
   workflow: "dsl-update",
   invocation_handoff: "dsl-task-request",
   result_handoff: "dsl-task-result",
@@ -101,9 +98,7 @@ export const checkDslScore: TaskContract = {
   id: "check-dsl-score",
   description: "Check DSL completeness score and identify improvement areas",
   target_agent: "dsl-designer",
-  allowed_from_agents: [
-  "dsl-designer"
-],
+  allowed_from_agents: [],
   workflow: "dsl-update",
   invocation_handoff: "dsl-task-request",
   result_handoff: "dsl-task-result",
@@ -125,9 +120,7 @@ export const auditDslCompleteness: TaskContract = {
   id: "audit-dsl-completeness",
   description: "Audit completeness of DSL definitions against generated prompts",
   target_agent: "dsl-auditor",
-  allowed_from_agents: [
-  "dsl-auditor"
-],
+  allowed_from_agents: [],
   workflow: "dsl-audit",
   invocation_handoff: "dsl-task-request",
   result_handoff: "dsl-audit-result",
@@ -152,9 +145,7 @@ export const auditSemanticDesign: TaskContract = {
   id: "audit-semantic-design",
   description: "Audit DSL design for semantic coherence",
   target_agent: "dsl-auditor",
-  allowed_from_agents: [
-  "dsl-auditor"
-],
+  allowed_from_agents: [],
   workflow: "dsl-audit",
   invocation_handoff: "dsl-task-request",
   result_handoff: "dsl-audit-result",
@@ -185,9 +176,7 @@ export const auditGeneratedPrompts: TaskContract = {
   id: "audit-generated-prompts",
   description: "Audit generated prompts against DSL intent",
   target_agent: "dsl-auditor",
-  allowed_from_agents: [
-  "dsl-auditor"
-],
+  allowed_from_agents: [],
   workflow: "dsl-audit",
   invocation_handoff: "dsl-task-request",
   result_handoff: "dsl-audit-result",
@@ -214,9 +203,7 @@ export const auditExtensionConsumption: TaskContract = {
   id: "audit-extension-consumption",
   description: "Audit declared x-* extensions for consumption gaps across render and runtime paths",
   target_agent: "dsl-auditor",
-  allowed_from_agents: [
-  "dsl-auditor"
-],
+  allowed_from_agents: [],
   workflow: "dsl-audit",
   invocation_handoff: "dsl-task-request",
   result_handoff: "dsl-audit-result",

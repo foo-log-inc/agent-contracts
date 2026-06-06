@@ -24,6 +24,13 @@ function makeAuditResult(overrides: Record<string, unknown> = {}): string {
     miss_count: 2,
     critical_gaps: [],
     recommendations: [],
+    completion_criteria_coverage: {
+      all_dimensions_inspected: true,
+      gaps_classified: true,
+      gate_analysis_complete: true,
+      guardrail_enforcement_verified: true,
+      scope_overlap_analyzed: true,
+    },
     ...overrides,
   };
   return `\`\`\`json\n${JSON.stringify(data)}\n\`\`\``;
@@ -36,7 +43,7 @@ function createGateAwareAdapter(opts: {
   const gateCalls: string[] = [];
   return {
     gateCalls,
-    async send(prompt: string): Promise<string> {
+    async send(prompt: string, _options?: unknown): Promise<string> {
       if (prompt.includes("gate evaluator")) {
         gateCalls.push(prompt);
         return JSON.stringify({
@@ -44,9 +51,12 @@ function createGateAwareAdapter(opts: {
           reason: opts.gateApproval ? "condition satisfied" : "condition not met",
         });
       }
-      const match = prompt.match(/## Task: (\S+)/);
-      const taskId = match?.[1] ?? "";
-      return opts.taskResponses[taskId] ?? "";
+      for (const [taskId, response] of Object.entries(opts.taskResponses)) {
+        if (prompt.includes(taskId)) {
+          return response;
+        }
+      }
+      return "";
     },
   };
 }
