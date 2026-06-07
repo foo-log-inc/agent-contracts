@@ -711,10 +711,12 @@ describe("deprecatedOwnershipFieldsRule", () => {
     expect(diags.length).toBe(4);
     expect(diags.every((d) => d.ruleId === "deprecated-ownership-fields")).toBe(true);
     expect(diags.every((d) => d.severity === "warning")).toBe(true);
-    expect(diags[0].message).toContain("artifact_bindings + artifact_slots");
+    expect(diags[0].message).toContain("own_artifacts");
+    expect(diags[0].message).toContain("can_write_artifacts");
+    expect(diags[0].message).toContain("can_read_artifacts");
   });
 
-  it("warns when agent uses deprecated permission fields", () => {
+  it("does not warn when agent uses canonical permission fields", () => {
     const dsl = makeDsl({
       agents: {
         a1: {
@@ -730,9 +732,39 @@ describe("deprecatedOwnershipFieldsRule", () => {
       },
     });
     const diags = deprecatedOwnershipFieldsRule.run(dsl);
-    expect(diags.length).toBe(3);
-    expect(diags.every((d) => d.ruleId === "deprecated-ownership-fields")).toBe(true);
-    expect(diags[0].message).toContain("artifact_bindings + artifact_slots");
+    expect(diags).toHaveLength(0);
+  });
+
+  it("warns only on artifact-side when both sides are populated", () => {
+    const dsl = makeDsl({
+      agents: {
+        a1: {
+          role_name: "R",
+          purpose: "P",
+          own_artifacts: ["art1"],
+          can_read_artifacts: ["art1"],
+          can_write_artifacts: ["art1"],
+        },
+      },
+      artifacts: {
+        art1: {
+          type: "code",
+          owner: "a1",
+          producers: ["a1"],
+          editors: ["a1"],
+          consumers: ["a1"],
+          states: ["draft"],
+        },
+      },
+    });
+    const diags = deprecatedOwnershipFieldsRule.run(dsl);
+    expect(diags).toHaveLength(4);
+    expect(diags.map((d) => d.path).sort()).toEqual([
+      "artifacts.art1.consumers",
+      "artifacts.art1.editors",
+      "artifacts.art1.owner",
+      "artifacts.art1.producers",
+    ]);
   });
 
   it("passes when deprecated fields are empty", () => {
