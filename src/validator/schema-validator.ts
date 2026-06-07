@@ -117,6 +117,28 @@ function checkExtensionsKeys(
   return diagnostics;
 }
 
+function checkToolContractExclusivity(
+  data: Record<string, unknown>,
+): DiagnosticMessage[] {
+  const tools = data["tools"];
+  if (!isRecord(tools)) return [];
+  const diagnostics: DiagnosticMessage[] = [];
+
+  for (const [toolId, tool] of Object.entries(tools)) {
+    if (!isRecord(tool)) continue;
+    if (tool["cli_contract"] && tool["component_contract"]) {
+      diagnostics.push({
+        path: `tools.${toolId}`,
+        message:
+          'Tool cannot specify both "cli_contract" and "component_contract". Use one contract reference.',
+        code: "tool-contract-mutual-exclusion",
+      });
+    }
+  }
+
+  return diagnostics;
+}
+
 function checkDecisionStepRoutingKey(
   data: Record<string, unknown>,
 ): DiagnosticMessage[] {
@@ -831,6 +853,7 @@ export function validateSchema(
   const diagnostics: DiagnosticMessage[] = [
     ...deprecationWarnings,
     ...checkCustomPropsRecursive(data, DslSchema, ""),
+    ...checkToolContractExclusivity(data),
     ...checkDecisionStepRoutingKey(data),
     ...checkExtensionsKeys(data),
     ...checkExtensionValidation(data),

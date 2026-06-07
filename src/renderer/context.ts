@@ -14,7 +14,9 @@ import type {
   System,
   SoftwareBinding,
 } from "../schema/index.js";
-import { resolveAllOf } from "../schema/index.js";
+import { resolveAllOf, resolveSchemaRefs } from "../schema/index.js";
+import { resolveAgentEffects } from "../resolver/effects.js";
+import type { EffectiveEffects } from "../resolver/effects.js";
 import type { LoadedBinding } from "../config/binding-loader.js";
 
 export interface GlobalContext {
@@ -160,6 +162,22 @@ export interface MergedBehavioralSpec {
   completion_criteria: string[];
 }
 
+export interface HandoffFieldView {
+  name: string;
+  type: string;
+  required: boolean;
+  enum?: string;
+}
+
+export interface HandoffRoleView {
+  handoffId: string;
+  role: "producer" | "consumer";
+  taskId?: string;
+  description?: string;
+  resolvedSchema: Record<string, unknown>;
+  fields: HandoffFieldView[];
+}
+
 export interface DelegatableTaskView {
   id: string;
   description: string;
@@ -181,6 +199,10 @@ export interface PerAgentContext {
   relatedArtifacts: Dsl["artifacts"];
   relatedTools: Dsl["tools"];
   relatedHandoffTypes: Dsl["handoff_types"];
+  resolvedHandoffTypes: Record<string, Record<string, unknown>>;
+  producerHandoffs: HandoffRoleView[];
+  consumerHandoffs: HandoffRoleView[];
+  effectiveEffects: EffectiveEffects;
   mergedBehavior: MergedBehavioralSpec;
   relatedGuardrails: EntityGuardrailEntry[];
   relatedValidations: EntityValidationEntry[];
@@ -745,6 +767,113 @@ function extractSchemaFieldNames(
   return Object.keys(schema);
 }
 
+function extractSchemaFields(
+  schema: Record<string, unknown>,
+): HandoffFieldView[] {
+  const effective = resolveAllOf(schema);
+  const props = effective["properties"] as
+    | Record<string, Record<string, unknown>>
+    | undefined;
+  if (!props) return [];
+  const requiredSet = new Set(
+    (effective["required"] as string[] | undefined) ?? [],
+  );
+  return Object.entries(props).map(([name, sub]) => {
+    const enumVals = sub["enum"] as string[] | undefined;
+    return {
+      name,
+      type: (sub["type"] as string) ?? "any",
+      required: requiredSet.has(name),
+      enum: enumVals ? enumVals.join(" | ") : undefined,
+    };
+  });
+}
+
+function resolveHandoffSchema(
+  dsl: Dsl,
+  handoffId: string,
+): Record<string, unknown> | null {
+  const handoff = dsl.handoff_types[handoffId];
+  if (!handoff?.schema) return null;
+  return resolveSchemaRefs(
+    handoff.schema as Record<string, unknown>,
+    dsl.components?.schemas ?? {},
+  );
+}
+
+function buildHandoffRoleView(
+  dsl: Dsl,
+  handoffId: string,
+  role: "producer" | "consumer",
+  taskId?: string,
+): HandoffRoleView | null {
+  const handoff = dsl.handoff_types[handoffId];
+  const resolvedSchema = resolveHandoffSchema(dsl, handoffId);
+  if (!handoff || !resolvedSchema) return null;
+  return {
+    handoffId,
+    role,
+    taskId,
+    description: handoff.description,
+    resolvedSchema,
+    fields: extractSchemaFields(resolvedSchema),
+  };
+}
+
+function buildHandoffRoles(
+  dsl: Dsl,
+  agentId: string,
+  receivableTasks: Array<(Task & Record<string, unknown>) & { id: string }>,
+  delegatableTasks: DelegatableTaskView[],
+): { producer: HandoffRoleView[]; consumer: HandoffRoleView[] } {
+  const producer = new Map<string, HandoffRoleView>();
+  const consumer = new Map<string, HandoffRoleView>();
+
+  const addRole = (
+    map: Map<string, HandoffRoleView>,
+    view: HandoffRoleView | null,
+  ) => {
+    if (!view) return;
+    const key = `${view.handoffId}:${view.role}:${view.taskId ?? ""}`;
+    map.set(key, view);
+  };
+
+  for (const task of receivableTasks) {
+    addRole(
+      consumer,
+      buildHandoffRoleView(dsl, task.invocation_handoff, "consumer", task.id),
+    );
+    addRole(
+      producer,
+      buildHandoffRoleView(dsl, task.result_handoff, "producer", task.id),
+    );
+  }
+
+  for (const task of delegatableTasks) {
+    addRole(
+      producer,
+      buildHandoffRoleView(dsl, task.invocation_handoff, "producer", task.id),
+    );
+    addRole(
+      consumer,
+      buildHandoffRoleView(dsl, task.result_handoff, "consumer", task.id),
+    );
+  }
+
+  const agent = dsl.agents[agentId];
+  for (const handoffId of agent?.can_return_handoffs ?? []) {
+    addRole(
+      producer,
+      buildHandoffRoleView(dsl, handoffId, "producer"),
+    );
+  }
+
+  return {
+    producer: [...producer.values()],
+    consumer: [...consumer.values()],
+  };
+}
+
 function buildDelegatableTasks(
   dsl: Dsl,
   agentId: string,
@@ -806,14 +935,25 @@ export function buildPerAgentContext(
     ...delegatableTasks.map((t) => t.result_handoff),
   ]);
   const relatedHandoffTypes: Dsl["handoff_types"] = {};
+  const resolvedHandoffTypes: Record<string, Record<string, unknown>> = {};
   for (const [kind, ht] of Object.entries(dsl.handoff_types)) {
-    if (handoffKinds.has(kind)) relatedHandoffTypes[kind] = ht;
+    if (!handoffKinds.has(kind)) continue;
+    relatedHandoffTypes[kind] = ht;
+    const resolved = resolveHandoffSchema(dsl, kind);
+    if (resolved) resolvedHandoffTypes[kind] = resolved;
   }
 
+  const handoffRoles = buildHandoffRoles(
+    dsl,
+    agentId,
+    receivableTasks,
+    delegatableTasks,
+  );
   const rawReceivableTasks = receivableTasks.map(({ id: _id, ...rest }) => rest as Task);
   const mergedBehavior = mergeBehavioralSpec(agent, rawReceivableTasks);
   const relatedGuardrails = resolveEffectiveGuardrails(dsl, "agents", agentId);
   const relatedValidations = resolveEntityValidations(dsl, "agents", agentId);
+  const effectiveEffects = resolveAgentEffects(dsl, agentId);
 
   return {
     agent,
@@ -823,6 +963,10 @@ export function buildPerAgentContext(
     relatedArtifacts,
     relatedTools,
     relatedHandoffTypes,
+    resolvedHandoffTypes,
+    producerHandoffs: handoffRoles.producer,
+    consumerHandoffs: handoffRoles.consumer,
+    effectiveEffects,
     mergedBehavior,
     relatedGuardrails,
     relatedValidations,

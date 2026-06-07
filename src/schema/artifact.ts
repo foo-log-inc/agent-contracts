@@ -18,6 +18,7 @@ export const ArtifactSchema = z
     exclude_patterns: z.array(z.string()).optional(),
     manual_edit: z.enum(["allowed", "discouraged", "forbidden"]).optional(),
     change_control: z.enum(["none", "approval-required", "regeneration-required"]).optional(),
+    derived_from: z.union([z.string(), z.array(z.string())]).optional(),
   })
   .passthrough();
 export type Artifact = z.infer<typeof ArtifactSchema>;

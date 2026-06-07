@@ -219,6 +219,10 @@ A **Tool** defines an invokable CLI/MCP tool:
 * `extends` — inherit from a base tool definition
 * `command` — single command name (alternative to `commands[]`)
 * `commands` — structured list of sub-commands with `category`, `reads`, `writes`, and `purpose`
+* `cli_contract` — path to a CLI contract YAML (for CLI/MCP adapter invocation)
+* `component_contract` — path to an AaaC Component contract YAML (for in-process / SDK / MCP Component invocation). Mutually exclusive with `cli_contract`.
+* `artifact_bindings` — maps contract slot names to project artifact IDs
+* `effects` (on agents/tasks) — optional narrow-only override of capability effects derived from executable tools
 
 ### Workflow
 

@@ -156,6 +156,62 @@
 {{/each}}
 {{/if}}
 
+{{#if producerHandoffs.length}}
+## Handoff Output Formats
+
+You must produce output in the following handoff_type formats:
+
+{{#each producerHandoffs}}
+### {{this.handoffId}}{{#if this.taskId}} (task: {{this.taskId}}){{/if}}
+
+{{#if this.description}}{{this.description}}
+
+{{/if}}
+{{#if this.fields.length}}
+| Field | Type | Required |
+|-------|------|----------|
+{{#each this.fields}}
+| {{this.name}} | {{this.type}}{{#if this.enum}} ({{this.enum}}){{/if}} | {{#if this.required}}yes{{else}}no{{/if}} |
+{{/each}}
+{{/if}}
+{{#if this.resolvedSchema}}
+**Resolved schema:**
+
+```yaml
+{{{yamlBlock this.resolvedSchema}}}
+```
+{{/if}}
+{{/each}}
+{{/if}}
+
+{{#if consumerHandoffs.length}}
+## Handoff Input Formats
+
+You will receive input in the following handoff_type formats:
+
+{{#each consumerHandoffs}}
+### {{this.handoffId}}{{#if this.taskId}} (task: {{this.taskId}}){{/if}}
+
+{{#if this.description}}{{this.description}}
+
+{{/if}}
+{{#if this.fields.length}}
+| Field | Type | Required |
+|-------|------|----------|
+{{#each this.fields}}
+| {{this.name}} | {{this.type}}{{#if this.enum}} ({{this.enum}}){{/if}} | {{#if this.required}}yes{{else}}no{{/if}} |
+{{/each}}
+{{/if}}
+{{#if this.resolvedSchema}}
+**Resolved schema:**
+
+```yaml
+{{{yamlBlock this.resolvedSchema}}}
+```
+{{/if}}
+{{/each}}
+{{/if}}
+
 {{#if (notEmpty relatedHandoffTypes)}}
 ## Handoff Types
 
@@ -166,13 +222,13 @@
 {{this.description}}
 
 {{/if}}
-{{#if this.schema}}
+{{#with (lookup ../resolvedHandoffTypes @key)}}
 **Schema:**
 
 ```yaml
-{{{yamlBlock this.schema}}}
+{{{yamlBlock this}}}
 ```
-{{/if}}
+{{/with}}
 {{#if this.example}}
 **Example:**
 

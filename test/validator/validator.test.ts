@@ -1248,3 +1248,24 @@ describe("validateSchema — deprecated x-extensions aliases", () => {
     });
   });
 });
+
+describe("validateSchema — tool contract mutual exclusion", () => {
+  it("fails when tool specifies both cli_contract and component_contract", () => {
+    const data = {
+      version: 1,
+      system: { id: "s", name: "S", default_workflow_order: ["implement"] },
+      tools: {
+        t1: {
+          kind: "cli",
+          cli_contract: "cli.yaml",
+          component_contract: "component.yaml",
+        },
+      },
+    };
+    const result = validateSchema(data);
+    expect(result.success).toBe(false);
+    expect(
+      result.diagnostics.some((d) => d.code === "tool-contract-mutual-exclusion"),
+    ).toBe(true);
+  });
+});

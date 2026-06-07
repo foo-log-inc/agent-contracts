@@ -64,6 +64,7 @@ export {
   type GuardrailScope,
 } from "./guardrail.js";
 export { resolveAllOf } from "./json-schema-utils.js";
+export { resolveSchemaRefs } from "./resolve-schema-refs.js";
 export {
   AppendOperatorSchema,
   type AppendOperator,

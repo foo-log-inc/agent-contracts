@@ -44,6 +44,7 @@ export const TaskSchema = z
     validations: z.array(z.string()).default([]),
     guardrails: z.array(z.string()).optional(),
     model_class: ModelClassSchema.optional(),
+    effects: z.array(z.string()).optional(),
   })
   .passthrough();
 export type Task = z.infer<typeof TaskSchema>;

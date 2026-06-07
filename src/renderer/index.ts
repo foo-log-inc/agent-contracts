@@ -35,6 +35,8 @@ export {
   type PerGuardrailPolicyContext,
   type MergedBehavioralSpec,
   type DelegatableTaskView,
+  type HandoffRoleView,
+  type HandoffFieldView,
   type GuardrailEnforcementEntry,
   type EntityGuardrailEntry,
   type EntityValidationEntry,
