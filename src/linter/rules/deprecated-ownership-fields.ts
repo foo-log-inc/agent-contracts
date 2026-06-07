@@ -2,11 +2,6 @@ import type { Dsl } from "../../schema/index.js";
 import type { LintRule, LintDiagnostic } from "../types.js";
 
 const ARTIFACT_FIELDS = ["owner", "producers", "editors", "consumers"] as const;
-const AGENT_FIELDS = [
-  "own_artifacts",
-  "can_read_artifacts",
-  "can_write_artifacts",
-] as const;
 
 function isArtifactFieldUsed(
   artifact: Dsl["artifacts"][string],
@@ -24,24 +19,10 @@ function isArtifactFieldUsed(
   }
 }
 
-function isAgentFieldUsed(
-  agent: Dsl["agents"][string],
-  field: (typeof AGENT_FIELDS)[number],
-): boolean {
-  switch (field) {
-    case "own_artifacts":
-      return agent.own_artifacts.length > 0;
-    case "can_read_artifacts":
-      return agent.can_read_artifacts.length > 0;
-    case "can_write_artifacts":
-      return agent.can_write_artifacts.length > 0;
-  }
-}
-
 export const deprecatedOwnershipFieldsRule: LintRule = {
   id: "deprecated-ownership-fields",
   description:
-    "Warn when deprecated ownership/permission fields are used instead of artifact_bindings + artifact_slots",
+    "Warn when deprecated artifact-side ownership fields are used instead of declaring ownership on agents via own_artifacts, can_write_artifacts, and can_read_artifacts",
 
   run(dsl: Dsl): LintDiagnostic[] {
     const diagnostics: LintDiagnostic[] = [];
@@ -53,20 +34,7 @@ export const deprecatedOwnershipFieldsRule: LintRule = {
             ruleId: "deprecated-ownership-fields",
             severity: "warning",
             path: `artifacts.${artId}.${field}`,
-            message: `Artifact "${artId}" uses deprecated field "${field}". Ownership is derived from artifact_bindings + artifact_slots in the binding model.`,
-          });
-        }
-      }
-    }
-
-    for (const [agentId, agent] of Object.entries(dsl.agents)) {
-      for (const field of AGENT_FIELDS) {
-        if (isAgentFieldUsed(agent, field)) {
-          diagnostics.push({
-            ruleId: "deprecated-ownership-fields",
-            severity: "warning",
-            path: `agents.${agentId}.${field}`,
-            message: `Agent "${agentId}" uses deprecated field "${field}". Artifact permissions are derived from artifact_bindings + artifact_slots in the binding model.`,
+            message: `Artifact "${artId}" uses deprecated field "${field}". Declare ownership on agents via own_artifacts, can_write_artifacts, and can_read_artifacts instead.`,
           });
         }
       }

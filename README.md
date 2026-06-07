@@ -183,6 +183,7 @@ An **Agent** defines who an execution entity is:
 * constraints
 * behavioral rules
 * structured content sections (reference material, procedures, criteria)
+* memory — optional capability declaration for session resume support (`resumable`, `ref_required`, `emits_memory_ref`)
 
 ### Task
 
@@ -601,6 +602,10 @@ agents:
     constraints:
       - "Never write code directly"
 
+    memory:
+      resumable: true
+      emits_memory_ref: true
+
     sections:
       - title: "Delegation Protocol"
         content: |
@@ -933,6 +938,25 @@ tasks:
             uses_tool: api-pipeline
 ````
 
+### `$clone` — resolve-time entity duplication
+
+`$clone` creates a new entity by copying an existing entity within the same section and optionally applying a merge diff:
+
+````yaml
+agents:
+  implementer.api:
+    $clone:
+      from: implementer
+      merge:
+        purpose: "API-specialized implementer"
+        can_write_artifacts:
+          $replace: [openapi-spec]
+        responsibilities:
+          $append: ["Validate schema changes"]
+````
+
+`$clone` is processed during `resolve` (after `extends`, before tool inheritance). All merge operators (`$append`, `$prepend`, `$replace`, `$remove`, `$insert_after`) work within `merge`. The base entity is preserved; chained clones (A→B→C) are resolved via topological sort. Circular clones are rejected.
+
 Supported merge operators:
 
 | Operator        | Behavior                                   |
@@ -1138,6 +1162,7 @@ npx agent-contracts
 | `agent-contracts check`           | Run resolve → validate → lint → render --check         |
 | `agent-contracts navigation-index` | Build artifact-centric navigation index |
 | `agent-contracts artifact-coverage` | Measure file coverage by artifact definitions |
+| `agent-contracts extract`           | Extract embedded CLI contract specification            |
 | `agent-contracts render`          | _(deprecated)_ Alias for `generate templates`          |
 
 The `[path]` argument defaults to `agent-contracts.yaml` in the current directory.
@@ -1369,6 +1394,41 @@ The `check` command also validates that imported interface files exist on disk (
 * `dsl` and `teams` are mutually exclusive at the config root
 * Every team except `_defaults` must specify `dsl`
 * Existing single-team configs (top-level `dsl` only) remain valid unchanged
+
+### Artifact binding (config-level)
+
+The `artifact_binding` config field connects DSL artifact definitions to an external artifact registry (e.g., `artifact-contracts.yaml`). Registry values override DSL defaults using deep-merge semantics.
+
+Two forms are supported:
+
+````yaml
+# Simple form (IDs match between DSL and registry)
+artifact_binding: ./artifact-contracts.yaml
+
+# Explicit mapping form (IDs differ)
+artifact_binding:
+  source: ./artifact-contracts.yaml
+  mappings:
+    openapi-spec: billing_api_contract
+````
+
+**Merge semantics:**
+
+* Registry fields override DSL fields (deep-merge at field level)
+* DSL-only fields are preserved
+* `{var}` templates in `path_patterns` are substituted using `config.paths`
+
+**Diagnostics:**
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `unbound-artifact` | warning | DSL artifact has no registry counterpart |
+| `orphan-binding` | warning | Registry artifact has no DSL counterpart |
+| `type-mismatch` | warning | DSL and registry disagree on `type`/`authority` |
+
+**Placement:** Top-level for single-team configs, or per-team in `teams` (inheritable from `_defaults`).
+
+Currently consumed by `navigation-index` and `artifact-coverage` commands. When not configured, behavior is unchanged (full backward compatibility).
 
 ### Render target options
 

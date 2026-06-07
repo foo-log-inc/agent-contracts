@@ -2,7 +2,7 @@
 
 Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows. Provides static validation, semantic linting, prompt rendering, guardrail generation, and completeness scoring for agent contract definitions.
 
-**Version:** 0.33.0
+**Version:** 0.34.0
 
 ## Table of Contents
 
@@ -354,7 +354,7 @@ agent-contracts audit extensions -c agent-contracts.config.yaml
 agent-contracts audit all -c agent-contracts.config.yaml
 ```
 ```
-agent-contracts audit dsl --dry-run -c agent-contracts.config.yaml
+agent-contracts audit dsl --show-prompt -c agent-contracts.config.yaml
 ```
 ```
 agent-contracts audit render --format json -c agent-contracts.config.yaml
@@ -377,7 +377,7 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 | `--team` |  | No |  | Limit to one team (multi-team config only). |
 | `--format` |  | No | `"text"` | Output format. |
 | `--scope` |  | No |  | Limit audit scope to specified entities (e.g. agents:architect,implementer). |
-| `--dry-run` |  | No | `false` | Output the audit prompt without calling LLM. |
+| `--show-prompt` |  | No | `false` | Output the constructed prompt without calling the LLM API. |
 | `--adapter` |  | No |  | SDK adapter to use for LLM calls (overrides config audit.adapter). |
 | `--model` |  | No |  | LLM model override (overrides config audit.model). |
 | `--log-file` | -l | No |  | Write agent progress log to this file path. |
@@ -845,12 +845,21 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 
 ```yaml
 x-agent: 
-  retryable_exit_codes: 
+  riskLevel: medium
+  requiresConfirmation: false
+  idempotent: false
+  sideEffects: 
+    - network
+  sideEffectNote: Network calls to LLM provider when adapter is not mock. Filesystem write only when --output is specified.
+  safeDryRunOption: show-prompt
+  expectedDurationMs: 120000
+  retryableExitCodes: 
+    - 1
     - 12
   recommended_before_use: 
     - Ensure agent-contracts.config.yaml exists with render targets.
     - Run validate first to confirm DSL is valid.
-    - Install agent-contracts-runtime if not using --dry-run.
+    - Install agent-contracts-runtime if not using --show-prompt.
 ```
 
 ---
