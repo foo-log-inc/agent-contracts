@@ -353,6 +353,43 @@ describe("schema default values", () => {
     expect(t.kind).toBeUndefined();
   });
 
+  it("accepts component_contract on ToolSchema", () => {
+    const t = ToolSchema.parse({
+      ...minimalValidTool,
+      component_contract: "components/review.yaml",
+      command: "review",
+    });
+    expect(t.component_contract).toBe("components/review.yaml");
+  });
+
+  it("accepts effects on AgentSchema and TaskSchema", () => {
+    const a = AgentSchema.parse({
+      ...minimalValidAgent,
+      effects: ["read:spec"],
+    });
+    expect(a.effects).toEqual(["read:spec"]);
+
+    const t = TaskSchema.parse({
+      ...minimalValidTask,
+      effects: ["write:output"],
+    });
+    expect(t.effects).toEqual(["write:output"]);
+  });
+
+  it("accepts derived_from on ArtifactSchema", () => {
+    const single = ArtifactSchema.parse({
+      ...minimalValidArtifact,
+      derived_from: "source-art",
+    });
+    expect(single.derived_from).toBe("source-art");
+
+    const multi = ArtifactSchema.parse({
+      ...minimalValidArtifact,
+      derived_from: ["source-a", "source-b"],
+    });
+    expect(multi.derived_from).toEqual(["source-a", "source-b"]);
+  });
+
   it("defaults WorkflowSchema entry_conditions to [] when omitted", () => {
     const w = WorkflowSchema.parse({
       steps: [

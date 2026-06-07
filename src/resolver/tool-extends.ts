@@ -42,6 +42,10 @@ function mergeToolFields(base: Tool, child: Tool): Tool {
     merged.cli_contract = base.cli_contract;
   }
 
+  if (isUnset(child.component_contract) && !isUnset(base.component_contract)) {
+    merged.component_contract = base.component_contract;
+  }
+
   if (isUnset(child.description) && !isUnset(base.description)) {
     merged.description = base.description;
   }

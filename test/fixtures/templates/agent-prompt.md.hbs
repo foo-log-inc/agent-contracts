@@ -48,6 +48,28 @@
 {{/each}}
 {{/if}}
 
+{{#if producerHandoffs.length}}
+## Handoff Output Formats
+
+{{#each producerHandoffs}}
+### {{this.handoffId}}
+{{#each this.fields}}
+- {{this.name}}: {{this.type}}
+{{/each}}
+{{/each}}
+{{/if}}
+
+{{#if consumerHandoffs.length}}
+## Handoff Input Formats
+
+{{#each consumerHandoffs}}
+### {{this.handoffId}}
+{{#each this.fields}}
+- {{this.name}}: {{this.type}}
+{{/each}}
+{{/each}}
+{{/if}}
+
 {{#if (notEmpty relatedHandoffTypes)}}
 ## Handoff Types
 

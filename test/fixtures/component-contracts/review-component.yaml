@@ -1,0 +1,18 @@
+schema: aaac/v1
+info:
+  id: review-component
+  version: "1.0.0"
+  description: Review component for testing
+
+operations:
+  review:
+    description: Review source code changes
+    artifact_slots:
+      source-diff:
+        direction: read
+      review-report:
+        direction: write
+  summarize:
+    description: Summarize review findings
+    artifact_slots:
+      review-report: review-report
