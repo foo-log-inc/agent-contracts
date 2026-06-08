@@ -7,6 +7,10 @@ export interface HandoffTypeLike {
   version?: number;
   schema?: AnyRecord;
   example?: AnyRecord;
+  /** Feature #134: optional structured tag — rendered as $tags.target_agent */
+  target_agent?: string;
+  /** Feature #134: optional structured tag — rendered as $tags.workflow_phase */
+  workflow_phase?: string;
 }
 
 /**
@@ -31,8 +35,12 @@ export function resolveHandoffPayload(
 }
 
 /**
- * Build a handoff envelope `{ type, version, payload }` suitable for
+ * Build a handoff envelope `{ type, version, payload, $tags? }` suitable for
  * runtime invocation files and documentation.
+ *
+ * `$tags` is included only when `target_agent` or `workflow_phase` is set on
+ * the handoff type, keeping the envelope backward-compatible with consumers
+ * that do not know about these fields.
  */
 export function buildHandoffEnvelope(
   handoffType: HandoffTypeLike | null | undefined,
@@ -40,10 +48,18 @@ export function buildHandoffEnvelope(
 ): AnyRecord {
   if (!handoffType) return {};
   const type = idOverride ?? handoffType.id;
+
+  // Build structured tags when present (Feature #134)
+  const tags: AnyRecord = {};
+  if (handoffType.target_agent) tags["target_agent"] = handoffType.target_agent;
+  if (handoffType.workflow_phase) tags["workflow_phase"] = handoffType.workflow_phase;
+  const hasTags = Object.keys(tags).length > 0;
+
   return {
     ...(type ? { type } : {}),
     ...(handoffType.version !== undefined ? { version: handoffType.version } : {}),
     payload: resolveHandoffPayload(handoffType),
+    ...(hasTags ? { $tags: tags } : {}),
   };
 }
 
