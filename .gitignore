@@ -17,3 +17,5 @@ test/__cli_output_bindings__/
 agent-contracts/
 agent-contracts.config.yaml
 setup-aidev.sh
+
+.agent-logs/

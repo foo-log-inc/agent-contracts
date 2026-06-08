@@ -7,6 +7,7 @@ const BINDING_SECTIONS: Record<string, SectionMode> = {
   outputs: "map",
   renders: "array",
   reporting: "object",
+  event_mapping: "map",
 };
 
 export function mergeBinding(

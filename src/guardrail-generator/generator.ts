@@ -1,11 +1,11 @@
 import { readFile, writeFile, mkdir, chmod, unlink, copyFile } from "node:fs/promises";
-import { resolve, dirname } from "node:path";
+import { resolve, dirname, extname, basename } from "node:path";
 import Handlebars from "handlebars";
 import YAML from "yaml";
 import type { Dsl } from "../schema/index.js";
 import type { ResolvedConfig } from "../config/types.js";
 import type { LoadedBinding } from "../config/binding-loader.js";
-import type { BindingOutput } from "../schema/index.js";
+import type { BindingOutput, SoftwareBinding } from "../schema/index.js";
 import type { ContextType } from "../schema/context-type.js";
 import type {
   BindingGenerationContext,
@@ -103,21 +103,90 @@ function serializeContent(data: unknown, format: string): string {
   throw new Error(`Unsupported format for patch serialization: ${format}`);
 }
 
+/**
+ * Infer the output format from explicit setting or from template/target file extension.
+ * Defaults to "json" for patch mode when nothing can be inferred.
+ */
+function inferOutputFormat(
+  outputDef: BindingOutput,
+  targetPath: string,
+): "json" | "yaml" | "bash" | "text" {
+  if (outputDef.format) return outputDef.format as "json" | "yaml" | "bash" | "text";
+
+  // Strip .hbs suffix from template name before checking extension
+  const templateRef = (outputDef.template ?? "").replace(/\.hbs$/, "");
+  const refs = [templateRef, targetPath].filter(Boolean);
+
+  for (const ref of refs) {
+    const ext = extname(basename(ref)).toLowerCase();
+    if (ext === ".json") return "json";
+    if (ext === ".yaml" || ext === ".yml") return "yaml";
+    if (ext === ".sh" || ext === ".bash") return "bash";
+    if (ext === ".txt") return "text";
+  }
+
+  return "json"; // safe default for patch mode
+}
+
+/**
+ * Apply section_append: find the first `# BEGIN <id>` / `# END <id>` block in
+ * `incoming`, then replace the matching block in `existing` (idempotent) or
+ * append if the block is not yet present.  Falls back to simple append when
+ * `incoming` contains no section markers.
+ */
+function applySectionBlock(existing: string, incoming: string): string {
+  const beginRe = /^#\s*BEGIN\s+(\S+)/m;
+  const beginMatch = beginRe.exec(incoming);
+
+  if (!beginMatch) {
+    // No markers — simple append
+    const sep = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
+    return existing + sep + incoming;
+  }
+
+  const sectionId = beginMatch[1]!;
+  const escaped = sectionId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // Match the entire block in the existing file (BEGIN line through END line)
+  const blockRe = new RegExp(
+    `^#\\s*BEGIN\\s+${escaped}[^\\n]*(?:\\r?\\n)[\\s\\S]*?^#\\s*END\\s+${escaped}[^\\n]*$`,
+    "m",
+  );
+
+  if (blockRe.test(existing)) {
+    // Replace existing block — use a function to avoid `$` special chars in replacement
+    const replacement = incoming.endsWith("\n") ? incoming.slice(0, -1) : incoming;
+    return existing.replace(blockRe, () => replacement);
+  }
+
+  // Block not found — append
+  const sep = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
+  return existing + sep + incoming;
+}
+
 async function applyPatch(
   targetPath: string,
   patchContent: string,
   outputDef: BindingOutput,
 ): Promise<string> {
-  const format = outputDef.format ?? "json";
+  const format = inferOutputFormat(outputDef, targetPath);
+  const strategy = outputDef.patch_strategy ?? "deep_merge";
 
-  if (format === "text") {
+  // ── text / bash formats ──────────────────────────────────────────────────
+  if (format === "text" || format === "bash") {
     let existing = "";
     try {
       existing = await readFile(targetPath, "utf8");
     } catch { /* first write */ }
+
+    if (strategy === "section_append") {
+      return applySectionBlock(existing, patchContent);
+    }
+
     return existing + patchContent;
   }
 
+  // ── JSON / YAML formats ──────────────────────────────────────────────────
   const patchData = parseContent(patchContent, format);
 
   let existingData: unknown;
@@ -128,8 +197,11 @@ async function applyPatch(
     return serializeContent(patchData, format);
   }
 
-  const strategy = outputDef.patch_strategy ?? "deep_merge";
-  if (strategy === "append" && Array.isArray(existingData)) {
+  // "array_append" — also handle legacy "append" alias for backward compat
+  if (
+    (strategy === "array_append" || strategy === ("append" as string)) &&
+    Array.isArray(existingData)
+  ) {
     const merged = deepMergeArrays(
       existingData,
       Array.isArray(patchData) ? patchData : [patchData],
@@ -141,6 +213,170 @@ async function applyPatch(
   const merged = deepMerge(existingData, patchData, outputDef.array_merge_key);
   return serializeContent(merged, format);
 }
+
+// ── Builtin template generators ──────────────────────────────────────────────
+
+/**
+ * Generate the content for a `builtin:event-mapping` output.
+ * Serialises the binding's `event_mapping` as pretty-printed JSON.
+ */
+function generateEventMappingContent(
+  ctx: BindingGenerationContext,
+): string {
+  const em = ctx.binding.event_mapping ?? {};
+  return JSON.stringify(em, null, 2) + "\n";
+}
+
+/**
+ * Generate `task-patterns.json`: maps each task ID to its agent, workflow,
+ * and a structured tag map derived entirely from DSL declarations.
+ */
+function generateTaskPatternsContent(
+  ctx: BindingGenerationContext,
+): string {
+  const result: Record<string, unknown> = {};
+  for (const [taskId, task] of Object.entries(ctx.tasks)) {
+    const agent = ctx.agents[task.target_agent];
+    result[taskId] = {
+      agent: task.target_agent,
+      workflow: task.workflow,
+      tags: {
+        "task.id": taskId,
+        "task.workflow": task.workflow,
+        "agent.id": task.target_agent,
+        ...(agent ? { "agent.role": agent.role_name } : {}),
+      },
+    };
+  }
+  return JSON.stringify(result, null, 2) + "\n";
+}
+
+/**
+ * Generate `artifact-lookup.json`: maps each artifact ID to its declared
+ * path globs.  Only artifacts that have `path_patterns` are included so the
+ * output remains strictly derived from the DSL — no project-specific patterns
+ * are ever hard-coded here.
+ */
+function generateArtifactLookupContent(
+  ctx: BindingGenerationContext,
+): string {
+  const result: Record<string, unknown> = {};
+  for (const [artifactId, artifact] of Object.entries(ctx.artifacts)) {
+    if (artifact.path_patterns && artifact.path_patterns.length > 0) {
+      result[artifactId] = {
+        path_patterns: artifact.path_patterns,
+        ...(artifact.exclude_patterns && artifact.exclude_patterns.length > 0
+          ? { exclude_patterns: artifact.exclude_patterns }
+          : {}),
+      };
+    }
+  }
+  return JSON.stringify(result, null, 2) + "\n";
+}
+
+/**
+ * Generate a recorder shell script that emits observability events for each
+ * hook event declared in `event_mapping`.
+ */
+function generateRecorderContent(
+  ctx: BindingGenerationContext,
+): string {
+  const eventMapping = ctx.binding.event_mapping ?? {};
+  const eventNames = Object.keys(eventMapping);
+
+  const emitCmd = ctx.reporting?.commands?.["emit"] ?? 'echo "event: $event_name"';
+
+  const lines: string[] = [
+    "#!/bin/sh",
+    "# Auto-generated by agent-contracts — DO NOT EDIT",
+    "# Observability recorder for hook events",
+    "",
+    "record_event() {",
+    "  local event_name=\"$1\"",
+    "  local payload=\"${2:-}\"",
+    `  ${emitCmd}`,
+    "}",
+    "",
+  ];
+
+  if (eventNames.length > 0) {
+    lines.push("# Registered hook events:");
+    for (const name of eventNames) {
+      lines.push(`#   ${name}`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Generate a git hook shell script that fires for promotion events declared
+ * in `event_mapping`.  Events whose names start with `git:` or contain
+ * `promotion`, `commit`, or `push` are treated as promotion events.
+ */
+function generateGitHookContent(
+  ctx: BindingGenerationContext,
+): string {
+  const eventMapping = ctx.binding.event_mapping ?? {};
+
+  const promotionEvents = Object.entries(eventMapping).filter(
+    ([name]) =>
+      name.startsWith("git:") ||
+      name.includes("promotion") ||
+      name.includes("commit") ||
+      name.includes("push"),
+  );
+
+  const emitCmd = ctx.reporting?.commands?.["emit"] ?? 'echo "event: $event_name"';
+
+  const lines: string[] = [
+    "#!/bin/sh",
+    "# Auto-generated by agent-contracts — DO NOT EDIT",
+    "# Git hook for promotion events",
+    "",
+  ];
+
+  if (promotionEvents.length > 0) {
+    lines.push("# Promotion events handled by this hook:");
+    for (const [name] of promotionEvents) {
+      lines.push(`#   ${name}`);
+      lines.push(`${emitCmd.replace("$event_name", JSON.stringify(name))}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("exit 0", "");
+  return lines.join("\n");
+}
+
+/**
+ * Dispatch to a specific builtin content generator.
+ * Returns `null` for unknown builtin names so the caller can push an
+ * "info" diagnostic and skip the output.
+ */
+function generateBuiltinContent(
+  builtinName: string,
+  ctx: BindingGenerationContext,
+  _outputId: string,
+): string | null {
+  switch (builtinName) {
+    case "event-mapping":
+      return generateEventMappingContent(ctx);
+    case "task-patterns":
+      return generateTaskPatternsContent(ctx);
+    case "artifact-lookup":
+      return generateArtifactLookupContent(ctx);
+    case "recorder":
+      return generateRecorderContent(ctx);
+    case "git-hook":
+      return generateGitHookContent(ctx);
+    default:
+      return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface GenerateGuardrailsOptions {
   dsl: Dsl;
@@ -203,7 +439,7 @@ export async function generateGuardrails(
 
   // Process each binding
   for (const lb of loadedBindings) {
-    const binding = lb.binding;
+    const binding = lb.binding as SoftwareBinding;
 
     if (filterBindings && !filterBindings.includes(binding.software)) {
       continue;
@@ -249,7 +485,7 @@ export async function generateGuardrails(
 
       const targetPath = resolve(config.configDir, pathResult.resolved);
 
-      // --- source: file copy without template processing ---
+      // ── source: file copy without template processing ──────────────────
       if (outputDef.source) {
         const sourcePath = resolve(config.configDir, outputDef.source);
         if (!dryRun) {
@@ -276,19 +512,36 @@ export async function generateGuardrails(
         continue;
       }
 
-      // --- template / inline_template rendering ---
+      // ── template / inline_template rendering ──────────────────────────
       let templateContent: string;
       if (outputDef.inline_template) {
         templateContent = outputDef.inline_template;
       } else if (outputDef.template) {
+        // ── builtin template dispatch ──────────────────────────────────
         if (outputDef.template.startsWith("builtin:")) {
-          diagnostics.push({
-            path: `binding.${binding.software}.outputs.${outputId}`,
-            message: `Builtin template "${outputDef.template}" is not yet implemented — skipping`,
-            severity: "info",
-          });
+          const builtinName = outputDef.template.slice("builtin:".length);
+          const builtinContent = generateBuiltinContent(builtinName, ctx, outputId);
+
+          if (builtinContent === null) {
+            diagnostics.push({
+              path: `binding.${binding.software}.outputs.${outputId}`,
+              message: `Builtin template "${outputDef.template}" is not yet implemented — skipping`,
+              severity: "info",
+            });
+            continue;
+          }
+
+          if (!dryRun) {
+            await mkdir(dirname(targetPath), { recursive: true });
+            await writeFile(targetPath, builtinContent, "utf8");
+            if (outputDef.executable) {
+              await chmod(targetPath, 0o755);
+            }
+          }
+          outputFiles.push(targetPath);
           continue;
         }
+
         const templatePath = resolve(config.configDir, outputDef.template);
         try {
           templateContent = await readFile(templatePath, "utf8");
