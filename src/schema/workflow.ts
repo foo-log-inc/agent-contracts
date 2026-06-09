@@ -91,6 +91,37 @@ const WorkflowTeamTaskStepSchema = z
   })
   .passthrough();
 
+/**
+ * Closed Agent Looping: a verification step that evaluates whether the goal has
+ * converged and, if not, loops back to an earlier step (Verification → Iteration
+ * back-edge). The evaluator returns a fixed `convergence-envelope` whose `verdict`
+ * (pass/fail) the runtime reads deterministically.
+ */
+const WorkflowEvaluateStepSchema = z
+  .object({
+    type: z.literal("evaluate"),
+    description: z.string().optional(),
+    /** GAP-analysis task that produces the convergence verdict. */
+    task: z.string(),
+    /** Agent that delegates the evaluation. */
+    from_agent: z.string(),
+    /** Agent that performs the evaluation (Producer != Verifier). */
+    evaluator_agent: z.string().optional(),
+    /** Step (task ID) to loop back to when not converged. */
+    loop_to: z.string(),
+    /** Iteration ceiling (bounded execution). */
+    max_iterations: z.number().int().min(1).max(10),
+    /** Context variable to inject the gap feedback into on the next iteration. */
+    inject_as: z.string().optional(),
+    /** Behavior when max_iterations is reached without convergence. */
+    on_exhausted: z
+      .enum(["fail_partial", "escalate", "abort"])
+      .optional(),
+    group: z.string().optional(),
+    depends_on: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
 export const WorkflowStepSchema = z.discriminatedUnion("type", [
   WorkflowDelegateStepSchema,
   WorkflowGateStepSchema,
@@ -98,6 +129,7 @@ export const WorkflowStepSchema = z.discriminatedUnion("type", [
   WorkflowValidationStepSchema,
   WorkflowDecisionStepSchema,
   WorkflowTeamTaskStepSchema,
+  WorkflowEvaluateStepSchema,
 ]);
 export type WorkflowStep = z.infer<typeof WorkflowStepSchema>;
 

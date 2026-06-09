@@ -309,6 +309,12 @@
               }
             },
             "additionalProperties": false
+          },
+          "effects": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -564,6 +570,12 @@
               "standard",
               "thinking"
             ]
+          },
+          "effects": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -680,6 +692,19 @@
               "approval-required",
               "regeneration-required"
             ]
+          },
+          "derived_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
           }
         },
         "required": [
@@ -736,6 +761,9 @@
             }
           },
           "cli_contract": {
+            "type": "string"
+          },
+          "component_contract": {
             "type": "string"
           },
           "artifact_bindings": {
@@ -892,6 +920,12 @@
               "type": "string"
             },
             "additionalProperties": {}
+          },
+          "target_agent": {
+            "type": "string"
+          },
+          "workflow_phase": {
+            "type": "string"
           }
         },
         "required": [
@@ -1277,6 +1311,63 @@
                     "workflow",
                     "handoff",
                     "expects"
+                  ],
+                  "additionalProperties": {}
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "evaluate"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "task": {
+                      "type": "string"
+                    },
+                    "from_agent": {
+                      "type": "string"
+                    },
+                    "evaluator_agent": {
+                      "type": "string"
+                    },
+                    "loop_to": {
+                      "type": "string"
+                    },
+                    "max_iterations": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 10
+                    },
+                    "inject_as": {
+                      "type": "string"
+                    },
+                    "on_exhausted": {
+                      "type": "string",
+                      "enum": [
+                        "fail_partial",
+                        "escalate",
+                        "abort"
+                      ]
+                    },
+                    "group": {
+                      "type": "string"
+                    },
+                    "depends_on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "task",
+                    "from_agent",
+                    "loop_to",
+                    "max_iterations"
                   ],
                   "additionalProperties": {}
                 }

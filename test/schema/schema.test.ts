@@ -193,6 +193,67 @@ describe("schema normal cases", () => {
     expect(() => WorkflowSchema.parse(minimalValidWorkflow)).not.toThrow();
   });
 
+  it("parses WorkflowStepSchema evaluate step (Closed Agent Looping)", () => {
+    expect(() =>
+      WorkflowStepSchema.parse({
+        type: "evaluate",
+        task: "implementation-quality-check",
+        from_agent: "architect",
+        evaluator_agent: "test-police",
+        loop_to: "plan-and-implement",
+        max_iterations: 3,
+        inject_as: "gap_feedback",
+        on_exhausted: "fail_partial",
+      }),
+    ).not.toThrow();
+  });
+
+  it("accepts a minimal evaluate step (only required fields)", () => {
+    expect(() =>
+      WorkflowStepSchema.parse({
+        type: "evaluate",
+        task: "gap-analysis",
+        from_agent: "architect",
+        loop_to: "plan",
+        max_iterations: 1,
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects an evaluate step with max_iterations out of range (1-10)", () => {
+    expect(() =>
+      WorkflowStepSchema.parse({
+        type: "evaluate",
+        task: "gap-analysis",
+        from_agent: "architect",
+        loop_to: "plan",
+        max_iterations: 0,
+      }),
+    ).toThrow();
+    expect(() =>
+      WorkflowStepSchema.parse({
+        type: "evaluate",
+        task: "gap-analysis",
+        from_agent: "architect",
+        loop_to: "plan",
+        max_iterations: 11,
+      }),
+    ).toThrow();
+  });
+
+  it("rejects an evaluate step with invalid on_exhausted", () => {
+    expect(() =>
+      WorkflowStepSchema.parse({
+        type: "evaluate",
+        task: "gap-analysis",
+        from_agent: "architect",
+        loop_to: "plan",
+        max_iterations: 2,
+        on_exhausted: "retry-forever",
+      }),
+    ).toThrow();
+  });
+
   it("parses PolicySchema", () => {
     expect(() => PolicySchema.parse(minimalValidPolicy)).not.toThrow();
   });
