@@ -1,4 +1,4 @@
-import type { Dsl, Agent, Task, Tool } from "../schema/index.js";
+import type { Dsl, Tool } from "../schema/index.js";
 import { resolveToolExtends } from "./tool-extends.js";
 import { loadCliContractSlots, resolveSlotDirection } from "../navigation-index/cli-contract-loader.js";
 

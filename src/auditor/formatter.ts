@@ -1,8 +1,6 @@
 /**
  * Format audit results for CLI output.
  */
-
-import type { DslAuditResult } from "../generated/dsl-base/handoffs.js";
 import type { AuditRunResult } from "./auditor.js";
 import type { OutputFormat } from "./types.js";
 

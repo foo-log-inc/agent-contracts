@@ -5,7 +5,7 @@ import { parse as parseYaml } from "yaml";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { DslSchema, type Dsl } from "../../src/schema/index.js";
 import { buildGlobalContext, buildPerAgentContext, buildWorkflowContext } from "../../src/renderer/context.js";
-import { renderFromConfig, checkDriftFromConfig, expandOutputPath, hasUnresolvedPathVars, buildEntityContext } from "../../src/renderer/renderer.js";
+import { renderFromConfig, checkDriftFromConfig, expandOutputPath, hasUnresolvedPathVars } from "../../src/renderer/renderer.js";
 import { generateSequenceDiagram } from "../../src/renderer/sequence-diagram.js";
 import { generateOverviewFlowchart } from "../../src/renderer/overview-flowchart.js";
 import { artifactOwnershipRule } from "../../src/linter/rules/artifact-ownership.js";

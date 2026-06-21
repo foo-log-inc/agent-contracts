@@ -6,11 +6,6 @@ export interface ComponentContractSlotInfo {
   artifactSlots: Record<string, { direction: "read" | "write" | "readwrite" }>;
 }
 
-function extractStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string");
-}
-
 function parseSlotDirection(
   slotDef: unknown,
 ): "read" | "write" | "readwrite" | null {

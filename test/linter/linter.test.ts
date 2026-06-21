@@ -10,7 +10,7 @@ import { taskAgentBindingRule } from "../../src/linter/rules/task-agent-binding.
 import { mergeIntegrityRule } from "../../src/linter/rules/merge-integrity.js";
 import { artifactRequiredValidationWiringRule } from "../../src/linter/rules/artifact-required-validation-wiring.js";
 import { taskOutputValidationCompletenessRule } from "../../src/linter/rules/task-output-validation-completeness.js";
-import { semanticValidationPhaseCoverageRule } from "../../src/linter/rules/semantic-validation-phase-coverage.js";
+import { semanticValidationPhaseCoverageRule as _semanticValidationPhaseCoverageRule } from "../../src/linter/rules/semantic-validation-phase-coverage.js";
 import { deprecatedOwnershipFieldsRule } from "../../src/linter/rules/deprecated-ownership-fields.js";
 import { memoryConsistencyRule } from "../../src/linter/rules/memory-consistency.js";
 
