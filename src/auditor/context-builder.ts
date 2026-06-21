@@ -6,6 +6,7 @@
  * can analyze via LLM.
  */
 
+import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import * as yaml from "yaml";
 import type { Dsl, ScopeNodeType } from "../schema/index.js";
@@ -150,16 +151,13 @@ function collectAllXUsages(dsl: Dsl): XUsageEntry[] {
 
 function extractTemplateXReferences(config: ResolvedConfig): string[] {
   const refs: string[] = [];
-  try {
-    const { readFileSync } = require("node:fs") as typeof import("node:fs");
-    for (const target of config.renders) {
-      try {
-        const content = readFileSync(target.template, "utf8");
-        const matches = content.matchAll(/\{\{[^}]*?(x-[\w-]+)[^}]*?\}\}/g);
-        for (const m of matches) refs.push(m[1]);
-      } catch { /* template may not exist */ }
-    }
-  } catch { /* fallback if fs unavailable */ }
+  for (const target of config.renders) {
+    try {
+      const content = readFileSync(target.template, "utf8");
+      const matches = content.matchAll(/\{\{[^}]*?(x-[\w-]+)[^}]*?\}\}/g);
+      for (const m of matches) refs.push(m[1]);
+    } catch { /* template may not exist */ }
+  }
   return [...new Set(refs)];
 }
 
