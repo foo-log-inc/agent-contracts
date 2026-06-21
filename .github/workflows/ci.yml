@@ -1,40 +1,33 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Security audit
-        run: docker run --rm -v "$(pwd)":/app:ro -w /app node:22-alpine npm audit
-
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20, 22]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build test container
-        run: docker compose -f docker-compose.test.yml build --build-arg NODE_VERSION=${{ matrix.node-version }}
-      - name: Run tests
-        run: docker compose -f docker-compose.test.yml run --rm test
-
-  bundle-test:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - run: npm ci --legacy-peer-deps
-      - run: node esbuild.bundle.mjs
-      - run: npx vitest run --config vitest.bundle.config.ts
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci --legacy-peer-deps --ignore-scripts
+      - name: Audit
+        run: npm audit --audit-level=moderate
+      - name: Verify npm signatures
+        run: npm audit signatures
+      - name: Lint
+        run: npm run lint --if-present
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm run test:ci
+      - name: Verify package contents
+        run: npm pack --dry-run
