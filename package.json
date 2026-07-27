@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.35.2",
+  "version": "0.35.3",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -90,6 +90,10 @@
     "yaml": "^2.9.0",
     "zod": "^4.4.3",
     "zod-to-json-schema": "^3.25.2"
+  },
+  "overrides": {
+    "esbuild": "$esbuild",
+    "brace-expansion": "^5.0.8"
   },
   "engines": {
     "node": ">=20.0.0"
