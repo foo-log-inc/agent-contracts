@@ -25,6 +25,8 @@ jobs:
         run: npm audit signatures
       - name: Lint
         run: npm run lint --if-present
+      - name: Verify contract version matches the package version
+        run: npx cli-contracts version-sync --check
       - name: Build
         run: npm run build
       - name: Test

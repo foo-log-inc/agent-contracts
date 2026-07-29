@@ -235,7 +235,7 @@ export function createProgram(
     .option("-a, --all", "Extract all commands.", false)
     .option("--include-meta", "Include extraction metadata.", true)
     .option("-F, --format <format>", "Output format (yaml or json).", "yaml")
-    .action(async (commands: string[], opts: { all?: boolean; includeMeta?: boolean; format?: string }, cmd: Command) => {
+    .action(async (commands: string[], opts: { all?: boolean; includeMeta?: boolean; format?: string }) => {
       if (commands.length === 0 && !opts.all) {
         process.stderr.write(JSON.stringify({ code: "INVALID_ARGS", message: "Specify command IDs or use --all" }) + "\n");
         process.exit(2);
