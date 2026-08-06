@@ -1269,3 +1269,127 @@ describe("validateSchema — tool contract mutual exclusion", () => {
     ).toBe(true);
   });
 });
+
+describe("validateSchema — semantic checks run alongside schema-validation", () => {
+  /** Same agent, carrying the same undeclared key, in a complete vs incomplete document. */
+  function agentWithUndeclaredKey() {
+    return { role_name: "R", purpose: "P", audit_checklist: ["a", "b"] };
+  }
+
+  it("reports unknown-property whether or not the rest of the document validates", () => {
+    const complete = {
+      version: 1,
+      system: { id: "s", name: "S", default_workflow_order: [] },
+      agents: { reviewer: agentWithUndeclaredKey() },
+    };
+    const incomplete = {
+      version: 1,
+      system: { id: "s", name: "S" }, // missing default_workflow_order
+      agents: { reviewer: agentWithUndeclaredKey() },
+      tasks: { t1: { description: "d" } }, // missing required task fields
+    };
+
+    const onComplete = validateSchema(complete);
+    const onIncomplete = validateSchema(incomplete);
+
+    const undeclared = (r: ReturnType<typeof validateSchema>) =>
+      r.diagnostics.filter((d) => d.code === "unknown-property");
+
+    expect(undeclared(onComplete).map((d) => d.path)).toEqual([
+      "agents.reviewer.audit_checklist",
+    ]);
+    // The incomplete document reports the very same key, not only its shape errors.
+    expect(undeclared(onIncomplete).map((d) => d.path)).toEqual([
+      "agents.reviewer.audit_checklist",
+    ]);
+    expect(
+      onIncomplete.diagnostics.some((d) => d.code === "schema-validation"),
+    ).toBe(true);
+  });
+
+  it("reports tool-contract-mutual-exclusion on a schema-invalid document", () => {
+    const data = {
+      version: 1,
+      system: { id: "s", name: "S" }, // missing default_workflow_order
+      tools: {
+        t1: { kind: "cli", cli_contract: "cli.yaml", component_contract: "c.yaml" },
+      },
+    };
+    const result = validateSchema(data);
+    expect(result.success).toBe(false);
+    expect(
+      result.diagnostics.some((d) => d.code === "schema-validation"),
+    ).toBe(true);
+    expect(
+      result.diagnostics.some((d) => d.code === "tool-contract-mutual-exclusion"),
+    ).toBe(true);
+  });
+
+  it("reports decision-missing-routing-key on a schema-invalid document", () => {
+    const data = {
+      version: 1,
+      system: { id: "s", name: "S" }, // missing default_workflow_order
+      workflow: { w: { steps: [{ type: "decision" }] } },
+    };
+    const result = validateSchema(data);
+    expect(result.success).toBe(false);
+    expect(
+      result.diagnostics.some((d) => d.code === "schema-validation"),
+    ).toBe(true);
+    expect(
+      result.diagnostics.some((d) => d.code === "decision-missing-routing-key"),
+    ).toBe(true);
+  });
+
+  it("withholds data when the document fails schema validation", () => {
+    const result = validateSchema({
+      version: 1,
+      system: { id: "s", name: "S" },
+      agents: { reviewer: agentWithUndeclaredKey() },
+    });
+    expect(result.success).toBe(false);
+    expect(result.data).toBeUndefined();
+  });
+
+  // Extension declarations are read straight from the document, so on a
+  // schema-invalid document they may hold any shape at all.
+  it.each([
+    ["null declaration", { "x-foo": null }],
+    ["string declaration", { "x-foo": "should-be-an-object" }],
+    // A bare string scope naming a *different* node type is what reaches scope.join().
+    ["scope not an array", { "x-foo": { type: "string", scope: "task" } }],
+    ["scope array of non-strings", { "x-foo": { type: "string", scope: [7] } }],
+    ["schema not an object", { "x-foo": { type: "string", schema: "nope" } }],
+    ["required not a boolean", { "x-foo": { type: "string", required: "yes" } }],
+    ["declaration list, not a map", ["x-foo"]],
+  ])("survives a malformed extension declaration: %s", (_label, extensions) => {
+    const result = validateSchema({
+      version: 1,
+      system: { id: "s", name: "S" }, // missing default_workflow_order
+      extensions,
+      agents: { a: { role_name: "R", purpose: "P", "x-foo": 1 } },
+    });
+    expect(result.success).toBe(false);
+    // The malformed declaration is what gets reported...
+    expect(
+      result.diagnostics.some((d) => d.code === "schema-validation"),
+    ).toBe(true);
+    // ...and nothing is concluded about extensions governed by a declaration
+    // that cannot be read.
+    expect(
+      result.diagnostics.filter((d) => d.code !== "schema-validation"),
+    ).toEqual([]);
+  });
+
+  it("still treats an empty declared scope as every node type", () => {
+    const result = validateSchema({
+      version: 1,
+      system: { id: "s", name: "S", default_workflow_order: [] },
+      extensions: { "x-everywhere": { type: "string", required: true, scope: [] } },
+      agents: { a: { role_name: "R", purpose: "P" } },
+    });
+    expect(
+      result.diagnostics.some((d) => d.code === "extension-required-missing"),
+    ).toBe(true);
+  });
+});

@@ -103,9 +103,9 @@ function checkExtensionsKeys(
   data: Record<string, unknown>,
 ): DiagnosticMessage[] {
   const extensions = data["extensions"];
-  if (typeof extensions !== "object" || extensions === null) return [];
+  if (!isRecord(extensions)) return [];
   const diagnostics: DiagnosticMessage[] = [];
-  for (const key of Object.keys(extensions as Record<string, unknown>)) {
+  for (const key of Object.keys(extensions)) {
     if (!key.startsWith("x-")) {
       diagnostics.push({
         path: `extensions.${key}`,
@@ -173,14 +173,45 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-type ExtensionDeclMap = Record<
-  string,
-  {
-    scope?: ScopeNodeType[];
-    schema?: Record<string, unknown>;
-    required?: boolean;
-  }
->;
+function isStringArray(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((s) => typeof s === "string");
+}
+
+function isScopeNodeType(v: string): v is ScopeNodeType {
+  return (SCOPE_NODE_TYPES as readonly string[]).includes(v);
+}
+
+/** Extension declarations as written in the document, before schema validation. */
+type ExtensionDeclMap = Record<string, unknown>;
+
+interface ExtensionDecl {
+  scope?: string[];
+  schema?: Record<string, unknown>;
+  required: boolean;
+}
+
+/**
+ * Narrows one raw declaration. Declarations are read from unvalidated input —
+ * the document may still be failing schema validation — so a declaration counts
+ * as readable only when every field read here holds its declared shape.
+ * Anything else yields undefined: nothing can be concluded about extensions
+ * governed by a declaration that cannot be read, and the malformed declaration
+ * is already reported as `schema-validation`.
+ */
+function readExtensionDecl(raw: unknown): ExtensionDecl | undefined {
+  if (!isRecord(raw)) return undefined;
+  const scope = raw["scope"];
+  const schema = raw["schema"];
+  const required = raw["required"];
+  if (scope !== undefined && !isStringArray(scope)) return undefined;
+  if (schema !== undefined && !isRecord(schema)) return undefined;
+  if (required !== undefined && typeof required !== "boolean") return undefined;
+  return {
+    ...(scope !== undefined ? { scope } : {}),
+    ...(schema !== undefined ? { schema } : {}),
+    required: required === true,
+  };
+}
 
 function* enumerateEntitiesByType(
   data: Record<string, unknown>,
@@ -391,8 +422,7 @@ function validateDeclaredExtension(
   strict: boolean,
 ): void {
   const path = parentPath ? `${parentPath}.${key}` : key;
-  const decl = declMap[key];
-  if (decl === undefined) {
+  if (!(key in declMap)) {
     diagnostics.push({
       path,
       message: `Extension "${key}" is not declared in extensions.`,
@@ -401,6 +431,8 @@ function validateDeclaredExtension(
     });
     return;
   }
+  const decl = readExtensionDecl(declMap[key]);
+  if (decl === undefined) return;
   const scope = decl.scope;
   if (scope && scope.length > 0 && !scope.includes(nodeType)) {
     diagnostics.push({
@@ -410,12 +442,7 @@ function validateDeclaredExtension(
     });
     return;
   }
-  if (
-    decl.schema &&
-    typeof decl.schema === "object" &&
-    decl.schema !== null &&
-    Object.keys(decl.schema).length > 0
-  ) {
+  if (decl.schema && Object.keys(decl.schema).length > 0) {
     try {
       const validate = ajvInstance.compile(decl.schema);
       if (!validate(val)) {
@@ -775,7 +802,7 @@ function checkExtensionValidation(
     if (!strict) return [];
     declMap = {};
   } else {
-    declMap = raw as ExtensionDeclMap;
+    declMap = raw;
   }
 
   const diagnostics: DiagnosticMessage[] = [];
@@ -783,12 +810,18 @@ function checkExtensionValidation(
 
   walkExtensionNodes(data, "", "root", declMap, diagnostics, ajvInstance, strict);
 
-  for (const [extKey, decl] of Object.entries(declMap)) {
-    if (!decl.required) continue;
-    const applicableTypes: ScopeNodeType[] =
-      decl.scope && decl.scope.length > 0
-        ? decl.scope
-        : [...SCOPE_NODE_TYPES];
+  for (const [extKey, rawDecl] of Object.entries(declMap)) {
+    const decl = readExtensionDecl(rawDecl);
+    if (!decl?.required) continue;
+    let applicableTypes: ScopeNodeType[];
+    if (decl.scope === undefined || decl.scope.length === 0) {
+      applicableTypes = [...SCOPE_NODE_TYPES];
+    } else {
+      applicableTypes = decl.scope.filter(isScopeNodeType);
+      // A scope naming only unknown node types has no entities to enumerate.
+      // The unknown name is already reported as `schema-validation`.
+      if (applicableTypes.length === 0) continue;
+    }
 
     for (const t of applicableTypes) {
       for (const { path, obj } of enumerateEntitiesByType(data, t)) {
@@ -838,26 +871,23 @@ export function validateSchema(
 
   const result = DslSchema.safeParse(data);
 
-  if (!result.success) {
-    const diagnostics: DiagnosticMessage[] = [
-      ...deprecationWarnings,
-      ...result.error.issues.map((issue) => ({
-        path: issue.path.join("."),
-        message: issue.message,
-        code: "schema-validation",
-      })),
-    ];
-    return { success: false, diagnostics };
-  }
-
   const diagnostics: DiagnosticMessage[] = [
     ...deprecationWarnings,
+    ...(result.success
+      ? []
+      : result.error.issues.map((issue) => ({
+          path: issue.path.join("."),
+          message: issue.message,
+          code: "schema-validation",
+        }))),
     ...checkCustomPropsRecursive(data, DslSchema, ""),
     ...checkToolContractExclusivity(data),
     ...checkDecisionStepRoutingKey(data),
     ...checkExtensionsKeys(data),
     ...checkExtensionValidation(data),
   ];
+
+  if (!result.success) return { success: false, diagnostics };
 
   return {
     success: !hasBlockingDiagnostic(diagnostics),
