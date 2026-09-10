@@ -57,13 +57,30 @@ jobs:
         # lockfile, and failing the job on them holds the workflow permanently red and buries
         # the part it did fix. The gate that is enforced is the one that carries the risk — the
         # fix may leave an advisory behind, but it may never bring one in.
+        #
+        # `--legacy-peer-deps` matches the install steps. Without it the fix resolves a
+        # different tree from the one that is installed, and on npm 10.9.x it aborts with
+        # "Cannot read properties of null (reading 'edgesOut')" before touching the lockfile —
+        # an abort `|| true` swallows, leaving every advisory behind and reported as one no
+        # lockfile change can reach.
+        #
+        # An abort is caught rather than assumed away. `npm audit fix` exits 1 both when it
+        # leaves an advisory behind and when it aborts, so the exit code cannot separate the
+        # two; an abort prints on `npm error`, a residual advisory never does. Unread, an abort
+        # reaches the hash check below as "the lockfile did not change" and is taken for
+        # convergence.
         run: |
           node .github/scripts/npm-audit-advisories.mjs --level moderate > "$RUNNER_TEMP/advisories-before.txt"
 
           fix_here() {
             for _ in 1 2 3 4 5; do
               before=$(git hash-object package-lock.json)
-              npm audit fix --package-lock-only --ignore-scripts || true
+              fix_log=$(npm audit fix --package-lock-only --ignore-scripts --legacy-peer-deps 2>&1) || true
+              printf '%s\n' "$fix_log"
+              if printf '%s\n' "$fix_log" | grep -q '^npm error'; then
+                echo "::error::npm audit fix aborted in $PWD without touching the lockfile."
+                return 1
+              fi
               if [ "$(git hash-object package-lock.json)" = "$before" ]; then break; fi
             done
           }
