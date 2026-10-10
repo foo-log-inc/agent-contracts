@@ -479,6 +479,29 @@ describe("schema default values", () => {
 });
 
 describe("WorkflowStepSchema discriminated union", () => {
+  it("parses gate step with model_class", () => {
+    for (const mc of ["fast", "standard", "thinking"] as const) {
+      const s = WorkflowStepSchema.parse({ type: "gate", gate_kind: "audit-result", model_class: mc });
+      expect(s.type).toBe("gate");
+      if (s.type === "gate") {
+        expect(s.model_class).toBe(mc);
+      }
+    }
+  });
+
+  it("allows gate step without model_class", () => {
+    const s = WorkflowStepSchema.parse({ type: "gate", gate_kind: "audit-result" });
+    if (s.type === "gate") {
+      expect(s.model_class).toBeUndefined();
+    }
+  });
+
+  it("rejects invalid gate step model_class value", () => {
+    expect(() =>
+      WorkflowStepSchema.parse({ type: "gate", gate_kind: "audit-result", model_class: "ultra" }),
+    ).toThrow();
+  });
+
   it("parses handoff step", () => {
     const s = WorkflowStepSchema.parse({
       type: "handoff",

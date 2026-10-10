@@ -240,6 +240,7 @@ Workflow steps support additional properties:
 * `depends_on` — list of step task IDs that must complete before this step starts. When specified, the runtime can execute independent steps in parallel. When omitted, the step implicitly depends on all preceding steps (sequential execution)
 * `max_retries` (delegate steps) — maximum number of full task re-executions (new sessions) allowed per step. Defaults to `0` (no retries), or `1` when a `retry` block is present
 * `max_follow_ups` (delegate steps) — maximum number of lightweight same-session follow-up messages for output format corrections
+* `model_class` (gate steps) — capability class of the agent that evaluates the gate (`fast`, `standard`, `thinking`), the same vocabulary as a task's `model_class`. When omitted, the gate runs on the runtime's default model
 * `retry` (delegate steps) — defines a conditional retry loop with `condition`, `fix_task`, and optional `revalidate_task`. These are rendered as recovery instructions in the LLM prompt
 * `routing_key` (decision steps) — the field that determines branch selection. The legacy field `on` is still accepted but deprecated due to YAML 1.1 reserved word collision
 

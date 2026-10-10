@@ -45,6 +45,18 @@ describe("validateSchema", () => {
     }
   });
 
+  it("accepts model_class on a gate step as a declared property", () => {
+    const data = {
+      version: 1,
+      system: { id: "s", name: "S", default_workflow_order: [] },
+      workflow: {
+        wf: { steps: [{ type: "gate", gate_kind: "audit-result", model_class: "fast" }] },
+      },
+    };
+    const result = validateSchema(data);
+    expect(result.diagnostics.filter((d) => d.code === "unknown-property")).toEqual([]);
+  });
+
   it("rejects non-x- custom properties", () => {
     const data = {
       version: 1,
