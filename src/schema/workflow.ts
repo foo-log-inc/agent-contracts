@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SectionSchema } from "./agent.js";
+import { ModelClassSchema } from "./task.js";
 
 const RetrySchema = z.object({
   condition: z.string(),
@@ -35,6 +36,8 @@ const WorkflowGateStepSchema = z
     type: z.literal("gate"),
     description: z.string().optional(),
     gate_kind: z.string(),
+    /** Capability class of the gate evaluator agent — the same vocabulary as a task's `model_class`. */
+    model_class: ModelClassSchema.optional(),
     group: z.string().optional(),
     depends_on: z.array(z.string()).optional(),
   })

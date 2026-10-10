@@ -1130,6 +1130,14 @@
                     "gate_kind": {
                       "type": "string"
                     },
+                    "model_class": {
+                      "type": "string",
+                      "enum": [
+                        "fast",
+                        "standard",
+                        "thinking"
+                      ]
+                    },
                     "group": {
                       "type": "string"
                     },
