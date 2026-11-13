@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.35.9",
+  "version": "0.35.10",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -67,31 +67,40 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@stoplight/spectral-core": "^1.22.0",
-    "@stoplight/spectral-functions": "^1.9.0",
-    "@stoplight/spectral-rulesets": "^1.22.1",
-    "@types/node": "^25.6.0",
-    "agent-contracts-runtime": "^0.36.4",
+    "@stoplight/spectral-core": "^1.24.1",
+    "@stoplight/spectral-functions": "^1.11.1",
+    "@stoplight/spectral-rulesets": "^1.23.1",
+    "@types/node": "^26.6.6",
+    "agent-contracts-runtime": "^0.36.15",
     "ajv": "^8.18.0",
-    "cli-contracts": "^0.34.6",
+    "cli-contracts": "^0.34.12",
     "commander": "^14.0.3",
     "esbuild": "^0.28.0",
-    "eslint": "^10.2.0",
-    "globals": "^17.5.0",
-    "handlebars": "^4.7.9",
-    "minimatch": "^10.2.5",
-    "prettier": "^3.8.2",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "handlebars": "^4.7.10",
+    "minimatch": "^11.0.8",
+    "prettier": "^3.10.1",
     "tsup": "^8.5.1",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.58.1",
-    "vitest": "^4.1.11",
-    "yaml": "^2.9.0",
-    "zod": "^4.4.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^4.1.12",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7",
     "zod-to-json-schema": "^3.25.2"
   },
   "overrides": {
-    "esbuild": "$esbuild"
+    "esbuild": "$esbuild",
+    "eslint": {
+      "minimatch": "$minimatch"
+    },
+    "@eslint/config-array": {
+      "minimatch": "$minimatch"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "$minimatch"
+    }
   },
   "engines": {
     "node": ">=20.0.0"
