@@ -23,16 +23,17 @@ interface EffectRead {
 
 interface NetworkEffect {
   description?: string;
-  domains?: string[];
+  domains?: readonly string[];
   idempotent?: boolean;
   idempotency_key?: string;
   idempotent_note?: string;
 }
 
+// reads / writes are either artifact slot names or descriptive objects.
 interface Effects {
   risk_level?: RiskLevel;
-  reads?: EffectRead[];
-  writes?: EffectWrite[];
+  reads?: readonly string[] | readonly EffectRead[];
+  writes?: readonly string[] | readonly EffectWrite[];
   network?: NetworkEffect | boolean;
   execution_mode?: ExecutionMode;
   requires_confirmation?: boolean;
@@ -44,7 +45,7 @@ interface FileContract {
 
 interface Option {
   name: string;
-  schema?: { type?: string; [key: string]: unknown };
+  schema?: { type?: string | readonly string[]; [key: string]: unknown };
   file?: FileContract;
   effects?: Effects;
   repeatable?: boolean;
@@ -52,6 +53,13 @@ interface Option {
 
 interface EnvVar {
   sensitive?: boolean;
+}
+
+/** The parts of a command's contract its policy is derived from. */
+export interface CommandPolicyDefinition {
+  effects?: Effects;
+  options?: readonly Option[];
+  env?: Readonly<Record<string, EnvVar>>;
 }
 
 // ─── Derived Policy Types ───────────────────────────────────────
@@ -119,7 +127,7 @@ export interface PolicyDerivationInput {
     string,
     OptionInput & { definition: Option }
   >;
-  env?: Record<string, EnvVar>;
+  env?: Readonly<Record<string, EnvVar>>;
 }
 
 // ─── Risk Level Ordering ────────────────────────────────────────
@@ -161,6 +169,29 @@ export function isOptionActive(
   return specified && value != null;
 }
 
+// ─── Semantic Effects ──────────────────────────────────────────
+
+// A slot reference is the slot's name; it is the target it reads or writes.
+function semanticRead(r: string | EffectRead, source: string): DerivedReadEffect {
+  const read = typeof r === "string" ? { target: r } : r;
+  return { kind: "semantic", target: read.target, description: read.description, source };
+}
+
+function semanticWrite(w: string | EffectWrite, source: string): DerivedWriteEffect {
+  const write: EffectWrite = typeof w === "string" ? { target: w } : w;
+  return {
+    kind: "semantic",
+    target: write.target,
+    description: write.description,
+    overwrite: write.overwrite,
+    destructive: write.destructive,
+    ...(write.idempotent !== undefined ? { idempotent: write.idempotent } : {}),
+    ...(write.idempotency_key ? { idempotency_key: write.idempotency_key } : {}),
+    ...(write.idempotent_note ? { idempotent_note: write.idempotent_note } : {}),
+    source,
+  };
+}
+
 // ─── Derive Policy ─────────────────────────────────────────────
 
 export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
@@ -172,35 +203,25 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
   let executionMode: ExecutionMode | undefined;
   let explicitConfirmation: boolean | undefined;
 
+  // Every derived write, and only a write, puts file_write among the side effects.
+  const addWrite = (write: DerivedWriteEffect): void => {
+    sideEffects.add("file_write");
+    writes.push(write);
+  };
+
   if (input.command_effects) {
     const ce = input.command_effects;
     riskLevels.push(ce.risk_level ?? "low");
 
     if (ce.writes) {
-      sideEffects.add("file_write");
       for (const w of ce.writes) {
-        writes.push({
-          kind: "semantic",
-          target: w.target,
-          description: w.description,
-          overwrite: w.overwrite,
-          destructive: w.destructive,
-          ...(w.idempotent !== undefined ? { idempotent: w.idempotent } : {}),
-          ...(w.idempotency_key ? { idempotency_key: w.idempotency_key } : {}),
-          ...(w.idempotent_note ? { idempotent_note: w.idempotent_note } : {}),
-          source: `command:${input.command_id}`,
-        });
+        addWrite(semanticWrite(w, `command:${input.command_id}`));
       }
     }
 
     if (ce.reads) {
       for (const r of ce.reads) {
-        reads.push({
-          kind: "semantic",
-          target: r.target,
-          description: r.description,
-          source: `command:${input.command_id}`,
-        });
+        reads.push(semanticRead(r, `command:${input.command_id}`));
       }
     }
 
@@ -209,7 +230,7 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
       if (typeof ce.network === "object") {
         networkEffects.push({
           ...(ce.network.description ? { description: ce.network.description } : {}),
-          ...(ce.network.domains ? { domains: ce.network.domains } : {}),
+          ...(ce.network.domains ? { domains: [...ce.network.domains] } : {}),
           ...(ce.network.idempotent !== undefined ? { idempotent: ce.network.idempotent } : {}),
           ...(ce.network.idempotency_key ? { idempotency_key: ce.network.idempotency_key } : {}),
           ...(ce.network.idempotent_note ? { idempotent_note: ce.network.idempotent_note } : {}),
@@ -246,8 +267,7 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
         });
       }
       if (mode === "write" || mode === "append" || mode === "readWrite") {
-        sideEffects.add("file_write");
-        writes.push({
+        addWrite({
           kind: "option-file",
           option: optName,
           path: filePath,
@@ -262,30 +282,14 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
       riskLevels.push(eff.risk_level ?? "low");
 
       if (eff.writes) {
-        sideEffects.add("file_write");
         for (const w of eff.writes) {
-          writes.push({
-            kind: "semantic",
-            target: w.target,
-            description: w.description,
-            overwrite: w.overwrite,
-            destructive: w.destructive,
-            ...(w.idempotent !== undefined ? { idempotent: w.idempotent } : {}),
-            ...(w.idempotency_key ? { idempotency_key: w.idempotency_key } : {}),
-            ...(w.idempotent_note ? { idempotent_note: w.idempotent_note } : {}),
-            source: `option:${optName}`,
-          });
+          addWrite(semanticWrite(w, `option:${optName}`));
         }
       }
 
       if (eff.reads) {
         for (const r of eff.reads) {
-          reads.push({
-            kind: "semantic",
-            target: r.target,
-            description: r.description,
-            source: `option:${optName}`,
-          });
+          reads.push(semanticRead(r, `option:${optName}`));
         }
       }
 
@@ -294,7 +298,7 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
         if (typeof eff.network === "object") {
           networkEffects.push({
             ...(eff.network.description ? { description: eff.network.description } : {}),
-            ...(eff.network.domains ? { domains: eff.network.domains } : {}),
+            ...(eff.network.domains ? { domains: [...eff.network.domains] } : {}),
             ...(eff.network.idempotent !== undefined ? { idempotent: eff.network.idempotent } : {}),
             ...(eff.network.idempotency_key ? { idempotency_key: eff.network.idempotency_key } : {}),
             ...(eff.network.idempotent_note ? { idempotent_note: eff.network.idempotent_note } : {}),
@@ -349,4 +353,47 @@ export function derivePolicy(input: PolicyDerivationInput): DerivedPolicy {
     ...(executionMode ? { execution_mode: executionMode } : {}),
     ...(requiresSecrets ? { requires_secrets: requiresSecrets } : {}),
   };
+}
+
+// ─── Introspection ─────────────────────────────────────────────
+
+/**
+ * Joins the `-`-separated words of a name in camelCase, the way commander
+ * names the key it keeps a `--<name>` option's value under (`dry-run` →
+ * `dryRun`).
+ */
+export function camelCase(name: string): string {
+  return name
+    .split("-")
+    .map((word, i) => (i === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join("");
+}
+
+/** Derives a command's policy from the option values commander parsed for it. */
+export function introspectCommand(
+  command_id: string,
+  definition: CommandPolicyDefinition,
+  optionValues: Record<string, unknown>,
+): IntrospectionResult {
+  const options: PolicyDerivationInput["options"] = {};
+  const active_options: string[] = [];
+
+  for (const opt of definition.options ?? []) {
+    const key = camelCase(opt.name);
+    const value = optionValues[key];
+    const specified = key in optionValues && value !== undefined;
+    options[opt.name] = { value, specified, definition: opt };
+    if (isOptionActive(opt, value, specified)) {
+      active_options.push(opt.name);
+    }
+  }
+
+  const policy = derivePolicy({
+    command_id,
+    command_effects: definition.effects,
+    options,
+    env: definition.env,
+  });
+
+  return { command: command_id, active_options, policy };
 }

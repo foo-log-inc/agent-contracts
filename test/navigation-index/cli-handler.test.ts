@@ -8,12 +8,13 @@ const minimalYaml = join(fixturesDir, "minimal/agent-contracts.yaml");
 describe("handleNavigationIndex", () => {
   let stdout = "";
   let stderr = "";
-  let exitCode: number | undefined;
+  let savedExitCode: typeof process.exitCode;
 
   beforeEach(() => {
     stdout = "";
     stderr = "";
-    exitCode = undefined;
+    savedExitCode = process.exitCode;
+    process.exitCode = undefined;
     vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
       stdout += String(chunk);
       return true;
@@ -22,14 +23,11 @@ describe("handleNavigationIndex", () => {
       stderr += String(chunk);
       return true;
     });
-    vi.spyOn(process, "exit").mockImplementation((code) => {
-      exitCode = code as number;
-      throw new Error(`process.exit(${code})`);
-    });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    process.exitCode = savedExitCode;
   });
 
   it("outputs JSON navigation index for minimal fixture", async () => {
@@ -63,15 +61,13 @@ describe("handleNavigationIndex", () => {
   });
 
   it("exits 1 when artifact is not found", async () => {
-    await expect(
-      handlers.navigationIndex(
-        minimalYaml,
-        { format: "json", artifact: "nonexistent" },
-        {},
-      ),
-    ).rejects.toThrow("process.exit(1)");
+    await handlers.navigationIndex(
+      minimalYaml,
+      { format: "json", artifact: "nonexistent" },
+      {},
+    );
 
-    expect(exitCode).toBe(1);
+    expect(process.exitCode).toBe(1);
     expect(stderr).toContain("Artifact not found: nonexistent");
   });
 });

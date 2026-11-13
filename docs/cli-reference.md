@@ -2,7 +2,7 @@
 
 Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows. Provides static validation, semantic linting, prompt rendering, guardrail generation, and completeness scoring for agent contract definitions.
 
-**Version:** 0.34.0
+**Version:** 0.35.11
 
 ## Table of Contents
 
@@ -226,8 +226,8 @@ agent-contracts render --quiet
 #### Extensions
 
 ```yaml
-x-agent: 
-  recommended_before_use: 
+x-agent:
+  recommended_before_use:
     - Ensure agent-contracts.config.yaml exists with render targets.
     - Run validate first to confirm DSL is valid.
 ```
@@ -275,8 +275,8 @@ agent-contracts check --format json --quiet
 #### Extensions
 
 ```yaml
-x-agent: 
-  recommended_before_use: 
+x-agent:
+  recommended_before_use:
     - Ensure agent-contracts.config.yaml exists.
 ```
 
@@ -844,19 +844,19 @@ agent-contracts audit dsl --scope agents:architect,implementer -c config.yaml
 #### Extensions
 
 ```yaml
-x-agent: 
+x-agent:
   riskLevel: medium
   requiresConfirmation: false
   idempotent: false
-  sideEffects: 
+  sideEffects:
     - network
   sideEffectNote: Network calls to LLM provider when adapter is not mock. Filesystem write only when --output is specified.
   safeDryRunOption: show-prompt
   expectedDurationMs: 120000
-  retryableExitCodes: 
+  retryableExitCodes:
     - 1
     - 12
-  recommended_before_use: 
+  recommended_before_use:
     - Ensure agent-contracts.config.yaml exists with render targets.
     - Run validate first to confirm DSL is valid.
     - Install agent-contracts-runtime if not using --show-prompt.
@@ -935,8 +935,8 @@ agent-contracts generate interface -o team-interface.yaml --dry-run
 #### Extensions
 
 ```yaml
-x-agent: 
-  recommended_before_use: 
+x-agent:
+  recommended_before_use:
     - Ensure agent-contracts.config.yaml exists with render targets and/or binding definitions.
     - Run validate first to confirm DSL is valid.
 ```
