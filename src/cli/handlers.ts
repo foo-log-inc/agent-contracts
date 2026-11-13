@@ -843,7 +843,7 @@ const handleGenerate: CommandHandlers["generate"] = async (type, opts) => {
           dsl: schemaResult.data!,
           config: cfgForTeam,
           loadedBindings,
-          filterBindings: opts.binding ? [opts.binding] : undefined,
+          filterBindings: opts.binding,
           dryRun: !!opts.dryRun,
         });
 
