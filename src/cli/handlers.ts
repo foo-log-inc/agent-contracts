@@ -87,7 +87,8 @@ const handleResolve: CommandHandlers["resolve"] = async (dir, opts) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: ${msg}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 };
 
@@ -141,7 +142,10 @@ const handleValidate: CommandHandlers["validate"] = async (dir, opts) => {
           }
         }
       }
-      if (hasErrors) process.exit(1);
+      if (hasErrors) {
+        process.exitCode = 1;
+        return;
+      }
       if (!opts.quiet && allTeamsFullyClean) process.stdout.write("Validation passed.\n");
       return;
     }
@@ -162,7 +166,8 @@ const handleValidate: CommandHandlers["validate"] = async (dir, opts) => {
         quiet: !!opts.quiet,
       });
       if (output) process.stderr.write(output + "\n");
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     const refDiags = checkReferences(schemaResult.data!);
@@ -178,7 +183,8 @@ const handleValidate: CommandHandlers["validate"] = async (dir, opts) => {
       });
       if (output) process.stderr.write(output + "\n");
       if (refDiags.length > 0 || handoffDiags.length > 0 || (opts.strict && hasWarnings)) {
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
     }
 
@@ -186,7 +192,8 @@ const handleValidate: CommandHandlers["validate"] = async (dir, opts) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: ${msg}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 };
 
@@ -238,7 +245,10 @@ const handleLint: CommandHandlers["lint"] = async (dir, opts) => {
           if (opts.strict && diagnostics.some((d) => d.severity === "warning")) hasErrors = true;
         }
       }
-      if (hasErrors) process.exit(1);
+      if (hasErrors) {
+        process.exitCode = 1;
+        return;
+      }
       if (!opts.quiet && allClean) process.stdout.write("Lint passed.\n");
       return;
     }
@@ -259,7 +269,8 @@ const handleLint: CommandHandlers["lint"] = async (dir, opts) => {
         quiet: !!opts.quiet,
       });
       if (output) process.stderr.write(output + "\n");
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     const tsDiagnostics = lint(schemaResult.data!);
@@ -273,15 +284,22 @@ const handleLint: CommandHandlers["lint"] = async (dir, opts) => {
         quiet: !!opts.quiet,
       });
       if (output) process.stderr.write(output + "\n");
-      if (diagnostics.some((d) => d.severity === "error")) process.exit(1);
-      if (opts.strict && diagnostics.some((d) => d.severity === "warning")) process.exit(1);
+      if (diagnostics.some((d) => d.severity === "error")) {
+        process.exitCode = 1;
+        return;
+      }
+      if (opts.strict && diagnostics.some((d) => d.severity === "warning")) {
+        process.exitCode = 1;
+        return;
+      }
     }
 
     if (!opts.quiet && diagnostics.length === 0) process.stdout.write("Lint passed.\n");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: ${msg}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 };
 
@@ -312,7 +330,8 @@ const handleCheck: CommandHandlers["check"] = async (opts) => {
       process.stderr.write(
         "Error: agent-contracts.config.yaml not found. Use --config to specify path.\n",
       );
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     if (isMultiTeamConfig(config)) {
@@ -404,7 +423,10 @@ const handleCheck: CommandHandlers["check"] = async (opts) => {
         }
       }
 
-      if (hasErrors) process.exit(1);
+      if (hasErrors) {
+        process.exitCode = 1;
+        return;
+      }
       if (!opts.quiet) process.stdout.write("All checks passed.\n");
       return;
     }
@@ -421,7 +443,8 @@ const handleCheck: CommandHandlers["check"] = async (opts) => {
         quiet: !!opts.quiet,
       });
       if (output) process.stderr.write(output + "\n");
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     const refDiags = checkReferences(schemaResult.data!);
@@ -485,16 +508,21 @@ const handleCheck: CommandHandlers["check"] = async (opts) => {
       }
     }
 
-    if (hasErrors) process.exit(1);
+    if (hasErrors) {
+      process.exitCode = 1;
+      return;
+    }
     if (!opts.quiet) process.stdout.write("All checks passed.\n");
   } catch (err) {
     if (err instanceof ConfigLoadError) {
       process.stderr.write(`Config error: ${err.message}\n`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: ${msg}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 };
 
@@ -528,7 +556,8 @@ const handleScore: CommandHandlers["score"] = async (dir, opts) => {
         thresholdNum = parseInt(String(opts.threshold), 10);
         if (isNaN(thresholdNum)) {
           process.stderr.write(`Error: --threshold must be a number, got "${opts.threshold}"\n`);
-          process.exit(1);
+          process.exitCode = 1;
+          return;
         }
       }
 
@@ -557,7 +586,10 @@ const handleScore: CommandHandlers["score"] = async (dir, opts) => {
           hasErrors = true;
         }
       }
-      if (hasErrors) process.exit(1);
+      if (hasErrors) {
+        process.exitCode = 1;
+        return;
+      }
       return;
     }
 
@@ -570,7 +602,8 @@ const handleScore: CommandHandlers["score"] = async (dir, opts) => {
     if (!schemaResult.success) {
       const issues = schemaResult.diagnostics.map((d) => `  ${d.path}: ${d.message}`).join("\n");
       process.stderr.write(`Schema validation failed:\n${issues}\n`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     const result = score(schemaResult.data!);
     if (opts.format === "json") {
@@ -582,17 +615,20 @@ const handleScore: CommandHandlers["score"] = async (dir, opts) => {
       const threshold = parseInt(String(opts.threshold), 10);
       if (isNaN(threshold)) {
         process.stderr.write(`Error: --threshold must be a number, got "${opts.threshold}"\n`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       if (result.overall < threshold) {
         process.stderr.write(`Score ${result.overall} is below threshold ${threshold}\n`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: ${msg}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 };
 
@@ -670,7 +706,8 @@ const handleAudit: CommandHandlers["audit"] = async (type, opts) => {
     process.stderr.write(
       `Unknown audit type: "${auditType}". Use one of: ${AUDIT_TYPES.join(", ")}\n`,
     );
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const format = (opts.reportFormat ?? opts.format ?? "text") as AuditOutputFormat;
@@ -681,7 +718,8 @@ const handleAudit: CommandHandlers["audit"] = async (type, opts) => {
       process.stderr.write(
         "Error: agent-contracts.config.yaml not found. Use --config to specify path.\n",
       );
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     if (isMultiTeamConfig(config)) {
@@ -703,7 +741,8 @@ const handleAudit: CommandHandlers["audit"] = async (type, opts) => {
         if (result.exitCode > maxExit) maxExit = result.exitCode;
       }
       if (opts.output) writeFileSync(opts.output, allOutput.join(""), "utf8");
-      process.exit(maxExit);
+      process.exitCode = maxExit;
+      return;
     }
 
     const result = await runAuditForDsl(
@@ -716,17 +755,26 @@ const handleAudit: CommandHandlers["audit"] = async (type, opts) => {
     );
     process.stdout.write(result.output);
     if (opts.output) writeFileSync(opts.output, result.output, "utf8");
-    process.exit(result.exitCode);
+    process.exitCode = result.exitCode;
+    return;
   } catch (err) {
     if (err instanceof ConfigLoadError) {
       process.stderr.write(`Config error: ${err.message}\n`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: ${msg}\n`);
-    if (msg.includes("not installed")) process.exit(11);
-    if (msg.includes("adapter") || msg.includes("API")) process.exit(12);
-    process.exit(1);
+    if (msg.includes("not installed")) {
+      process.exitCode = 11;
+      return;
+    }
+    if (msg.includes("adapter") || msg.includes("API")) {
+      process.exitCode = 12;
+      return;
+    }
+    process.exitCode = 1;
+    return;
   }
 };
 
@@ -753,13 +801,15 @@ function resolvedConfigForTeam(
 const handleGenerate: CommandHandlers["generate"] = async (type, opts) => {
   if (type !== undefined && !(VALID_TYPES as readonly string[]).includes(type)) {
     process.stderr.write(`Unknown generate type: ${type}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const fmt = opts.format ?? "yaml";
   if (fmt !== "yaml" && fmt !== "json") {
     process.stderr.write(`Invalid --format: expected yaml or json, got ${fmt}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const normalizedType = type as GenerateType | undefined;
@@ -775,7 +825,8 @@ const handleGenerate: CommandHandlers["generate"] = async (type, opts) => {
       process.stderr.write(
         "Error: agent-contracts.config.yaml not found. Use --config to specify path.\n",
       );
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     const processTeam = async (
@@ -880,7 +931,10 @@ const handleGenerate: CommandHandlers["generate"] = async (type, opts) => {
         if (!opts.quiet) process.stdout.write(`\n--- Team: ${teamId} ---\n`);
         if (await processTeam(teamConfig, teamId)) exitWithError = true;
       }
-      if (exitWithError) process.exit(1);
+      if (exitWithError) {
+        process.exitCode = 1;
+        return;
+      }
       return;
     }
 
@@ -891,15 +945,20 @@ const handleGenerate: CommandHandlers["generate"] = async (type, opts) => {
       activeGuardrailPolicy: config.activeGuardrailPolicy,
       paths: config.paths,
     };
-    if (await processTeam(singleTeamConfig, undefined)) process.exit(1);
+    if (await processTeam(singleTeamConfig, undefined)) {
+      process.exitCode = 1;
+      return;
+    }
   } catch (err) {
     if (err instanceof ConfigLoadError) {
       process.stderr.write(`Config error: ${err.message}\n`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: ${msg}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 };
 
@@ -957,7 +1016,8 @@ const handleNavigationIndex: CommandHandlers["navigationIndex"] = async (dir, op
   const fmt = opts.format ?? "json";
   if (fmt !== "json" && fmt !== "yaml") {
     process.stderr.write(`Invalid --format: expected json or yaml, got ${fmt}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   try {
@@ -986,7 +1046,10 @@ const handleNavigationIndex: CommandHandlers["navigationIndex"] = async (dir, op
             throw err;
           }
         }
-        if (hasErrors) process.exit(1);
+        if (hasErrors) {
+          process.exitCode = 1;
+          return;
+        }
         process.stdout.write(JSON.stringify(out, null, 2) + "\n");
       } else {
         for (const [teamId, teamConfig] of teamEntries) {
@@ -1008,7 +1071,10 @@ const handleNavigationIndex: CommandHandlers["navigationIndex"] = async (dir, op
             throw err;
           }
         }
-        if (hasErrors) process.exit(1);
+        if (hasErrors) {
+          process.exitCode = 1;
+          return;
+        }
       }
       return;
     }
@@ -1021,7 +1087,8 @@ const handleNavigationIndex: CommandHandlers["navigationIndex"] = async (dir, op
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: ${msg}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 };
 
@@ -1031,7 +1098,8 @@ const handleArtifactCoverage: CommandHandlers["artifactCoverage"] = async (dir, 
   const fmt = opts.format ?? "text";
   if (fmt !== "text" && fmt !== "json") {
     process.stderr.write(`Invalid --format: expected text or json, got ${fmt}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   try {
@@ -1069,7 +1137,8 @@ const handleArtifactCoverage: CommandHandlers["artifactCoverage"] = async (dir, 
         );
         if (!allAbove) {
           process.stderr.write(`Coverage below threshold (${threshold}%)\n`);
-          process.exit(1);
+          process.exitCode = 1;
+          return;
         }
       }
       return;
@@ -1096,13 +1165,15 @@ const handleArtifactCoverage: CommandHandlers["artifactCoverage"] = async (dir, 
         process.stderr.write(
           `Coverage ${report.summary.coverage_percent}% is below threshold (${threshold}%)\n`,
         );
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: ${msg}\n`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 };
 

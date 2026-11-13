@@ -12,11 +12,6 @@ export interface RunGenerateInterfaceCliOptions {
 }
 
 export function runGenerateInterfaceCli(opts: RunGenerateInterfaceCliOptions): void {
-  if (!opts.dsl.team_interface) {
-    process.stderr.write("Error: DSL has no team_interface section.\n");
-    process.exit(1);
-  }
-
   const outputPath = resolve(process.cwd(), opts.output ?? "team-interface.yaml");
   const result = generateInterface({
     dsl: opts.dsl,
