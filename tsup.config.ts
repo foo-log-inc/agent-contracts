@@ -14,7 +14,6 @@ export default defineConfig({
   noExternal: [
     "@stoplight/spectral-core",
     "@stoplight/spectral-functions",
-    "@stoplight/spectral-rulesets",
   ],
   external: [
     "agent-contracts-runtime",

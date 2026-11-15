@@ -1,6 +1,6 @@
 {
   "name": "agent-contracts",
-  "version": "0.35.11",
+  "version": "0.35.12",
   "description": "Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows",
   "type": "module",
   "main": "dist/index.js",
@@ -69,7 +69,6 @@
     "@eslint/js": "^10.0.1",
     "@stoplight/spectral-core": "^1.24.1",
     "@stoplight/spectral-functions": "^1.11.1",
-    "@stoplight/spectral-rulesets": "^1.23.1",
     "@types/node": "^26.6.6",
     "agent-contracts-runtime": "^0.36.15",
     "ajv": "^8.18.0",
@@ -80,15 +79,13 @@
     "globals": "^17.14.0",
     "handlebars": "^4.7.10",
     "minimatch": "^11.0.8",
-    "prettier": "^3.10.1",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.2",
     "vitest": "^4.1.12",
     "yaml": "^2.9.1",
-    "zod": "^4.6.7",
-    "zod-to-json-schema": "^3.25.2"
+    "zod": "^4.6.7"
   },
   "overrides": {
     "esbuild": "$esbuild",
