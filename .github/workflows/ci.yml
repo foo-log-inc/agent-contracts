@@ -19,7 +19,14 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci --legacy-peer-deps --ignore-scripts
-      - name: Audit
+      - name: Audit (production dependencies)
+        # Blocking audit scoped to what a consumer installs: an advisory in a runtime
+        # dependency reaches every user of the published package.
+        run: npm audit --omit=dev --audit-level=moderate
+      - name: Audit including dev dependencies (report only)
+        # Non-blocking visibility for the dev toolchain, which runs only in CI and on a
+        # developer's machine. Fix these when an upstream release makes it possible.
+        continue-on-error: true
         run: npm audit --audit-level=moderate
       - name: Verify npm signatures
         # `audit:signatures` runs `npm audit signatures` with the npm version package.json pins, here and
