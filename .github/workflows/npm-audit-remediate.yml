@@ -128,7 +128,7 @@ jobs:
         run: npm ci --legacy-peer-deps --ignore-scripts
       - name: Verify npm signatures
         if: steps.audit.outcome == 'failure' && steps.diff.outcome == 'failure'
-        run: npm audit signatures
+        run: npm run audit:signatures
       - name: Lint
         if: steps.audit.outcome == 'failure' && steps.diff.outcome == 'failure'
         run: npm run lint --if-present

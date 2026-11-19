@@ -40,7 +40,8 @@
     "prepublishOnly": "npm run clean && npm run build && npm run bundle:min",
     "test:ci": "vitest run",
     "bundle": "node esbuild.bundle.mjs",
-    "bundle:min": "node esbuild.bundle.mjs --minify"
+    "bundle:min": "node esbuild.bundle.mjs --minify",
+    "audit:signatures": "npx --yes npm@11.19.1 audit signatures"
   },
   "keywords": [
     "agent",
