@@ -125,11 +125,12 @@ export function formatAuditResults(results: AuditRunResult[], format: OutputForm
 
 export function computeExitCode(results: AuditRunResult[], failOn?: string): number {
   for (const r of results) {
+    if (r.status === "success") continue;
     if (r.status === "error") {
       if (r.errorMessage?.includes("not installed")) return 11;
       if (r.errorMessage?.includes("adapter") || r.errorMessage?.includes("API")) return 12;
-      return 1;
     }
+    return 1;
   }
 
   const severityRank: Record<string, number> = { info: 0, warning: 1, error: 2, critical: 3 };

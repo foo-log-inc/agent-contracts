@@ -1233,7 +1233,7 @@ The output follows the [CLI Contracts](https://github.com/foo-log-inc/cli-contra
 |--------|-------------|
 | `--format <text\|json\|markdown>` | Output format (default: `text`) |
 | `--scope <filter>` | Limit audit scope (e.g. `agents:architect,implementer`) |
-| `--dry-run` | Output the audit prompt without calling the LLM |
+| `--show-prompt` | Output the audit prompt without calling the LLM |
 | `--adapter <name>` | SDK adapter: `claude`, `openai`, `gemini`, `cursor` (overrides config) |
 | `--model <name>` | LLM model override (overrides config) |
 | `-l, --log-file <path>` | Write structured agent progress log to a file |
@@ -1301,7 +1301,7 @@ agent-contracts generate interface -c agent-contracts.config.yaml --format json
 agent-contracts audit dsl -c agent-contracts.config.yaml
 agent-contracts audit render -c agent-contracts.config.yaml --format json
 agent-contracts audit all -c agent-contracts.config.yaml --adapter claude
-agent-contracts audit dsl -c agent-contracts.config.yaml --dry-run
+agent-contracts audit dsl -c agent-contracts.config.yaml --show-prompt
 agent-contracts navigation-index
 agent-contracts navigation-index --format yaml
 agent-contracts navigation-index --artifact api-contracts
@@ -1943,10 +1943,10 @@ audit:
 agent-contracts audit dsl -c config.yaml
 agent-contracts audit all -c config.yaml --adapter claude
 agent-contracts audit render -c config.yaml --format json
-agent-contracts audit dsl -c config.yaml --dry-run
+agent-contracts audit dsl -c config.yaml --show-prompt
 ````
 
-Use `--dry-run` to inspect the prompt sent to the LLM without making an API call. Running multiple adapters provides cross-validation — findings reported by 3+ adapters are high-confidence issues.
+Use `--show-prompt` to inspect the prompt sent to the LLM without making an API call. Running multiple adapters provides cross-validation — findings reported by 3+ adapters are high-confidence issues.
 
 All LLM commands support `--log-file <path>` (`-l`) to write structured progress logs to a file for debugging and monitoring.
 

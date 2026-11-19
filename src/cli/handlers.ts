@@ -862,9 +862,13 @@ const handleGenerate: CommandHandlers["generate"] = async (type, opts) => {
             process.stdout.write("No drift detected.\n");
           }
         } else {
-          const files = await renderFromConfig(schemaResult.data!, config.renders, renderOptions);
+          const files = await renderFromConfig(schemaResult.data!, config.renders, {
+            ...renderOptions,
+            dryRun: !!opts.dryRun,
+          });
           if (!opts.quiet) {
-            process.stdout.write(`Rendered ${files.length} file(s):\n`);
+            const action = opts.dryRun ? "Would render" : "Rendered";
+            process.stdout.write(`${action} ${files.length} file(s):\n`);
             for (const f of files) process.stdout.write(`  ${f}\n`);
           }
         }

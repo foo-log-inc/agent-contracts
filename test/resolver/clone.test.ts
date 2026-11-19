@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MergeError } from "../../src/resolver/merger.js";
+import { MergeError, mergeDsl } from "../../src/resolver/merger.js";
 import { resolveClone, CloneError } from "../../src/resolver/clone.js";
 
 describe("resolveClone", () => {
@@ -340,5 +340,63 @@ describe("resolveClone", () => {
     };
 
     expect(() => resolveClone(data)).toThrow(MergeError);
+  });
+
+  it("throws CloneError when attributes are written next to $clone", () => {
+    const data = {
+      agents: {
+        implementer: baseAgent,
+        "implementer.api": {
+          $clone: { from: "implementer" },
+          purpose: "API-specialized implementer",
+        },
+      },
+    };
+
+    expect(() => resolveClone(data)).toThrow(CloneError);
+    expect(() => resolveClone(structuredClone(data))).toThrow(/agents\.implementer\.api.*purpose.*\$clone\.merge/);
+  });
+
+  it("throws CloneError when an extending DSL overrides a base entity defined by $clone", () => {
+    const base = {
+      guardrail_policies: {
+        lenient: { rules: [{ guardrail: "g1", severity: "info", action: "info" }] },
+        strict: { $clone: { from: "lenient" } },
+      },
+    };
+    const project = {
+      extends: "../base/",
+      guardrail_policies: {
+        strict: { rules: [{ guardrail: "g1", severity: "critical", action: "block" }] },
+      },
+    };
+
+    const merged = mergeDsl(base, project);
+    expect(() => resolveClone(merged)).toThrow(/guardrail_policies\.strict.*rules/);
+  });
+
+  it("applies an extending DSL's $clone.merge to a base entity defined by $clone", () => {
+    const base = {
+      guardrail_policies: {
+        lenient: { rules: [{ guardrail: "g1", severity: "info", action: "info" }] },
+        strict: { $clone: { from: "lenient" } },
+      },
+    };
+    const project = {
+      extends: "../base/",
+      guardrail_policies: {
+        strict: {
+          $clone: {
+            merge: { rules: { $replace: [{ guardrail: "g1", severity: "critical", action: "block" }] } },
+          },
+        },
+      },
+    };
+
+    const merged = mergeDsl(base, project);
+    resolveClone(merged);
+    const policies = merged["guardrail_policies"] as Record<string, { rules: Array<Record<string, string>> }>;
+    expect(policies["strict"].rules).toEqual([{ guardrail: "g1", severity: "critical", action: "block" }]);
+    expect(policies["lenient"].rules[0].action).toBe("info");
   });
 });
