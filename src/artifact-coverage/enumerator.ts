@@ -1,20 +1,19 @@
 import { execSync } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { minimatch } from "minimatch";
+import { matchesArtifact } from "artifact-contracts/core";
 
+/**
+ * Lists the project's files, leaving out those that match one of
+ * `excludePatterns` (the same glob semantics as an artifact's
+ * `path_patterns`).
+ */
 export function enumerateProjectFiles(
   cwd: string,
   excludePatterns: string[],
 ): string[] {
-  const filePaths = listFiles(cwd);
-
-  if (excludePatterns.length === 0) {
-    return filePaths;
-  }
-
-  return filePaths.filter(
-    (f) => !excludePatterns.some((p) => minimatch(f, p, { dot: true })),
+  return listFiles(cwd).filter(
+    (f) => !matchesArtifact(f, { path_patterns: excludePatterns }),
   );
 }
 

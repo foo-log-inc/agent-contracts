@@ -1,4 +1,4 @@
-import { createRulesetFunction } from "@stoplight/spectral-core";
+import { isRecord, type RuleFunction, type RuleResult } from "../types.js";
 
 type SchemaObj = {
   required?: string[];
@@ -51,64 +51,64 @@ function flattenAllOf(obj: SchemaObj): SchemaObj {
  * - nested objects: required fields must exist in their properties
  * - allOf sub-schemas are merged before checking
  */
-export default createRulesetFunction<SchemaObj, null>(
-  { input: { type: "object" }, options: null },
-  (targetVal, _options, context) => {
-    const results: { message: string; path: (string | number)[] }[] = [];
+const payloadSchemaIntegrity: RuleFunction = (value, context) => {
+  if (!isRecord(value)) return [];
+  const results: RuleResult[] = [];
 
-    function checkObj(obj: SchemaObj, basePath: (string | number)[]) {
-      const flat = flattenAllOf(obj);
-      const required = flat.required;
-      const properties = flat.properties;
+  function checkObj(obj: SchemaObj, basePath: (string | number)[]) {
+    const flat = flattenAllOf(obj);
+    const required = flat.required;
+    const properties = flat.properties;
 
-      if (
-        Array.isArray(required) &&
-        typeof properties === "object" &&
-        properties !== null
-      ) {
-        const propKeys = new Set(Object.keys(properties));
-        for (let i = 0; i < required.length; i++) {
-          if (!propKeys.has(required[i])) {
-            results.push({
-              message: `required field "${required[i]}" is not defined in properties`,
-              path: [...basePath, "required", i],
-            });
-          }
-        }
-      }
-
-      if (typeof properties === "object" && properties !== null) {
-        for (const [key, schema] of Object.entries(properties)) {
-          if (typeof schema !== "object" || schema === null) continue;
-          const s = schema as Record<string, unknown>;
-
-          if (Array.isArray(s.enum) && s.enum.length === 0) {
-            results.push({
-              message: `enum for "${key}" must not be empty`,
-              path: [...basePath, "properties", key, "enum"],
-            });
-          }
-
-          if (s.type === "object") {
-            checkObj(s as SchemaObj, [...basePath, "properties", key]);
-          }
-
-          if (s.items && typeof s.items === "object") {
-            const items = s.items as Record<string, unknown>;
-            if (items.type === "object") {
-              checkObj(items as SchemaObj, [
-                ...basePath,
-                "properties",
-                key,
-                "items",
-              ]);
-            }
-          }
+    if (
+      Array.isArray(required) &&
+      typeof properties === "object" &&
+      properties !== null
+    ) {
+      const propKeys = new Set(Object.keys(properties));
+      for (let i = 0; i < required.length; i++) {
+        if (!propKeys.has(required[i])) {
+          results.push({
+            message: `required field "${required[i]}" is not defined in properties`,
+            path: [...basePath, "required", i],
+          });
         }
       }
     }
 
-    checkObj(targetVal, [...context.path]);
-    return results;
-  },
-);
+    if (typeof properties === "object" && properties !== null) {
+      for (const [key, schema] of Object.entries(properties)) {
+        if (typeof schema !== "object" || schema === null) continue;
+        const s = schema as Record<string, unknown>;
+
+        if (Array.isArray(s.enum) && s.enum.length === 0) {
+          results.push({
+            message: `enum for "${key}" must not be empty`,
+            path: [...basePath, "properties", key, "enum"],
+          });
+        }
+
+        if (s.type === "object") {
+          checkObj(s as SchemaObj, [...basePath, "properties", key]);
+        }
+
+        if (s.items && typeof s.items === "object") {
+          const items = s.items as Record<string, unknown>;
+          if (items.type === "object") {
+            checkObj(items as SchemaObj, [
+              ...basePath,
+              "properties",
+              key,
+              "items",
+            ]);
+          }
+        }
+      }
+    }
+  }
+
+  checkObj(value as SchemaObj, [...context.path]);
+  return results;
+};
+
+export default payloadSchemaIntegrity;

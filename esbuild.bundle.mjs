@@ -73,6 +73,10 @@ const result = await build({
   // Keep LLM SDK packages external — user installs only what they use
   external: externalSdks,
 
+  // agent-contracts-runtime imports agent-contracts: resolve it to this
+  // package's own source, so the CLI carries a single agent-contracts.
+  alias: { "agent-contracts": "./src/index.ts" },
+
   // Prefer ESM entry points to avoid CJS relative-require issues in the bundle
   mainFields: ["module", "main"],
   conditions: ["import", "node"],

@@ -2,7 +2,7 @@
 
 Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows. Provides static validation, semantic linting, prompt rendering, guardrail generation, and completeness scoring for agent contract definitions.
 
-**Version:** 0.35.11
+**Version:** 0.35.12
 
 ## Table of Contents
 
@@ -138,7 +138,7 @@ agent-contracts validate --quiet
 
 Run semantic lint rules on resolved DSL.
 
-Runs TypeScript-based semantic lint rules and Spectral rules on the resolved DSL. Checks for best-practice violations, naming conventions, and structural issues beyond schema conformance.
+Runs TypeScript-based semantic lint rules on the resolved DSL. Checks for best-practice violations, naming conventions, and structural issues beyond schema conformance.
 
 **Usage:**
 

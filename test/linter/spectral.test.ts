@@ -424,3 +424,29 @@ describe("Spectral lint — version", () => {
     expect(ver.length).toBe(1);
   });
 });
+
+describe("Spectral lint — diagnostics report the DSL as written", () => {
+  it("keeps names and property keys verbatim in messages and paths", async () => {
+    const dsl = makeDsl({
+      agents: { a: { can_invoke_agents: ["x{{property}}y"] } },
+      handoff_types: {
+        h: { schema: { type: "object", properties: { "c~1d": { enum: [] } } } },
+      },
+    });
+    const diags = await spectralLint(dsl);
+    expect(diags).toEqual([
+      {
+        ruleId: "agent-can-invoke-agents-ref",
+        severity: "error",
+        path: "agents.a.can_invoke_agents.0",
+        message: '"x{{property}}y" does not exist in agents',
+      },
+      {
+        ruleId: "handoff-payload-integrity",
+        severity: "error",
+        path: "handoff_types.h.schema.properties.c~1d.enum",
+        message: 'enum for "c~1d" must not be empty',
+      },
+    ]);
+  });
+});

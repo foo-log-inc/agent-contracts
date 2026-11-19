@@ -60,4 +60,13 @@ describe("matchFileToArtifacts", () => {
     const result = matchFileToArtifacts("vitest.config.ts", artifacts);
     expect(result).toEqual(["config"]);
   });
+
+  it("treats a pattern ending in / as every path below the directory", () => {
+    const dirs: Record<string, ArtifactFileInfo> = {
+      docs: { path_patterns: ["docs/"], exclude_patterns: ["docs/drafts/"] },
+    };
+    expect(matchFileToArtifacts("docs/guide/intro.md", dirs)).toEqual(["docs"]);
+    expect(matchFileToArtifacts("docs/drafts/plan.md", dirs)).toEqual([]);
+    expect(matchFileToArtifacts("docs", dirs)).toEqual([]);
+  });
 });

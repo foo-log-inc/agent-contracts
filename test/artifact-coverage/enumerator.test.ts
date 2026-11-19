@@ -41,4 +41,11 @@ describe("enumerateProjectFiles", () => {
     ]);
     expect(files).toEqual(["src/a.ts", "index.ts"]);
   });
+
+  it("excludes every file below a directory pattern ending in /", () => {
+    mockExecSync.mockReturnValue("src/a.ts\nvendor/lib/x.js\nvendor.ts\n");
+
+    const files = enumerateProjectFiles("/project", ["vendor/"]);
+    expect(files).toEqual(["src/a.ts", "vendor.ts"]);
+  });
 });
