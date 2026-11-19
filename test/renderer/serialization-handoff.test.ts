@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { parse } from "yaml";
 import {
   toYamlString,
   toJsonString,
@@ -12,8 +13,31 @@ import {
 describe("serialization", () => {
   it("toYamlString renders nested objects", () => {
     expect(toYamlString({ task_id: "specify", nested: { a: 1 } })).toBe(
-      'task_id: "specify"\nnested: a: 1',
+      'task_id: "specify"\nnested:\n  a: 1',
     );
+  });
+
+  it("toYamlString keeps arrays nested inside arrays", () => {
+    const value = { rows: [[1, 2], [3, 4]] };
+    expect(parse(toYamlString(value))).toEqual(value);
+  });
+
+  it("toYamlString renders a one-element array on the line after its key", () => {
+    const value = { tags: ["x"] };
+    expect(toYamlString(value)).toBe('tags:\n  - "x"');
+    expect(parse(toYamlString(value))).toEqual(value);
+  });
+
+  it("toYamlString output reads back to the same value", () => {
+    const value = {
+      text: "line1\nline2",
+      empty_list: [],
+      empty_map: {},
+      nested: { only: { a: 1 } },
+      items: [{ id: "a", tags: ["t"] }, [["deep"]]],
+      "key: with colon": "v",
+    };
+    expect(parse(toYamlString(value))).toEqual(value);
   });
 
   it("toJsonString pretty-prints JSON", () => {
