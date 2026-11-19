@@ -1,5 +1,5 @@
 import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
-import { dirname } from "node:path";
+import { dirname, win32 } from "node:path";
 import Handlebars from "handlebars";
 import type { Dsl } from "../schema/index.js";
 import { resolveAllOf } from "../schema/index.js";
@@ -277,6 +277,8 @@ Handlebars.registerHelper(
 export interface RenderOptions {
   loadedBindings?: LoadedBinding[];
   activeGuardrailPolicy?: string;
+  /** Return the output paths without writing or removing files. */
+  dryRun?: boolean;
 }
 
 export function getDslSection(dsl: Dsl, context: ContextType): Record<string, unknown> {
@@ -314,12 +316,31 @@ export function expandOutputPath(
   return pattern.replace(
     new RegExp(`\\{${context}\\.([^}]+)\\}`, "g"),
     (_match, field: string) => {
-      if (field === "id") return entityId;
+      if (field === "id") return assertPathSegmentValue(entityId, _match, context, entityId);
       if (entity === undefined) return _match;
       const value = entity[field];
-      return typeof value === "string" ? value : _match;
+      return typeof value === "string" ? assertPathSegmentValue(value, _match, context, entityId) : _match;
     },
   );
+}
+
+/**
+ * A path variable may select a subdirectory below the fixed part of the
+ * output pattern, but must not leave it: ".." segments and absolute values
+ * are rejected.
+ */
+function assertPathSegmentValue(
+  value: string,
+  variable: string,
+  context: ContextType,
+  entityId: string,
+): string {
+  if (win32.isAbsolute(value) || value.split(/[\\/]/).includes("..")) {
+    throw new Error(
+      `Output path variable ${variable} of ${context} "${entityId}" must not contain ".." segments or be an absolute path: "${value}"`,
+    );
+  }
+  return value;
 }
 
 import { CONTEXT_TYPES } from "../schema/context-type.js";
@@ -384,6 +405,27 @@ async function removeIfExists(filePath: string): Promise<void> {
   }
 }
 
+/**
+ * Writes one rendered output, or removes it when skip_empty applies.
+ * Returns whether the path is a generated file.
+ */
+async function emitRenderedOutput(
+  outputPath: string,
+  output: string,
+  skipEmpty: boolean | undefined,
+  dryRun: boolean | undefined,
+): Promise<boolean> {
+  if (skipEmpty && isEffectivelyEmpty(output)) {
+    if (!dryRun) await removeIfExists(outputPath);
+    return false;
+  }
+  if (!dryRun) {
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, output, "utf8");
+  }
+  return true;
+}
+
 export async function renderFromConfig(
   dsl: Dsl,
   renderTargets: ResolvedRenderTarget[],
@@ -401,13 +443,9 @@ export async function renderFromConfig(
           ? buildSystemContext(dsl, options)
           : (buildNavigationIndex(dsl) as unknown as Record<string, unknown>);
       const output = compiled(ctx);
-      if (target.skip_empty && isEffectivelyEmpty(output)) {
-        await removeIfExists(target.output);
-        continue;
+      if (await emitRenderedOutput(target.output, output, target.skip_empty, options?.dryRun)) {
+        outputFiles.push(target.output);
       }
-      await mkdir(dirname(target.output), { recursive: true });
-      await writeFile(target.output, output, "utf8");
-      outputFiles.push(target.output);
     } else {
       const section = getDslSection(dsl, target.context);
       const allIds = Object.keys(section);
@@ -419,13 +457,9 @@ export async function renderFromConfig(
         const entity = section[entityId] as Record<string, unknown> | undefined;
         const outputPath = expandOutputPath(target.output, target.context, entityId, entity);
         if (hasUnresolvedPathVars(outputPath)) continue;
-        if (target.skip_empty && isEffectivelyEmpty(output)) {
-          await removeIfExists(outputPath);
-          continue;
+        if (await emitRenderedOutput(outputPath, output, target.skip_empty, options?.dryRun)) {
+          outputFiles.push(outputPath);
         }
-        await mkdir(dirname(outputPath), { recursive: true });
-        await writeFile(outputPath, output, "utf8");
-        outputFiles.push(outputPath);
       }
     }
   }

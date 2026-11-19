@@ -1198,6 +1198,85 @@ describe("expandOutputPath", () => {
     const result = expandOutputPath("guardrails/{guardrail.id}/{guardrail.severity}.md", "guardrail", "no-force-push", entity);
     expect(result).toBe("guardrails/no-force-push/critical.md");
   });
+
+  it("rejects an entity id containing a '..' segment", () => {
+    expect(() => expandOutputPath("out/agents/{agent.id}.md", "agent", "../escaped/dummy")).toThrow(
+      /\{agent\.id\} of agent "\.\.\/escaped\/dummy" must not contain/,
+    );
+  });
+
+  it("rejects a field value containing a '..' segment", () => {
+    const entity = { "x-claude-path": "packages/../../outside" };
+    expect(() => expandOutputPath("../{agent.x-claude-path}/CLAUDE.md", "agent", "my-agent", entity)).toThrow(
+      /\{agent\.x-claude-path\}/,
+    );
+  });
+
+  it("rejects a backslash-separated '..' segment", () => {
+    expect(() => expandOutputPath("out/{agent.id}.md", "agent", "..\\escaped")).toThrow(/\{agent\.id\}/);
+  });
+
+  it("rejects an absolute value", () => {
+    const entity = { "x-path": "/etc/cron.d/job" };
+    expect(() => expandOutputPath("{agent.x-path}.md", "agent", "my-agent", entity)).toThrow(/\{agent\.x-path\}/);
+  });
+
+  it("accepts dots that are not a '..' segment", () => {
+    expect(expandOutputPath("out/{agent.id}.md", "agent", "implementer.api..v2")).toBe("out/implementer.api..v2.md");
+  });
+});
+
+describe("renderFromConfig output path containment", () => {
+  const containDir = join(tmpdir(), "agc-contain-output");
+
+  afterAll(() => {
+    rmSync(containDir, { recursive: true, force: true });
+  });
+
+  it("fails without writing outside the output pattern prefix", async () => {
+    const dsl = DslSchema.parse({
+      version: 1,
+      system: { id: "s", name: "S", default_workflow_order: [] },
+      agents: { "../escaped/dummy": { role_name: "D", purpose: "P" } },
+    });
+    const targets = [agentTarget(join(templateDir, "agent-prompt.md.hbs"), join(containDir, "agents", "{agent.id}.md"))];
+    await expect(renderFromConfig(dsl, targets)).rejects.toThrow(/must not contain/);
+    expect(existsSync(join(containDir, "escaped", "dummy.md"))).toBe(false);
+  });
+});
+
+describe("renderFromConfig dryRun", () => {
+  const dryDir = join(tmpdir(), "agc-dry-run-output");
+
+  afterAll(() => {
+    rmSync(dryDir, { recursive: true, force: true });
+  });
+
+  it("returns the output paths without writing files", async () => {
+    const targets = [
+      agentTarget(join(templateDir, "agent-prompt.md.hbs"), join(dryDir, "{agent.id}.md")),
+      systemTarget(join(templateDir, "overview.md.hbs"), join(dryDir, "overview.md")),
+    ];
+    const files = await renderFromConfig(fullDsl, targets, { dryRun: true });
+    expect(files).toContain(join(dryDir, "main-architect.md"));
+    expect(files).toContain(join(dryDir, "overview.md"));
+    expect(existsSync(dryDir)).toBe(false);
+  });
+
+  it("does not delete an existing file for skip_empty", async () => {
+    const dsl = DslSchema.parse({
+      version: 1,
+      system: { id: "s", name: "S", default_workflow_order: [] },
+      agents: { dev: { role_name: "Dev", purpose: "P", can_execute_tools: ["without-script"] } },
+      tools: { "without-script": { kind: "cli", invokable_by: ["dev"] } },
+    });
+    const stale = join(dryDir, "without-script.sh");
+    mkdirSync(dryDir, { recursive: true });
+    writeFileSync(stale, "stale", "utf8");
+    const targets = [toolTarget(join(templateDir, "tool-script.sh.hbs"), join(dryDir, "{tool.id}.sh"), { skip_empty: true })];
+    await renderFromConfig(dsl, targets, { dryRun: true });
+    expect(readFileSync(stale, "utf8")).toBe("stale");
+  });
 });
 
 describe("hasUnresolvedPathVars", () => {

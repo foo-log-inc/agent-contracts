@@ -120,4 +120,14 @@ describe("computeExitCode", () => {
   it("returns 12 for adapter error", () => {
     expect(computeExitCode([makeResult({ status: "error", errorMessage: "adapter failed" })])).toBe(12);
   });
+
+  it("returns 1 when the agent output could not be validated", () => {
+    const r = makeResult({ status: "validation_error", data: null, errorMessage: "Could not extract structured result from agent output" });
+    expect(computeExitCode([r])).toBe(1);
+  });
+
+  it("returns 1 when the agent escalated", () => {
+    const r = makeResult({ status: "escalation", data: null, errorMessage: "API contract unclear" });
+    expect(computeExitCode([r])).toBe(1);
+  });
 });

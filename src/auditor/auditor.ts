@@ -78,6 +78,10 @@ export async function runAudit(
     adapter: auditConfig.adapter ?? "mock",
     model: auditConfig.model,
     dsl: resolvedDsl,
+    // The audit context is fully embedded in the request, and the audit
+    // command has no filesystem side effects besides --output: the agent
+    // gets no tools.
+    adapterOptions: { tools: [] },
     logFile: options.logFile,
     maxFollowUps: 2,
     maxRetries: 0,

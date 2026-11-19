@@ -65,6 +65,20 @@ effectiveGuardrails(entityType, entityId) =
 
 Resolved guardrails are injected into each entity's `PerEntityContext.relatedGuardrails` so templates can render them into prompts.
 
+#### Agent-level enforcement
+
+A runtime that enforces guardrails per agent (in-process execution with tool hooks) applies to each agent its effective guardrails plus every guardrail that is **not attributed to any agent**. A guardrail is not attributed to any agent when its `scope.agents` is absent or empty and no `agents[].guardrails` references it. Such a guardrail — for example one scoped only to tools, tasks, artifacts, or workflows — applies to every agent, so the in-process runtime enforces the same rules as the generated hooks and the guardrail evaluation CLI.
+
+```
+enforcedGuardrails(agentId) =
+  effectiveGuardrails("agents", agentId)
+  ∪ Set(guardrailId for each guardrail where
+          (scope.agents is absent or empty)
+          and no agent lists guardrailId in agents[].guardrails)
+```
+
+A guardrail attributed to agents (listed in `scope.agents`, or referenced by an agent's `guardrails`) applies only to those agents.
+
 A parallel mechanism exists for validations: `resolveEntityValidations()` resolves validation IDs into `EntityValidationEntry[]` and injects them as `relatedValidations` into agent, task, and tool contexts. See Issue #19.
 
 | Existing | Purpose | Guardrail Relation |
@@ -111,7 +125,7 @@ const GuardrailSchema = z.object({
 |-------|----------|-------------|
 | `description` | yes | Human-readable description of the constraint |
 | `scope` | yes | References to DSL entities this guardrail applies to |
-| `scope.agents` | no | Agent IDs this guardrail is relevant to |
+| `scope.agents` | no | Agent IDs this guardrail is relevant to. When absent or empty and no agent references the guardrail, agent-level enforcement applies it to every agent (§1.3) |
 | `scope.tasks` | no | Task IDs this guardrail is relevant to |
 | `scope.tools` | no | Tool IDs this guardrail is relevant to |
 | `scope.artifacts` | no | Artifact IDs this guardrail is relevant to |

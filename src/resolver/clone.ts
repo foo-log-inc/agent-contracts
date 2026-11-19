@@ -100,6 +100,18 @@ function resolveSectionClones(section: string, entities: AnyRecord): void {
     return;
   }
 
+  // The clone is built from `from` and `$clone.merge` only. Attributes next to
+  // `$clone` (written in the same file, or by an extending DSL for the same ID)
+  // would be discarded, so they are rejected.
+  for (const id of cloneIds) {
+    const siblings = Object.keys(entities[id] as AnyRecord).filter((key) => key !== "$clone");
+    if (siblings.length > 0) {
+      throw new CloneError(
+        `${section}.${id} has attributes next to $clone (${siblings.join(", ")}); write them in $clone.merge`,
+      );
+    }
+  }
+
   const sorted = topologicalSortCloneIds(cloneIds, entities);
   const resolved = new Map<string, AnyRecord>();
 
