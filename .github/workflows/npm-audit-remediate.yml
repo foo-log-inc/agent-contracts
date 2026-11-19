@@ -5,9 +5,10 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
+# The job that runs the dependencies holds no write token; the job that holds
+# one runs only git and gh on the artifact the first job produced.
 permissions:
-  contents: write
-  issues: write
+  contents: read
 
 concurrency:
   group: npm-audit-remediate
@@ -16,10 +17,16 @@ concurrency:
 jobs:
   remediate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      clean: ${{ steps.audit.outcome == 'success' }}
+      changed: ${{ steps.diff.outcome == 'failure' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -100,29 +107,6 @@ jobs:
         id: diff
         continue-on-error: true
         run: git diff --exit-code -- '*package-lock.json'
-      - name: Report advisories that no lockfile change can reach
-        if: steps.audit.outcome == 'failure' && steps.diff.outcome == 'success'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ISSUE_TITLE: "security: npm audit findings that a lockfile fix cannot reach"
-        # The audit crossed the threshold and the fix moved nothing, so there is no branch and
-        # no pull request to open. Staying quiet here would leave a known vulnerability with no
-        # trace anywhere; one issue, filed once, keeps it visible without a daily notification.
-        run: |
-          if ! [ -s "$RUNNER_TEMP/residual.md" ]; then
-            echo "Nothing survived the fix. No report needed."
-            exit 0
-          fi
-          if gh issue list --state open --search "\"$ISSUE_TITLE\" in:title" --json number --jq '.[0].number' | grep -q '[0-9]'; then
-            echo "An open issue already carries these findings."
-            exit 0
-          fi
-          {
-            echo "\`npm audit\` reports findings that \`npm audit fix --package-lock-only\` cannot move. Each one needs a change a lockfile cannot express: raising a pin, accepting a semver-major, or waiting on an upstream release."
-            cat "$RUNNER_TEMP/residual.md"
-            printf 'Run: %s/%s/actions/runs/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
-          } > "$RUNNER_TEMP/unfixable-body.md"
-          gh issue create --title "$ISSUE_TITLE" --body-file "$RUNNER_TEMP/unfixable-body.md"
       - name: Install updated lockfile
         if: steps.audit.outcome == 'failure' && steps.diff.outcome == 'failure'
         run: npm ci --legacy-peer-deps --ignore-scripts
@@ -141,8 +125,81 @@ jobs:
       - name: Verify package contents
         if: steps.audit.outcome == 'failure' && steps.diff.outcome == 'failure'
         run: npm pack --dry-run
+      - name: Package the fix for the write job
+        if: steps.audit.outcome == 'failure'
+        run: |
+          mkdir -p "$RUNNER_TEMP/fix"
+          if [ "${{ steps.diff.outcome }}" = "failure" ]; then
+            git add -- '*package-lock.json'
+            git diff --cached --binary > "$RUNNER_TEMP/fix/lockfix.patch"
+          fi
+          cp "$RUNNER_TEMP/residual.md" "$RUNNER_TEMP/fix/residual.md" 2>/dev/null || : > "$RUNNER_TEMP/fix/residual.md"
+      - uses: actions/upload-artifact@v4
+        if: steps.audit.outcome == 'failure'
+        with:
+          name: npm-audit-fix
+          path: ${{ runner.temp }}/fix
+          retention-days: 3
+
+  publish-fix:
+    needs: remediate
+    if: needs.remediate.outputs.clean == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-audit-fix
+          path: ${{ runner.temp }}/fix
+      - name: Report advisories that no lockfile change can reach
+        if: needs.remediate.outputs.changed != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_TITLE: "security: npm audit findings that a lockfile fix cannot reach"
+        # The audit crossed the threshold and the fix moved nothing, so there is no branch and
+        # no pull request to open. Staying quiet here would leave a known vulnerability with no
+        # trace anywhere; one issue, filed once, keeps it visible without a daily notification.
+        run: |
+          if ! [ -s "$RUNNER_TEMP/fix/residual.md" ]; then
+            echo "Nothing survived the fix. No report needed."
+            exit 0
+          fi
+          if gh issue list --state open --search "\"$ISSUE_TITLE\" in:title" --json number --jq '.[0].number' | grep -q '[0-9]'; then
+            echo "An open issue already carries these findings."
+            exit 0
+          fi
+          {
+            echo "\`npm audit\` reports findings that \`npm audit fix --package-lock-only\` cannot move. Each one needs a change a lockfile cannot express: raising a pin, accepting a semver-major, or waiting on an upstream release."
+            cat "$RUNNER_TEMP/fix/residual.md"
+            printf 'Run: %s/%s/actions/runs/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
+          } > "$RUNNER_TEMP/unfixable-body.md"
+          gh issue create --title "$ISSUE_TITLE" --body-file "$RUNNER_TEMP/unfixable-body.md"
+      - name: Accept only lockfile paths
+        if: needs.remediate.outputs.changed == 'true'
+        # The same rule as "Reject package.json changes", held on the side that pushes:
+        # whatever the first job did, only lockfiles reach the branch.
+        run: |
+          patch="$RUNNER_TEMP/fix/lockfix.patch"
+          [ -s "$patch" ] || { echo "::error::patch is empty"; exit 1; }
+          bad=0
+          git apply --numstat "$patch" | cut -f3- > "$RUNNER_TEMP/files.txt"
+          while IFS= read -r f; do
+            case "$f" in *" => "*) echo "::error::rename is not allowed: $f"; bad=1; continue ;; esac
+            [ "$(basename "$f")" = package-lock.json ] && continue
+            echo "::error::not a lockfile: $f"; bad=1
+          done < "$RUNNER_TEMP/files.txt"
+          if git apply --summary "$patch" | grep -E '^ (delete|create) mode|^ rename '; then
+            echo "::error::create/delete/rename is not allowed"; bad=1
+          fi
+          exit $bad
       - name: Push the remediation branch and report it
-        if: steps.audit.outcome == 'failure' && steps.diff.outcome == 'failure'
+        if: needs.remediate.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH: security/npm-audit-lockfile-fix
@@ -167,10 +224,10 @@ jobs:
             - Auto-merge is prohibited
             - The pull request must pass the normal CI gate before merge
         run: |
+          git apply --index "$RUNNER_TEMP/fix/lockfix.patch"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$BRANCH"
-          git add -- '*package-lock.json'
           git commit -m "security: apply npm audit lockfile fix"
 
           # Never rewrite the branch. A pull request may already be open on it, and a force
@@ -199,7 +256,7 @@ jobs:
           fi
           {
             printf '%s\n' "$ISSUE_BODY"
-            cat "$RUNNER_TEMP/residual.md"
+            cat "$RUNNER_TEMP/fix/residual.md"
             printf 'Run: %s/%s/actions/runs/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
           } > "$RUNNER_TEMP/issue-body.md"
           gh issue create --title "$ISSUE_TITLE" --body-file "$RUNNER_TEMP/issue-body.md"
