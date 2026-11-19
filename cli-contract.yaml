@@ -219,10 +219,9 @@ command_sets:
       lint:
         summary: Run semantic lint rules on resolved DSL.
         description: >-
-          Runs TypeScript-based semantic lint rules and Spectral rules
-          on the resolved DSL. Checks for best-practice violations,
-          naming conventions, and structural issues beyond schema
-          conformance.
+          Runs TypeScript-based semantic lint rules on the resolved DSL.
+          Checks for best-practice violations, naming conventions, and
+          structural issues beyond schema conformance.
         usage:
           - agent-contracts lint
           - agent-contracts lint path/to/agent-contracts.yaml

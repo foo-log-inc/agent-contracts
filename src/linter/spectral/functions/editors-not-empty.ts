@@ -1,4 +1,4 @@
-import { createRulesetFunction } from "@stoplight/spectral-core";
+import type { RuleFunction } from "../types.js";
 
 type ArtifactObj = {
   owner?: string;
@@ -21,24 +21,20 @@ function allDeprecatedOwnershipFieldsEmpty(art: ArtifactObj): boolean {
  * ownership fields are set. Skips when all deprecated ownership fields
  * are empty (binding-model state).
  */
-export default createRulesetFunction<string[], null>(
-  { input: { type: "array" }, options: null },
-  (targetVal, _options, context) => {
-    const root = context.document.data as {
-      artifacts?: Record<string, ArtifactObj>;
-    };
-    const artId =
-      context.path.length >= 2 ? String(context.path[1]) : undefined;
-    const artifact =
-      artId && root.artifacts ? root.artifacts[artId] : undefined;
+const editorsNotEmpty: RuleFunction = (value, context) => {
+  if (!Array.isArray(value)) return [];
+  const artifacts = context.document.artifacts as Record<string, ArtifactObj> | undefined;
+  const artId = context.path.length >= 2 ? String(context.path[1]) : undefined;
+  const artifact = artId && artifacts ? artifacts[artId] : undefined;
 
-    if (artifact && allDeprecatedOwnershipFieldsEmpty(artifact)) {
-      return [];
-    }
-
-    if (targetVal.length === 0) {
-      return [{ message: "editors must not be empty" }];
-    }
+  if (artifact && allDeprecatedOwnershipFieldsEmpty(artifact)) {
     return [];
-  },
-);
+  }
+
+  if (value.length === 0) {
+    return [{ message: "editors must not be empty" }];
+  }
+  return [];
+};
+
+export default editorsNotEmpty;

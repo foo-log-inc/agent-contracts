@@ -138,7 +138,7 @@ agent-contracts validate --quiet
 
 Run semantic lint rules on resolved DSL.
 
-Runs TypeScript-based semantic lint rules and Spectral rules on the resolved DSL. Checks for best-practice violations, naming conventions, and structural issues beyond schema conformance.
+Runs TypeScript-based semantic lint rules on the resolved DSL. Checks for best-practice violations, naming conventions, and structural issues beyond schema conformance.
 
 **Usage:**
 

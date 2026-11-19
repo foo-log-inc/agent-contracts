@@ -1888,7 +1888,7 @@ Checks:
 * semantic validation phase coverage — warns when `semantic` or `fidelity` validations only appear in late workflow phases (e.g., audit) but not earlier phases (e.g., specify, plan)
 * validation executor context wiring — warns when a validation's executor (agent or tool) exists in the DSL but the validation is not surfaced in the executor's prompt context
 * YAML safety — warns when YAML 1.1 reserved words (`on`, `yes`, `no`, `true`, `false`, etc.) are used in positions where they may be misinterpreted by non-1.2 parsers
-* naming/style issues through Spectral rules
+* naming/style issues — kebab-case keys and `version: 1`
 
 #### `--strict` mode
 
@@ -1985,7 +1985,7 @@ That separation keeps runtime concerns and architecture concerns from being mixe
 | Language       | TypeScript (ESM, strict mode)      |
 | Schema         | Zod + ajv (JSON Schema meta-validation) |
 | YAML parsing   | yaml                               |
-| Lint           | TypeScript custom rules + Spectral |
+| Lint           | TypeScript custom rules            |
 | Templates      | Handlebars                         |
 | CLI            | commander                          |
 | Testing        | Vitest                             |

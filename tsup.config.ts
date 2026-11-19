@@ -11,10 +11,6 @@ export default defineConfig({
   outDir: "dist",
   sourcemap: true,
   splitting: false,
-  noExternal: [
-    "@stoplight/spectral-core",
-    "@stoplight/spectral-functions",
-  ],
   external: [
     "agent-contracts-runtime",
     "@anthropic-ai/claude-agent-sdk",

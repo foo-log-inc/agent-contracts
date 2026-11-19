@@ -1,4 +1,4 @@
-import { createRulesetFunction } from "@stoplight/spectral-core";
+import { isRecord, type RuleFunction, type RuleResult } from "../types.js";
 
 type AgentObj = {
   can_read_artifacts?: string[];
@@ -8,23 +8,24 @@ type AgentObj = {
 /**
  * Section 15.2.7: prerequisites[].target must be in the agent's can_read_artifacts.
  */
-export default createRulesetFunction<AgentObj, null>(
-  { input: { type: "object" }, options: null },
-  (targetVal, _options, context) => {
-    const readable = new Set(targetVal.can_read_artifacts ?? []);
-    const prereqs = targetVal.prerequisites ?? [];
-    if (readable.size === 0) return [];
-    const results: { message: string; path: (string | number)[] }[] = [];
+const prerequisiteReadable: RuleFunction = (value, context) => {
+  if (!isRecord(value)) return [];
+  const agent = value as AgentObj;
+  const readable = new Set(agent.can_read_artifacts ?? []);
+  const prereqs = agent.prerequisites ?? [];
+  if (readable.size === 0) return [];
+  const results: RuleResult[] = [];
 
-    for (let i = 0; i < prereqs.length; i++) {
-      const p = prereqs[i];
-      if (!readable.has(p.target)) {
-        results.push({
-          message: `prerequisite target "${p.target}" is not in can_read_artifacts`,
-          path: [...context.path, "prerequisites", i, "target"],
-        });
-      }
+  for (let i = 0; i < prereqs.length; i++) {
+    const p = prereqs[i];
+    if (!readable.has(p.target)) {
+      results.push({
+        message: `prerequisite target "${p.target}" is not in can_read_artifacts`,
+        path: [...context.path, "prerequisites", i, "target"],
+      });
     }
-    return results;
-  },
-);
+  }
+  return results;
+};
+
+export default prerequisiteReadable;
