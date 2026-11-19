@@ -1267,6 +1267,8 @@ artifact_coverage:
     - ".cursor/**"
 ```
 
+Exclude patterns use the same glob semantics as an artifact's `path_patterns`: a pattern ending in `/` excludes every file below that directory.
+
 The score command evaluates 7 dimensions:
 
 | Dimension | What it measures | Weight |
