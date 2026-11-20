@@ -9,7 +9,7 @@ import { loadConfig, resolveDslPath, loadBindings, ConfigLoadError } from "../co
 import { resolve, substituteVars, resolveBound } from "../resolver/index.js";
 import { expandDefaults } from "../resolver/expand-defaults.js";
 import { validateSchema, checkReferences, validateHandoffSchemas } from "../validator/index.js";
-import { lint, spectralLint } from "../linter/index.js";
+import { lint } from "../linter/index.js";
 import {
   renderFromConfig,
   checkDriftFromConfig,
@@ -230,10 +230,8 @@ const handleLint: CommandHandlers["lint"] = async (dir, opts) => {
         }
 
         const tsDiagnostics = lint(schemaResult.data!);
-        const spectralDiagnostics = await spectralLint(
-          schemaResult.data! as unknown as Record<string, unknown>,
-        );
-        const diagnostics = [...tsDiagnostics, ...spectralDiagnostics, ...schemaWarnings];
+        const refDiags = checkReferences(schemaResult.data!);
+        const diagnostics = [...tsDiagnostics, ...refDiags, ...schemaWarnings];
         if (diagnostics.length > 0) {
           allClean = false;
           const output = formatDiagnostics(diagnostics, {
@@ -274,10 +272,8 @@ const handleLint: CommandHandlers["lint"] = async (dir, opts) => {
     }
 
     const tsDiagnostics = lint(schemaResult.data!);
-    const spectralDiagnostics = await spectralLint(
-      schemaResult.data! as unknown as Record<string, unknown>,
-    );
-    const diagnostics = [...tsDiagnostics, ...spectralDiagnostics, ...schemaWarnings];
+    const refDiags = checkReferences(schemaResult.data!);
+    const diagnostics = [...tsDiagnostics, ...refDiags, ...schemaWarnings];
     if (diagnostics.length > 0) {
       const output = formatDiagnostics(diagnostics, {
         format: (opts.format ?? "text") as OutputFormat,
@@ -367,11 +363,7 @@ const handleCheck: CommandHandlers["check"] = async (opts) => {
           hasErrors = true;
         }
 
-        const tsLintDiags = lint(schemaResult.data!);
-        const spectralDiags = await spectralLint(
-          schemaResult.data! as unknown as Record<string, unknown>,
-        );
-        const lintDiags = [...tsLintDiags, ...spectralDiags];
+        const lintDiags = lint(schemaResult.data!);
         if (lintDiags.length > 0) {
           const output = formatDiagnostics(lintDiags, {
             format: (opts.format ?? "text") as OutputFormat,
@@ -459,11 +451,7 @@ const handleCheck: CommandHandlers["check"] = async (opts) => {
       hasErrors = true;
     }
 
-    const tsLintDiags = lint(schemaResult.data!);
-    const spectralDiags = await spectralLint(
-      schemaResult.data! as unknown as Record<string, unknown>,
-    );
-    const lintDiags = [...tsLintDiags, ...spectralDiags];
+    const lintDiags = lint(schemaResult.data!);
     if (lintDiags.length > 0) {
       const output = formatDiagnostics(lintDiags, {
         format: (opts.format ?? "text") as OutputFormat,

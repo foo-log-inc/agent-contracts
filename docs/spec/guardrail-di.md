@@ -890,7 +890,7 @@ binding.guardrail_impl.{key} → guardrails
 
 ### 7.2 Existing Rule Interactions
 
-- `guardrails` and `guardrail_policies` are subject to existing Spectral lint rules (kebab-case IDs, etc.)
+- References from and to `guardrails` and `guardrail_policies` (entity `guardrails`, `scope`, policy `rules[].guardrail`) are checked by the reference-integrity checks that `validate`, `lint` and `check` run
 - The existing `check` command automatically picks up schema validation for the new sections
 - `extends` merge behavior applies to `guardrails` and `guardrail_policies` the same as other top-level maps
 
