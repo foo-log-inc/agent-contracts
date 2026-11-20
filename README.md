@@ -1862,11 +1862,13 @@ To address this:
 
 ### Reference integrity
 
+`validate`, `lint` and `check` run these checks; each finding is an error.
+
 Checks:
 
-* cross-entity references
+* cross-entity references, including workflow step references (`task`, `from_agent`, `gate_kind`, `handoff_kind`, `validation`)
 * owner / producer / editor / consumer validity
-* handoff schema consistency (`required` vs. `properties` alignment)
+* handoff schema consistency (`required` vs. `properties` alignment, non-empty `enum`), in nested objects and object `items` as well
 * permission alignment between agents and artifacts
 * `team_interface` internal consistency (workflows, handoffs, and exposed artifacts exist in the DSL)
 * cross-team reference validity (`team_task` targets exist in `imports`)
@@ -1888,7 +1890,7 @@ Checks:
 * semantic validation phase coverage — warns when `semantic` or `fidelity` validations only appear in late workflow phases (e.g., audit) but not earlier phases (e.g., specify, plan)
 * validation executor context wiring — warns when a validation's executor (agent or tool) exists in the DSL but the validation is not surfaced in the executor's prompt context
 * YAML safety — warns when YAML 1.1 reserved words (`on`, `yes`, `no`, `true`, `false`, etc.) are used in positions where they may be misinterpreted by non-1.2 parsers
-* naming/style issues — kebab-case keys and `version: 1`
+* naming/style issues — kebab-case keys of `agents`, `tasks`, `artifacts`, `tools`, `validations`, `handoff_types` and `policies`
 
 #### `--strict` mode
 

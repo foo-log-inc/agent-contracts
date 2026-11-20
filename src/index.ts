@@ -2,7 +2,7 @@ export * from "./schema/index.js";
 export { loadDsl, DslLoadError, type LoadResult } from "./loader/index.js";
 export { resolve, mergeDsl, resolveBase, expandDefaults, resolveBound, resolveArtifactBinding, resolveAgentEffects, resolveTaskEffects, resolveToolEffects, isNarrowOnlyOverride, collectAgentArtifactProducers, collectAgentArtifactConsumers, normalizeDerivedFrom, type EffectiveEffects, MergeError, CloneError, BaseResolveError, type ResolveResult, type BoundResolveOptions, type BoundResolveResult, type ArtifactBindingDiagnostic, type ArtifactBindingResult } from "./resolver/index.js";
 export { validateSchema, checkReferences, validateHandoffSchemas, type SchemaValidationResult, type DiagnosticMessage, type ReferenceDiagnostic } from "./validator/index.js";
-export { lint, builtinRules, spectralLint, yamlReservedKeySafetyRule, type LintRule, type LintDiagnostic, type Severity } from "./linter/index.js";
+export { lint, builtinRules, yamlReservedKeySafetyRule, type LintRule, type LintDiagnostic, type Severity } from "./linter/index.js";
 export {
   renderFromConfig,
   checkDriftFromConfig,

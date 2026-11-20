@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { resolve } from "node:path";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { DslSchema, type Dsl } from "../../src/schema/index.js";
 import { buildNavigationIndex } from "../../src/navigation-index/builder.js";
 import { buildEntityContext } from "../../src/renderer/renderer.js";
+import { loadDsl } from "../../src/loader/loader.js";
 
 const speckeeperCliContract = resolve(
   import.meta.dirname,
@@ -560,5 +563,37 @@ describe("buildEntityContext with navigation-index", () => {
     expect((ctx.artifacts as Record<string, unknown>).specs).toMatchObject({
       id: "specs",
     });
+  });
+});
+
+describe("buildNavigationIndex — a DSL that omits agents, artifacts and tools", () => {
+  it("builds the index from loadDsl output, which the schema has not parsed", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "agc-nav-standalone-"));
+    try {
+      writeFileSync(
+        join(dir, "agent-contracts.yaml"),
+        [
+          "version: 1",
+          "system:",
+          "  id: sample",
+          "  name: sample",
+          "  default_workflow_order: []",
+          'guardrails: { $ref: "./guardrails.yaml" }',
+          'guardrail_policies: { $ref: "./guardrail-policies.yaml" }',
+          "",
+        ].join("\n"),
+      );
+      writeFileSync(join(dir, "guardrails.yaml"), "{}\n");
+      writeFileSync(join(dir, "guardrail-policies.yaml"), "{}\n");
+
+      const { data } = await loadDsl(join(dir, "agent-contracts.yaml"));
+      expect(Object.keys(data)).toEqual(["version", "system", "guardrails", "guardrail_policies"]);
+
+      const index = buildNavigationIndex(data);
+      expect(index.system).toEqual({ id: "sample", name: "sample" });
+      expect(index.artifacts).toEqual({});
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

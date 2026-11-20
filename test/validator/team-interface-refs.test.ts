@@ -34,6 +34,7 @@ function buildBaseDsl() {
       api_contract: minimalArtifact(),
     },
     handoff_types: {
+      "task-delegation": handoff,
       "feature-request": handoff,
       "implementation-result": handoff,
       "h-in": handoff,

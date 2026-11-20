@@ -25,6 +25,7 @@ export function validateHandoffSchemas(dsl: Dsl): ReferenceDiagnostic[] {
           path: `handoff_types.${kind}.schema${err.instancePath}`,
           message: `Invalid JSON Schema: ${err.message ?? "unknown error"}`,
           code: "invalid-handoff-schema",
+          severity: "error",
         });
       }
     }

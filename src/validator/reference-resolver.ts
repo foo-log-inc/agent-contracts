@@ -5,10 +5,19 @@ export interface ReferenceDiagnostic {
   path: string;
   message: string;
   code: string;
+  severity: "error";
 }
 
+/**
+ * Reference and handoff-schema integrity of a parsed DSL. `validate`, `lint`
+ * and `check` report these diagnostics; every one is an error.
+ */
 export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
   const diagnostics: ReferenceDiagnostic[] = [];
+
+  function report(path: string, message: string, code: string) {
+    diagnostics.push({ path, message, code, severity: "error" });
+  }
 
   const agentIds = new Set(Object.keys(dsl.agents));
   const artifactIds = new Set(Object.keys(dsl.artifacts));
@@ -27,11 +36,7 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
     code: string = "reference-not-found",
   ) {
     if (!validSet.has(value)) {
-      diagnostics.push({
-        path,
-        message: `Reference "${value}" not found in ${entityType}`,
-        code,
-      });
+      report(path, `Reference "${value}" not found in ${entityType}`, code);
     }
   }
 
@@ -87,11 +92,11 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
     if (art.owner) {
       const ownerAgent = dsl.agents[art.owner];
       if (ownerAgent && ownerAgent.can_read_artifacts.length > 0 && !ownerAgent.can_read_artifacts.includes(id)) {
-        diagnostics.push({
-          path: `artifacts.${id}.owner`,
-          message: `Agent "${art.owner}" owns artifact "${id}" but cannot read it (missing from can_read_artifacts)`,
-          code: "artifact-owner-no-read",
-        });
+        report(
+          `artifacts.${id}.owner`,
+          `Agent "${art.owner}" owns artifact "${id}" but cannot read it (missing from can_read_artifacts)`,
+          "artifact-owner-no-read",
+        );
       }
     }
     for (const valId of art.required_validations) {
@@ -99,11 +104,11 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
       if (validation?.executor_type === "tool" && validation.executor) {
         const tool = dsl.tools[validation.executor];
         if (tool && tool.invokable_by.length === 0) {
-          diagnostics.push({
-            path: `artifacts.${id}.required_validations`,
-            message: `Validation "${valId}" uses tool "${validation.executor}" which has no agents in invokable_by`,
-            code: "validation-executor-unreachable",
-          });
+          report(
+            `artifacts.${id}.required_validations`,
+            `Validation "${valId}" uses tool "${validation.executor}" which has no agents in invokable_by`,
+            "validation-executor-unreachable",
+          );
         }
       }
     }
@@ -164,6 +169,7 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
       } else if (step.type === "gate") {
         checkExists(step.gate_kind, handoffKinds, "handoff_types", `workflow.${wfId}.steps[${j}].gate_kind`);
       } else if (step.type === "handoff") {
+        checkExists(step.handoff_kind, handoffKinds, "handoff_types", `workflow.${wfId}.steps[${j}].handoff_kind`);
         if (step.task) {
           checkExists(step.task, taskIds, "tasks", `workflow.${wfId}.steps[${j}].task`);
         }
@@ -184,11 +190,11 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
             "team-import-not-found",
           );
         } else {
-          diagnostics.push({
-            path: `workflow.${wfId}.steps[${j}].to_team`,
-            message: `team_task step references team "${step.to_team}" but dsl.imports is not defined`,
-            code: "team-task-missing-imports",
-          });
+          report(
+            `workflow.${wfId}.steps[${j}].to_team`,
+            `team_task step references team "${step.to_team}" but dsl.imports is not defined`,
+            "team-task-missing-imports",
+          );
         }
         checkExists(step.handoff, handoffKinds, "handoff_types", `workflow.${wfId}.steps[${j}].handoff`);
         checkExists(step.expects, handoffKinds, "handoff_types", `workflow.${wfId}.steps[${j}].expects`);
@@ -200,21 +206,21 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
     const targetAgent = dsl.agents[task.target_agent];
     if (targetAgent) {
       if (!targetAgent.can_return_handoffs.includes(task.result_handoff)) {
-        diagnostics.push({
-          path: `tasks.${id}.result_handoff`,
-          message: `Task result_handoff "${task.result_handoff}" is not in target agent "${task.target_agent}" can_return_handoffs`,
-          code: "result-handoff-not-returnable",
-        });
+        report(
+          `tasks.${id}.result_handoff`,
+          `Task result_handoff "${task.result_handoff}" is not in target agent "${task.target_agent}" can_return_handoffs`,
+          "result-handoff-not-returnable",
+        );
       }
       if (targetAgent.can_read_artifacts.length > 0) {
         for (let j = 0; j < task.input_artifacts.length; j++) {
           const inputId = task.input_artifacts[j];
           if (!targetAgent.can_read_artifacts.includes(inputId)) {
-            diagnostics.push({
-              path: `tasks.${id}.input_artifacts[${j}]`,
-              message: `Input artifact "${inputId}" is not in target agent "${task.target_agent}" can_read_artifacts`,
-              code: "input-artifact-not-readable",
-            });
+            report(
+              `tasks.${id}.input_artifacts[${j}]`,
+              `Input artifact "${inputId}" is not in target agent "${task.target_agent}" can_read_artifacts`,
+              "input-artifact-not-readable",
+            );
           }
         }
       }
@@ -223,74 +229,64 @@ export function checkReferences(dsl: Dsl): ReferenceDiagnostic[] {
 
   for (const [id, agent] of Object.entries(dsl.agents)) {
     if (agent.mode === "read-only" && agent.can_write_artifacts.length > 0) {
-      diagnostics.push({
-        path: `agents.${id}.can_write_artifacts`,
-        message: `Agent "${id}" has mode "read-only" but can_write_artifacts is not empty`,
-        code: "readonly-agent-has-writes",
-      });
+      report(
+        `agents.${id}.can_write_artifacts`,
+        `Agent "${id}" has mode "read-only" but can_write_artifacts is not empty`,
+        "readonly-agent-has-writes",
+      );
     }
     if (agent.prerequisites) {
       for (let j = 0; j < agent.prerequisites.length; j++) {
         const pre = agent.prerequisites[j];
         if (agent.can_read_artifacts.length > 0 && !agent.can_read_artifacts.includes(pre.target)) {
-          diagnostics.push({
-            path: `agents.${id}.prerequisites[${j}].target`,
-            message: `Prerequisite target "${pre.target}" is not in agent "${id}" can_read_artifacts`,
-            code: "prerequisite-not-readable",
-          });
+          report(
+            `agents.${id}.prerequisites[${j}].target`,
+            `Prerequisite target "${pre.target}" is not in agent "${id}" can_read_artifacts`,
+            "prerequisite-not-readable",
+          );
         }
       }
     }
   }
 
-  for (const [kind, ht] of Object.entries(dsl.handoff_types)) {
-    const schema = ht.schema as Record<string, unknown>;
+  function isSchemaObject(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+
+  /** `required` vs. `properties` and empty `enum`s of one object schema, then of its nested objects and object `items`. */
+  function checkHandoffSchema(schema: Record<string, unknown>, path: string) {
     const effectiveSchema = resolveAllOf(schema);
     const required = effectiveSchema.required;
     const properties = effectiveSchema.properties;
-    if (
-      Array.isArray(required) &&
-      properties !== undefined &&
-      properties !== null &&
-      typeof properties === "object" &&
-      !Array.isArray(properties)
-    ) {
-      const propRecord = properties as Record<string, unknown>;
+    if (!isSchemaObject(properties)) return;
+    if (Array.isArray(required)) {
       for (let j = 0; j < required.length; j++) {
         const key = required[j];
-        if (typeof key === "string" && !(key in propRecord)) {
-          diagnostics.push({
-            path: `handoff_types.${kind}.schema.required[${j}]`,
-            message: `Handoff schema required field "${key}" is not a key in schema.properties`,
-            code: "schema-required-not-in-properties",
-          });
+        if (typeof key === "string" && !(key in properties)) {
+          report(
+            `${path}.required[${j}]`,
+            `Handoff schema required field "${key}" is not a key in schema.properties`,
+            "schema-required-not-in-properties",
+          );
         }
       }
     }
-    if (
-      properties !== undefined &&
-      properties !== null &&
-      typeof properties === "object" &&
-      !Array.isArray(properties)
-    ) {
-      const propRecord = properties as Record<string, unknown>;
-      for (const [propKey, propSchema] of Object.entries(propRecord)) {
-        if (
-          propSchema !== null &&
-          typeof propSchema === "object" &&
-          !Array.isArray(propSchema)
-        ) {
-          const enumVal = (propSchema as Record<string, unknown>).enum;
-          if (Array.isArray(enumVal) && enumVal.length === 0) {
-            diagnostics.push({
-              path: `handoff_types.${kind}.schema.properties.${propKey}`,
-              message: `Handoff schema property "${propKey}" has an empty enum`,
-              code: "schema-empty-enum",
-            });
-          }
-        }
+    for (const [propKey, propSchema] of Object.entries(properties)) {
+      if (!isSchemaObject(propSchema)) continue;
+      const propPath = `${path}.properties.${propKey}`;
+      const enumVal = propSchema.enum;
+      if (Array.isArray(enumVal) && enumVal.length === 0) {
+        report(propPath, `Handoff schema property "${propKey}" has an empty enum`, "schema-empty-enum");
+      }
+      if (propSchema.type === "object") checkHandoffSchema(propSchema, propPath);
+      if (isSchemaObject(propSchema.items) && propSchema.items.type === "object") {
+        checkHandoffSchema(propSchema.items, `${propPath}.items`);
       }
     }
+  }
+
+  for (const [kind, ht] of Object.entries(dsl.handoff_types)) {
+    checkHandoffSchema(ht.schema as Record<string, unknown>, `handoff_types.${kind}.schema`);
   }
 
   for (const [id, agent] of Object.entries(dsl.agents)) {

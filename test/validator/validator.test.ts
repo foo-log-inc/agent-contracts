@@ -1405,3 +1405,87 @@ describe("validateSchema — semantic checks run alongside schema-validation", (
     ).toBe(true);
   });
 });
+
+describe("checkReferences — workflow handoff steps and nested handoff schemas", () => {
+  function makeDsl(partial: Record<string, unknown>) {
+    return DslSchema.parse({
+      version: 1,
+      system: { id: "s", name: "S", default_workflow_order: ["implement"] },
+      ...partial,
+    });
+  }
+
+  it("reports a handoff step whose handoff_kind is not a handoff type", () => {
+    const dsl = makeDsl({
+      workflow: {
+        implement: { steps: [{ type: "handoff", handoff_kind: "nonexistent-kind" }] },
+      },
+    });
+    expect(checkReferences(dsl)).toEqual([
+      {
+        path: "workflow.implement.steps[0].handoff_kind",
+        message: 'Reference "nonexistent-kind" not found in handoff_types',
+        code: "reference-not-found",
+        severity: "error",
+      },
+    ]);
+  });
+
+  it("reports required fields and empty enums inside nested objects and object items", () => {
+    const dsl = makeDsl({
+      handoff_types: {
+        report: {
+          version: 1,
+          schema: {
+            type: "object",
+            properties: {
+              details: {
+                type: "object",
+                required: ["summary", "ghost"],
+                properties: { summary: { type: "string" } },
+              },
+              findings: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: { kind: { type: "string", enum: [] } },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    expect(checkReferences(dsl)).toEqual([
+      {
+        path: "handoff_types.report.schema.properties.details.required[1]",
+        message: 'Handoff schema required field "ghost" is not a key in schema.properties',
+        code: "schema-required-not-in-properties",
+        severity: "error",
+      },
+      {
+        path: "handoff_types.report.schema.properties.findings.items.properties.kind",
+        message: 'Handoff schema property "kind" has an empty enum',
+        code: "schema-empty-enum",
+        severity: "error",
+      },
+    ]);
+  });
+
+  it("merges allOf sub-schemas before checking", () => {
+    const dsl = makeDsl({
+      handoff_types: {
+        delegation: {
+          version: 1,
+          schema: {
+            allOf: [
+              { type: "object", required: ["from_agent"], properties: { from_agent: { type: "string" } } },
+              { type: "object", required: ["payload"], properties: { payload: { type: "object" } } },
+            ],
+          },
+        },
+      },
+    });
+    expect(checkReferences(dsl)).toEqual([]);
+  });
+});

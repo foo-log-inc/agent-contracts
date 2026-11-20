@@ -43,3 +43,29 @@ export const deprecatedOwnershipFieldsRule: LintRule = {
     return diagnostics;
   },
 };
+
+export const artifactEditorsNotEmptyRule: LintRule = {
+  id: "artifact-editors-not-empty",
+  description:
+    "(deprecated) Artifact editors must not be empty when another deprecated ownership field is set",
+
+  run(dsl: Dsl): LintDiagnostic[] {
+    const diagnostics: LintDiagnostic[] = [];
+
+    for (const [artId, artifact] of Object.entries(dsl.artifacts)) {
+      const usesDeprecatedOwnership = ARTIFACT_FIELDS.some((field) =>
+        isArtifactFieldUsed(artifact, field),
+      );
+      if (usesDeprecatedOwnership && !isArtifactFieldUsed(artifact, "editors")) {
+        diagnostics.push({
+          ruleId: "artifact-editors-not-empty",
+          severity: "info",
+          path: `artifacts.${artId}.editors`,
+          message: "editors must not be empty",
+        });
+      }
+    }
+
+    return diagnostics;
+  },
+};

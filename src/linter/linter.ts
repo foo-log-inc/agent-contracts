@@ -22,7 +22,19 @@ import {
 } from "./rules/entity-guardrail-binding.js";
 import { validationExecutorNoContextRule } from "./rules/validation-executor-no-context.js";
 import { artifactOwnershipConsistencyRule } from "./rules/artifact-ownership-consistency.js";
-import { deprecatedOwnershipFieldsRule } from "./rules/deprecated-ownership-fields.js";
+import {
+  deprecatedOwnershipFieldsRule,
+  artifactEditorsNotEmptyRule,
+} from "./rules/deprecated-ownership-fields.js";
+import {
+  agentKeyCasingRule,
+  taskKeyCasingRule,
+  artifactKeyCasingRule,
+  toolKeyCasingRule,
+  validationKeyCasingRule,
+  handoffTypeKeyCasingRule,
+  policyKeyCasingRule,
+} from "./rules/key-casing.js";
 import {
   extensionDeclaredButUnusedRule,
   extensionScopeMismatchRule,
@@ -56,6 +68,7 @@ const builtinRules: LintRule[] = [
   validationExecutorNoContextRule,
   artifactOwnershipConsistencyRule,
   deprecatedOwnershipFieldsRule,
+  artifactEditorsNotEmptyRule,
   extensionDeclaredButUnusedRule,
   extensionScopeMismatchRule,
   extensionUndeclaredUsageRule,
@@ -66,6 +79,13 @@ const builtinRules: LintRule[] = [
   memoryConsistencyRule,
   artifactDataflowRule,
   componentContractBindingRule,
+  agentKeyCasingRule,
+  taskKeyCasingRule,
+  artifactKeyCasingRule,
+  toolKeyCasingRule,
+  validationKeyCasingRule,
+  handoffTypeKeyCasingRule,
+  policyKeyCasingRule,
 ];
 
 export function lint(

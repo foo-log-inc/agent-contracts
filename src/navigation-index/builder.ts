@@ -1,4 +1,4 @@
-import type { Dsl, Tool } from "../schema/index.js";
+import { DslSchema, type Dsl, type Tool } from "../schema/index.js";
 import { resolveToolExtends } from "../resolver/tool-extends.js";
 import { loadCliContractSlots, resolveSlotDirection } from "./cli-contract-loader.js";
 import type {
@@ -271,7 +271,14 @@ function defaultProperties(
   };
 }
 
-export function buildNavigationIndex(dsl: Dsl): ProjectNavigationIndex {
+/**
+ * Build the navigation index of a DSL, as `loadDsl` / `resolve` return it or
+ * as already parsed. The DSL is parsed by `DslSchema` here, so the sections
+ * it omits take their schema defaults; a DSL the schema rejects throws the
+ * `ZodError` that names the failing paths.
+ */
+export function buildNavigationIndex(input: Record<string, unknown>): ProjectNavigationIndex {
+  const dsl = DslSchema.parse(input);
   const resolvedTools = resolveToolExtends(dsl.tools);
   const allLinks: ToolArtifactLink[] = [];
 
