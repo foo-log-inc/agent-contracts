@@ -2,7 +2,7 @@
 
 Declarative YAML DSL toolkit for defining, validating, and rendering multi-agent development workflows. Provides static validation, semantic linting, prompt rendering, guardrail generation, and completeness scoring for agent contract definitions.
 
-**Version:** 0.35.15
+**Version:** 0.35.16
 
 ## Table of Contents
 
